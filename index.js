@@ -280,6 +280,7 @@ function _help(input, channel) {
     var message = 'Current commands!\n' +
     '=====================\n' +
     '`current` : list current track\n' +
+    '`status` : show current status of Sonos\n' +
     '`search` _text_ : search for a track, does NOT add it to the queue\n' +
     '`add` _text_ : Add song to the queue and start playing if idle.\n' +
     '`append` _text_ : Append a song to the previous playlist and start playing the same list again.\n' +
