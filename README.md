@@ -90,4 +90,5 @@ List of commands (just type help in the channel)
 
 *Screenshot*
 
-![ScreenShot](https://raw.github.com/htilly/zenmusic/blob/master/doc/images/ExampleZenMusic.png)
+![ScreenShot](http://raw.github.com/htilly/zenmusic/master/doc/images/ExampleZenMusic.png)
+
