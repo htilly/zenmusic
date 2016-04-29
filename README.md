@@ -5,6 +5,7 @@
 
 Quick hack created during one of Schibsted Swedens hackdays.
 It´s a #slack-bot that control Sonos (and spotify). Highly democratic bot :)
+Uses https://github.com/bencevans/node-sonos to controll Sonos.
 
 *What do I need in order to get it to work?*
 
