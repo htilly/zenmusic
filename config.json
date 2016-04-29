@@ -1,0 +1,6 @@
+{
+    "adminChannel" : "_ADMIN-SLACK-CHANNEL_",
+    "standardChannel" : "_SLACK-CHANNEL_",
+    "sonos" : "_IPADDRESS-TO-SONOS_",
+    "token" : "_SLACK-TOKEN-FOR-BOT_"
+}
