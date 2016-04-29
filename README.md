@@ -88,3 +88,6 @@ List of commands (just type help in the channel)
 * Vote - If +1 in slack then move in queue. (sort of)
 * Ask "what is playing".
 
+*Screenshot*
+
+![ScreenShot](https://raw.github.com/htilly/zenmusic/blob/master/doc/images/ExampleZenMusic.png)
