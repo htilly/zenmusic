@@ -11,12 +11,17 @@
     "zen",
     "centralen"
   ],
+  "repository": {
+    "type:": "git",
+    "url": "git@github.com:htilly/zenmusic.git"
+  },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "htmlencode": "0.0.4",
     "slack-client": "^1.5.1",
     "sonos": "^0.11.1",
-    "urlencode": "^1.1.0"
+    "urlencode": "^1.1.0",
+    "urllib-sync": "^1.1.2"
   }
 }

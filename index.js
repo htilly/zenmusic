@@ -3,23 +3,16 @@ var configure = require('./config.json');
 var sonos = new Sonos(configure.sonos);
 var adminChannel = configure.adminChannel;
 var standardChannel = configure.standardChannel;
-token = configure.token;
-
-
 var Slack, autoMark, autoReconnect, slack, token;
 var urllibsync = require('urllib-sync');
 var urlencode = require('urlencode');
 
-
-
+token = configure.token;
 Slack = require('slack-client');
 
 
-
 autoReconnect = true;
-
 autoMark = true;
-
 slack = new Slack(token, autoReconnect, autoMark);
 
 var gongCounter = 0;
@@ -442,7 +435,7 @@ function _append(input, channel) {
             });
         });
         */
-        
+
                 sonos.getCurrentState(function (err, state) {
             if(err) {
                 console.log(err);
@@ -642,16 +635,16 @@ function _search(input, channel) {
         var trackName = data.tracks.items[0].artists[0].name + ' - ' + data.tracks.items[0].name;
 
 
-  
-                
+
+
             //Print the result...
             message = 'I found the following track: "' + trackName + '" if you want to play it, use the add command..\n';
             channel.send(message)
-        
-      
+
+
             } else {
             channel.send('Sorry could not find that track :(');
-    }       
+    }
 }
 
 */
@@ -671,8 +664,8 @@ function _search(input, channel) {
     if(data.tracks && data.tracks.items && data.tracks.items.length > 0) {
 
 		for(var i = 1; i <= data.tracks.items.length; i++) {
-        	
-    	
+
+
 
         var spid = data.tracks.items[i-1].id;
         var uri = data.tracks.items[i-1].uri;
@@ -682,16 +675,16 @@ function _search(input, channel) {
         var trackName = data.tracks.items[i-1].artists[0].name + ' - ' + data.tracks.items[i-1].name;
 
 
-  
-                
+
+
             //Print the result...
             message = 'I found the following track: "' + trackName + '" if you want to play it, use the add command..\n';
             channel.send(message)
-        
+
       	}
             } else {
             channel.send('Sorry could not find that track :(');
-    }       
+    }
 }
 
 
