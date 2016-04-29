@@ -73,18 +73,18 @@ List of commands (just type help in the channel)
 
 *DONE*
 
-Added new function, search.
-Added new function, Append. Reuse the old queue and add new track to the end of it.
-Admin: Delete entire queue.
- Regularly delete the entries from the queue when the song has been played.
-   When adding a new track, do the following logic:
-        a) Check "status".
-     (fixed.. sort of..)   b1) If "playing", do a "list". Delete all songs in the queue with lower number than the current track. Then add song to queue.
-        b2) If "sleep" clear queue, add song to queue and do "play".
-Add clear-queue functionality.
-Fix queue function.
-Fix GONG function. If X Gongs within X sec then next.
-Admin commands from i.e."swe-music-admin".
-Vote - If +1 in slack then move in queue. (sort of)
-Ask "what is playing".
+* Added new function, search.
+* Added new function, Append. Reuse the old queue and add new track to the end of it.
+* Admin: Delete entire queue.
+* Regularly delete the entries from the queue when the song has been played.
+   * When adding a new track, do the following logic:
+        * Check "status". (fixed.. sort of..)   
+        * If "playing", do a "list". Delete all songs in the queue with lower number than the current track. Then add song to queue.
+        * If "sleep" clear queue, add song to queue and do "play".
+* Add clear-queue functionality.
+* Fix queue function.
+* Fix GONG function. If X Gongs within X sec then next.
+* Admin commands from i.e."swe-music-admin".
+* Vote - If +1 in slack then move in queue. (sort of)
+* Ask "what is playing".
 
