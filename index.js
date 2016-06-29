@@ -2,6 +2,7 @@ var Sonos = require('sonos').Sonos
 var configure = require('./config.json');
 var sonos = new Sonos(configure.sonos);
 var adminChannel = configure.adminChannel;
+var market = configure.market;
 var standardChannel = configure.standardChannel;
 var Slack, autoMark, autoReconnect, slack, token;
 var urllibsync = require('urllib-sync');
@@ -414,7 +415,7 @@ function _append(input, channel) {
         }
     }
 
-    var getapi = urllibsync.request('https://api.spotify.com/v1/search?q=' + query + '&type=track&limit=1');
+    var getapi = urllibsync.request('https://api.spotify.com/v1/search?q=' + query + '&type=track&limit=1&market=' + market);
     var data = JSON.parse(getapi.data.toString());
     console.log(data);
     if(data.tracks.items && data.tracks.items.length > 0) {
@@ -500,7 +501,7 @@ function _add(input, channel) {
         }
     }
 
-    var getapi = urllibsync.request('https://api.spotify.com/v1/search?q=' + query + '&type=track&limit=1');
+    var getapi = urllibsync.request('https://api.spotify.com/v1/search?q=' + query + '&type=track&limit=1&market=' + market);
     var data = JSON.parse(getapi.data.toString());
     console.log(data);
     if(data.tracks && data.tracks.items && data.tracks.items.length > 0) {
@@ -659,7 +660,7 @@ function _search(input, channel) {
         }
     }
 
-    var getapi = urllibsync.request('https://api.spotify.com/v1/search?q=' + query + '&type=track&limit=3');
+    var getapi = urllibsync.request('https://api.spotify.com/v1/search?q=' + query + '&type=track&limit=3&market=' + market);
     var data = JSON.parse(getapi.data.toString());
     console.log(data);
     if(data.tracks && data.tracks.items && data.tracks.items.length > 0) {
