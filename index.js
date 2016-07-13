@@ -4,17 +4,12 @@ var sonos = new Sonos(configure.sonos);
 var adminChannel = configure.adminChannel;
 var market = configure.market;
 var standardChannel = configure.standardChannel;
-var Slack, autoMark, autoReconnect, slack, token;
 var urllibsync = require('urllib-sync');
 var urlencode = require('urlencode');
 
 token = configure.token;
-Slack = require('slack-client');
 
 
-autoReconnect = true;
-autoMark = true;
-slack = new Slack(token, autoReconnect, autoMark);
 
 var gongCounter = 0;
 var gongLimit = 3;
@@ -24,11 +19,27 @@ var voteVictory = 3;
 var voteLimit = 1;
 var votes = {};
 
+
+
+const RtmClient = require('@slack/client').RtmClient;
+const RTM_EVENTS = require('@slack/client').RTM_EVENTS;
+const MemoryDataStore = require('@slack/client').MemoryDataStore;
+
+let slack = new RtmClient(token, {
+  logLevel: 'error', 
+  dataStore: new MemoryDataStore(),
+  autoReconnect: true,
+  autoMark: true 
+});
+
+
+
+
 slack.on('open', function() {
     var channel, channels, group, groups, id, messages, unreads;
     channels = [standardChannel];
     groups = [];
-    unreads = slack.getUnreadCount();
+//   unreads = slack.getUnreadCount();
     channels = (function() {
         var _ref, _results;
         _ref = slack.channels;
@@ -55,13 +66,13 @@ slack.on('open', function() {
         return _results;
     })();
 
-    console.log("Welcome to Slack. You are @" + slack.self.name + " of " + slack.team.name);
-    console.log('You are in: ' + channels.join(', '));
-    console.log('As well as: ' + groups.join(', '));
-    messages = unreads === 1 ? 'message' : 'messages';
-    var channel = slack.getChannelByName(standardChannel);
+//    console.log("Welcome to Slack. You are @" + slack.self + " of " + slack.team);
+//    console.log('You are in: ' + channels.join(', '));
+//    console.log('As well as: ' + groups.join(', '));
+//    messages = unreads === 1 ? 'message' : 'messages';
+ //   var channel = slack.getChannelByName(standardChannel);
     var message = ":notes: " + "Im back!!" + "\n";
-    channel.send(message);
+    // slack.sendMessage(message);
 
     return console.log("You have " + unreads + " unread " + messages);
 
@@ -70,10 +81,13 @@ slack.on('open', function() {
 
 });
 
-slack.on('message', function(message) {
-    var channel, channelError, channelName, errors, response, text, textError, ts, type, typeError, user, userName;
-    channel = slack.getChannelGroupOrDMByID(message.channel);
-    user = slack.getUserByID(message.user);
+
+
+slack.on(RTM_EVENTS.MESSAGE, (message) => {
+   let channel, channelError, channelName, errors, response, text, textError, ts, type, typeError, user, userName;
+
+    channel = slack.dataStore.getChannelGroupOrDMById(message.channel);
+    user = slack.dataStore.getUserById(message.user);
     response = '';
     type = message.type, ts = message.ts, text = message.text;
     channelName = (channel != null ? channel.is_channel : void 0) ? '#' : '';
@@ -166,27 +180,27 @@ function _getVolume(channel) {
 
     sonos.getVolume(function(err, vol) {
         console.log(err, vol);
-        channel.send('Vol is ' + vol + ' deadly dB _(ddB)_');
+        slack.sendMessage('Vol is ' + vol + ' deadly dB _(ddB)_', channel.id);
     });
 }
 
 function _setVolume(input, channel) {
 	if(channel.name !== adminChannel){
 		console.log("Only admins are allowed for this action!")
-		channel.send("Only admins are allowed for this action!")
+		slack.sendMessage("Only admins are allowed for this action!", channel.id)
 		return
 	}
 
     var vol = input[1];
 
     if(isNaN(vol)) {
-        channel.send('Nope.');
+        slack.sendMessage('Nope.', channel.id);
         return;
     } else {
         vol = Number(vol);
         console.log(vol);
         if(vol > 55) {
-            channel.send('You also could have tinnitus _(say: tih-neye-tus)_');
+            slack.sendMessage('You also could have tinnitus _(say: tih-neye-tus)_', channel.id);
         } else {
             sonos.setVolume(vol, function(err, data) {
                 _getVolume(channel);
@@ -198,20 +212,20 @@ function _setVolume(input, channel) {
 
 function _getQueue() {
     var res = null;
-    sonos.getQueue(function (err, result) {
+   sonos.getQueue(function (err, result) {
         res =  result;
     });
     return res;
 }
 
 function _showQueue(channel, cb) {
-    sonos.getQueue(function (err, result) {
+   sonos.getQueue(function (err, result) {
         if (err) {
             if(cb) {
                 return (err, null);
             }
             console.log(err)
-            channel.send('Couldn\'t fetch the queue');
+            slack.sendMessage('Couldn\'t fetch the queue', channel.id);
 
         } else {
             if(cb) {
@@ -232,7 +246,7 @@ function _showQueue(channel, cb) {
                         }
                     }
                 )
-                channel.send(message);
+                slack.sendMessage(message, channel.id);
             });
         }
     });
@@ -242,22 +256,22 @@ function _gong(channel, userName) {
     if(!(userName in gongScore)) {
         gongScore[userName] = 1
         gongCounter++;
-        channel.send("Is it really THAT bad?! Oh well.. This is GONG " + gongCounter + " out of " + gongLimit);
+        slack.sendMessage("Is it really THAT bad?! Oh well.. This is GONG " + gongCounter + " out of " + gongLimit, channel.id);
         if(gongCounter >= gongLimit) {
-            channel.send("The music got GOONGED!");
+            slack.sendMessage("The music got GOONGED!", channel.id);
             _nextTrack(channel, true)
             gongCounter = 0;
             gongScore={}
         }
     } else{
         if(gongScore[userName] >= gongLimitPerUser) {
-            channel.send("Are you trying to cheat " + userName + "? DENIED!")
+            slack.sendMessage("Are you trying to cheat " + userName + "? DENIED!", channel.id)
         }else {
             gongScore[userName] = gongScore[userName] + 1
             gongCounter++;
-                    channel.send("Is it really THAT bad?! Oh well.. This is GONG " + gongCounter + " out of " + gongLimit);
+                    slack.sendMessage("Is it really THAT bad?! Oh well.. This is GONG " + gongCounter + " out of " + gongLimit, channel.id);
                     if(gongCounter >= gongLimit) {
-                        channel.send("The music got GOONGED!");
+                        slack.sendMessage("The music got GOONGED!", channel.id);
                         _nextTrack(channel)
                          gongCounter = 0;
                          gongScore={}
@@ -269,7 +283,7 @@ function _gong(channel, userName) {
 function _previous(input, channel) {
 	if(channel.name !== adminChannel){
 		console.log("Only admins are allowed for this action!")
-		channel.send("Only admins are allowed for this action!")
+		slack.sendMessage("Only admins are allowed for this action!", channel.id)
 		return
 	}
     sonos.previous(function(err, previous) {
@@ -297,20 +311,20 @@ function _help(input, channel) {
     '`next` : play next track\n' +
     '`previous` : play previous track\n' +
     '=====================\n'
-    channel.send(message);
+    slack.sendMessage(message, channel.id);
 }
 
 function _play(input, channel) {
 	if(channel.name !== adminChannel){
 		console.log("Only admins are allowed for this action!")
-		channel.send("Only admins are allowed for this action!")
+		slack.sendMessage("Only admins are allowed for this action!", channel.id)
 		return
 	}
     sonos.selectQueue(function (err, result) {
         sonos.play(function (err, playing) {
              console.log([err, playing])
                 if(playing) {
-                channel.send('WHHHHHYYYYYY? Just do an *add* and the music should start..  you´re making me confused....');
+                slack.sendMessage('WHHHHHYYYYYY? Just do an *add* and the music should start..  you´re making me confused....');
                 }
             });
     });
@@ -319,13 +333,13 @@ function _play(input, channel) {
 function _stop(input, channel) {
 	if(channel.name !== adminChannel){
 		console.log("Only admins are allowed for this action!")
-		channel.send("Only admins are allowed for this action!")
+		slack.sendMessage("Only admins are allowed for this action!")
 		return
 	}
     sonos.stop(function (err, stopped) {
         console.log([err, stopped])
         if(stopped) {
-            channel.send('Why.. WHYY!?');
+            slack.sendMessage('Why.. WHYY!?');
         }
     });
 }
@@ -333,13 +347,13 @@ function _stop(input, channel) {
 function _flush(input, channel) {
 	if(channel.name !== adminChannel){
 		console.log("Only admins are allowed for this action!")
-		channel.send("Only admins are allowed for this action!")
+		slack.sendMessage("Only admins are allowed for this action!", channel.id)
 		return
 	}
     sonos.flush(function (err, flushed) {
         console.log([err, flushed])
         if(flushed) {
-            channel.send('Ok.. clean slate..  Let´s make it better this time!!');
+            slack.sendMessage('Ok.. clean slate..  Let´s make it better this time!!'), channel.id;
         }
     });
 }
@@ -363,14 +377,14 @@ function _say(input, channel) {
 function _nextTrack(channel, byPassChannelValidation) {
 	if(channel.name !== adminChannel && !byPassChannelValidation){
 		console.log("Only admins are allowed for this action!")
-		channel.send("Only admins are allowed for this action!")
+		slack.sendMessage("Only admins are allowed for this action!", channel.id)
 		return
 	}
     sonos.next(function (err, nexted) {
         if(err) {
             console.log(err);
         } else {
-            channel.send('Playing the next track...');
+            slack.sendMessage('Playing the next track...'), channel.id;
         }
     });
 }
@@ -399,7 +413,7 @@ function _currentTrack(channel, cb) {
 
 
             var message = 'We´re dancing to *' + track.artist + '* - *' + track.title + '* ('+pmin+':'+psec+'/'+fmin+':'+fsec+')';
-            channel.send(message);
+            slack.sendMessage(message, channel.id);
         }
     });
 }
@@ -455,14 +469,14 @@ function _append(input, channel) {
                                     message = 'Error!';
                                     console.log(err);
                                 }
-                                channel.send(message);
+                                slack.sendMessage(message, channel.id);
                                 if(res) {
                                     // And finally..  lets start rocking...
                                     sonos.selectQueue(function (err, result) {
                                         sonos.play(function (err, playing) {
                                             console.log([err, playing])
                                             if(playing) {
-                                                channel.send('Appending to old playlist... lack of creativity?!');
+                                                slack.sendMessage('Appending to old playlist... lack of creativity?!', channel.id);
                                             }
                                         });
                                     });
@@ -470,23 +484,23 @@ function _append(input, channel) {
                    });
                             } else if (state === 'playing') {
                     //Tell them to use add...
-                   channel.send("Already playing...  use add..")
+                   slack.sendMessage("Already playing...  use add..", channel.id)
                         } else if (state === 'paused') {
-                        channel.send("I'm frozen! Alive!")
+                        slack.sendMessage("I'm frozen! Alive!", channel.id)
                     } else if (state === 'transitioning') {
-                        channel.send("Mayday, mayday! I'm sinking!!")
+                        slack.sendMessage("Mayday, mayday! I'm sinking!!", channel.id)
                     } else if (state === 'no_media') {
-                        channel.send("Nothing to play, nothing to do. I'm rethinking my life")
+                        slack.sendMessage("Nothing to play, nothing to do. I'm rethinking my life", channel.id)
                     } else {
-                      channel.send("No freaking idea. What is this [" + state + "]?")
+                      slack.sendMessage("No freaking idea. What is this [" + state + "]?", channel.id)
                     }
 		}
         });
     } else {
-        channel.send('Sorry could not find that track :(');
+        slack.sendMessage('Sorry could not find that track :(', channel.id);
     }
 
-    // return channel.send("I have now added the following in my queue: " + input[2] + " by " + input[1]+"\n"+"https://api.spotify.com/v1/search?q=" + input[2] + "+" + input[1]+"&type=track&limit=1");
+    // return slack.sendMessage("I have now added the following in my queue: " + input[2] + " by " + input[1]+"\n"+"https://api.spotify.com/v1/search?q=" + input[2] + "+" + input[1]+"&type=track&limit=1");
 }
 
 
@@ -552,10 +566,10 @@ function _add(input, channel) {
             } else {
 	        	if (state === 'stopped') {
                     // Ok, lets start again..  Flush old playlist
-                    sonos.flush(function (err, flushed) {
+                    sonos.lack.sendMessagelush(function (err, flushed) {
                         console.log([err, flushed])
                         if(flushed) {
-                            channel.send('Clean slate..  Let´s make it better this time!!');
+                            slack.sendMessage('Clean slate..  Let´s make it better this time!!', channel.id);
                             //Then add the track to playlist...
                             sonos.addSpotifyQueue(spid, function (err, res) {
                                 var message = '';
@@ -567,14 +581,14 @@ function _add(input, channel) {
                                     message = 'Error!';
                                     console.log(err);
                                 }
-                                channel.send(message);
+                                slack.sendiMessage(message, channel.id);
                                 if(res) {
                                     // And finally..  lets start rocking...
                                     sonos.selectQueue(function (err, result) {
                                         sonos.play(function (err, playing) {
                                             console.log([err, playing])
                                             if(playing) {
-                                                channel.send('Flushed old playlist...  Time to rock again!');
+                                                slack.sendMessage('Flushed old playlist...  Time to rock again!', channel.id);
                                             }
                                         });
                                     });
@@ -594,24 +608,24 @@ function _add(input, channel) {
                             message = 'Error!';
                             console.log(err);
                         }
-                        channel.send(message)
+                        slack.sendMessage(message, channel.id)
                     });
     			} else if (state === 'paused') {
-    		      	channel.send("I'm frozen! Alive!")
+    		      	slack.sendMessage("I'm frozen! Alive!", channel.id)
     		    } else if (state === 'transitioning') {
-    		      	channel.send("Mayday, mayday! I'm sinking!!")
+    		      	slack.sendMessage("Mayday, mayday! I'm sinking!!", channel.id)
     		    } else if (state === 'no_media') {
-    		      	channel.send("Nothing to play, nothing to do. I'm rethinking my life")
+    		      	slack.sendMessage("Nothing to play, nothing to do. I'm rethinking my life", channel.id)
     		    } else {
-    		      channel.send("No freaking idea. What is this [" + state + "]?")
+    		      slack.sendMessage("No freaking idea. What is this [" + state + "]?", channel.id)
     		    }
         	}
     	});
     } else {
-        channel.send('Sorry could not find that track :(');
+        slack.sendMessage('Sorry could not find that track :(', channel.id);
     }
 
-    // return channel.send("I have now added the following in my queue: " + input[2] + " by " + input[1]+"\n"+"https://api.spotify.com/v1/search?q=" + input[2] + "+" + input[1]+"&type=track&limit=1");
+    // return slack.sendMessage("I have now added the following in my queue: " + input[2] + " by " + input[1]+"\n"+"https://api.spotify.com/v1/search?q=" + input[2] + "+" + input[1]+"&type=track&limit=1");
 }
 
 /*
@@ -641,11 +655,11 @@ function _search(input, channel) {
 
             //Print the result...
             message = 'I found the following track: "' + trackName + '" if you want to play it, use the add command..\n';
-            channel.send(message)
+            slack.sendMessage(message, channel.id)
 
 
             } else {
-            channel.send('Sorry could not find that track :(');
+            slack.sendMessage('Sorry could not find that track :(', channel.id);
     }
 }
 
@@ -681,11 +695,11 @@ function _search(input, channel) {
 
             //Print the result...
             message = 'I found the following track: "' + trackName + '" if you want to play it, use the add command..\n';
-            channel.send(message)
+            slack.sendMessage(message, channel.id)
 
       	}
             } else {
-            channel.send('Sorry could not find that track :(');
+            slack.sendMessage('Sorry could not find that track :(', channel.id);
     }
 }
 
@@ -696,7 +710,7 @@ function _vote(text, channel, userName) {
     sonos.getQueue(function (err, result) {
         if (err || !result) {
             console.log(err)
-            channel.send('Couldn\'t fetch the queue');
+            slack.sendMessage('Couldn\'t fetch the queue', channel.id);
         } else {
             for(var i = 0; i < result.items.length; i++)
             {
@@ -716,17 +730,17 @@ function _vote(text, channel, userName) {
 
                         if(votedTimes >= voteLimit)
                         {
-                            channel.send("Voting so many times " + userName + "! DENIED!")
+                            slack.sendMessage("Voting so many times " + userName + "! DENIED!", channel.id)
                             return
                         }else
                         {
                             votes[trackName].push(userName)
-                            channel.send("Valid vote by " + userName + "!")
+                            slack.sendMessage("Valid vote by " + userName + "!", channel.id)
                             votedTimes++
                         }
                         if(votedTimes >= voteVictory)
                         {
-                            channel.send("Vote passed! Will put " + trackName + " on top! Will reset votes for this track.")
+                            slack.sendMessage("Vote passed! Will put " + trackName + " on top! Will reset votes for this track.", channel.id)
                             delete votes[trackName]
                             // Should play item
                             _currentTrack(channel,
@@ -740,7 +754,7 @@ function _vote(text, channel, userName) {
                         }
                     }else{
                         votes[trackName] = [userName]
-                        channel.send("Valid vote by " + userName + "!")
+                        slack.sendMessage("Valid vote by " + userName + "!", channel.id)
                     }
                     return
                 }
@@ -755,17 +769,17 @@ function _status(channel){
             	console.log(err);
         	} else {
 	        	if (state === 'stopped') {
-			      channel.send("Sonos is currently sleeping!")
+			      slack.sendMessage("Sonos is currently sleeping!", channel.id)
 			} else if (state === 'playing') {
-		      	channel.send("Sonos is rocking!")
+		      	slack.sendMessage("Sonos is rocking!", channel.id)
 			} else if (state === 'paused') {
-		      	channel.send("I'm frozen! Alive!")
+		      	slack.sendMessage("I'm frozen! Alive!", channel.id)
 		    	} else if (state === 'transitioning') {
-		      	channel.send("Mayday, mayday! I'm sinking!!")
+		      	slack.sendMessage("Mayday, mayday! I'm sinking!!", channel.id)
 		    	} else if (state === 'no_media') {
-		      	channel.send("Nothing to play, nothing to do. I'm rethinking my life")
+		      	slack.sendMessage("Nothing to play, nothing to do. I'm rethinking my life", channel.id)
 		    	}else{
-		    		channel.send("No freaking idea. What is this [" + state + "]?")
+		    		slack.sendMessage("No freaking idea. What is this [" + state + "]?", channel.id)
 		    }
         	}
     	});
