@@ -1,9 +1,15 @@
 # zenmusic
 **Slack / Sonos / Spotify / Node.js - Control Sonos through #Slack**
 
+*Screenshot*
+
+![ScreenShot](http://raw.github.com/htilly/zenmusic/master/doc/images/Screenshot.png)
+
+
+
 *What is it?*
 
-Quick hack created during one of Schibsted Swedens hackdays.
+Quick hack created during one of Schibsted Swedens hackdays by staff from Centralen.
 It´s a #slack-bot that control Sonos (and spotify). Highly democratic bot :)
 Uses https://github.com/bencevans/node-sonos to controll Sonos.
 
@@ -88,7 +94,5 @@ List of commands (just type help in the channel)
 * Vote - If +1 in slack then move in queue. (sort of)
 * Ask "what is playing".
 
-*Screenshot*
 
-![ScreenShot](http://raw.github.com/htilly/zenmusic/master/doc/images/Screenshot.png)
 
