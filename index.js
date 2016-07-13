@@ -164,7 +164,7 @@ slack.on(RTM_EVENTS.MESSAGE, (message) => {
         errors = [typeError, textError, channelError].filter(function(element) {
             return element !== null;
         }).join(' ');
-        return console.log("@" + slack.self.name + " could not respond. " + errors);
+        return console.log("Could not respond. " + errors);
   }
 });
 
@@ -353,7 +353,7 @@ function _flush(input, channel) {
     sonos.flush(function (err, flushed) {
         console.log([err, flushed])
         if(flushed) {
-            slack.sendMessage('Ok.. clean slate..  Let´s make it better this time!!'), channel.id;
+            slack.sendMessage('Ok.. clean slate..  Let´s make it better this time!!', channel.id);
         }
     });
 }
@@ -566,7 +566,7 @@ function _add(input, channel) {
             } else {
 	        	if (state === 'stopped') {
                     // Ok, lets start again..  Flush old playlist
-                    sonos.lack.sendMessagelush(function (err, flushed) {
+                    sonos.flush(function (err, flushed) {
                         console.log([err, flushed])
                         if(flushed) {
                             slack.sendMessage('Clean slate..  Let´s make it better this time!!', channel.id);
@@ -581,7 +581,7 @@ function _add(input, channel) {
                                     message = 'Error!';
                                     console.log(err);
                                 }
-                                slack.sendiMessage(message, channel.id);
+                                slack.sendMessage(message, channel.id);
                                 if(res) {
                                     // And finally..  lets start rocking...
                                     sonos.selectQueue(function (err, result) {
