@@ -20,7 +20,7 @@
   "dependencies": {
     "htmlencode": "0.0.4",
     "@slack/client": "^3.5.1",
-    "sonos": "^0.11.1",
+    "sonos": "^0.12.0",
     "urlencode": "^1.1.0",
     "urllib-sync": "^1.1.2"
   }
