@@ -19,6 +19,25 @@ var voteVictory = 3;
 var voteLimit = 1;
 var votes = {};
 
+// UGLY hack to get it working on Heroku
+// Uncomment the bellow line if you are running in Heruko
+
+
+/* 
+
+var http = require('http');
+
+http.createServer(function(request, response) {
+  var body = [];
+  request.on('data', function(chunk) {
+    body.push(chunk);
+  }).on('end', function() {
+    body = Buffer.concat(body).toString();
+    response.end(body);
+  });
+}).listen(process.env.PORT || 5000);
+
+*/
 
 
 const RtmClient = require('@slack/client').RtmClient;
