@@ -24,4 +24,6 @@
     "urlencode": "^1.1.0",
     "urllib-sync": "^1.1.2"
   }
+    ,"engines": {
+    "node": "6.x"}
 }
