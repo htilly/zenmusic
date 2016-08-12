@@ -76,6 +76,10 @@ List of commands (just type help in the channel)
 * Now playing. Announce when starting a new song.
 * When asking for "Stat" show most played songs and most active users.
 * When local playlist is empty -> fallback and start playing "$playlist", i.e. Spotify topp 100.
+* Limit consecutive song additions by non-admin
+* Restrict songs already in the queue
+* Delete range of songs from queue
+* Vote to flush entire queue
 
 *DONE*
 
