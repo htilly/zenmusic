@@ -2,6 +2,7 @@ var Sonos = require('sonos').Sonos
 var configure = require('./config.json');
 var sonos = new Sonos(configure.sonos);
 var adminChannel = configure.adminChannel;
+var maxVolume = configure.maxVolume;
 var market = configure.market;
 var standardChannel = configure.standardChannel;
 var urllibsync = require('urllib-sync');
@@ -218,7 +219,7 @@ function _setVolume(input, channel) {
     } else {
         vol = Number(vol);
         console.log(vol);
-        if(vol > 55) {
+        if(vol > maxVolume) {
             slack.sendMessage('You also could have tinnitus _(say: tih-neye-tus)_', channel.id);
         } else {
             sonos.setVolume(vol, function(err, data) {
@@ -478,7 +479,7 @@ function _append(input, channel) {
                         if (state === 'stopped') {
                     // Ok, lets start again..  NO Flush
                             //Add the track to playlist...
-                            sonos.addSpotifyQueue(spid, function (err, res) {
+                            sonos.addSpotify(spid, function (err, res) {
                                 var message = '';
                                 if(res) {
                                     var queueLength = res[0].FirstTrackNumberEnqueued;
@@ -590,7 +591,7 @@ function _add(input, channel) {
                         if(flushed) {
                             slack.sendMessage('Clean slate..  Let´s make it better this time!!', channel.id);
                             //Then add the track to playlist...
-                            sonos.addSpotifyQueue(spid, function (err, res) {
+                            sonos.addSpotify(spid, function (err, res) {
                                 var message = '';
                                 if(res) {
                                     var queueLength = res[0].FirstTrackNumberEnqueued;
@@ -617,7 +618,7 @@ function _add(input, channel) {
                     });
 			    } else if (state === 'playing') {
                     //Add the track to playlist...
-                    sonos.addSpotifyQueue(spid, function (err, res) {
+                    sonos.addSpotify(spid, function (err, res) {
                         var message = '';
                         if(res) {
                             var queueLength = res[0].FirstTrackNumberEnqueued;
