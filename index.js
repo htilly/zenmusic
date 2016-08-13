@@ -344,7 +344,7 @@ function _play(input, channel) {
         sonos.play(function (err, playing) {
              console.log([err, playing])
                 if(playing) {
-                slack.sendMessage('WHHHHHYYYYYY? Just do an *add* and the music should start..  you´re making me confused....');
+                slack.sendMessage("WHHHHHYYYYYY? Just do an *add* and the music should start..  you´re making me confused....", channel.id);
                 }
             });
     });
@@ -359,7 +359,7 @@ function _stop(input, channel) {
     sonos.stop(function (err, stopped) {
         console.log([err, stopped])
         if(stopped) {
-            slack.sendMessage('Why.. WHYY!?');
+            slack.sendMessage("Why.. WHYY!?", chennel.id);
         }
     });
 }
