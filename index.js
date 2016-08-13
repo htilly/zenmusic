@@ -479,7 +479,7 @@ function _append(input, channel) {
                         if (state === 'stopped') {
                     // Ok, lets start again..  NO Flush
                             //Add the track to playlist...
-                            sonos.addSpotify(spid, function (err, res) {
+                             sonos.addSpotifyQueue(spid, function (err, res) {
                                 var message = '';
                                 if(res) {
                                     var queueLength = res[0].FirstTrackNumberEnqueued;
@@ -591,7 +591,7 @@ function _add(input, channel) {
                         if(flushed) {
                             slack.sendMessage('Clean slate..  Let´s make it better this time!!', channel.id);
                             //Then add the track to playlist...
-                            sonos.addSpotify(spid, function (err, res) {
+                            sonos.addSpotifyQueue(spid, function (err, res) {
                                 var message = '';
                                 if(res) {
                                     var queueLength = res[0].FirstTrackNumberEnqueued;
@@ -618,7 +618,7 @@ function _add(input, channel) {
                     });
 			    } else if (state === 'playing') {
                     //Add the track to playlist...
-                    sonos.addSpotify(spid, function (err, res) {
+                    sonos.addSpotifyQueue(spid, function (err, res) {
                         var message = '';
                         if(res) {
                             var queueLength = res[0].FirstTrackNumberEnqueued;
