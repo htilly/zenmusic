@@ -20,7 +20,7 @@
   "dependencies": {
     "htmlencode": "0.0.4",
     "@slack/client": "^3.5.1",
-    "sonos": "git+https://github.com/bencevans/node-sonos.git#bfb995610c8aa20bda09e370b0f5d31ba0caa6a0",
+    "sonos": "git+https://github.com/bencevans/node-sonos.git#master",
     "urlencode": "^1.1.0",
     "urllib-sync": "^1.1.2"
   }

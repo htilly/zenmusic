@@ -3,5 +3,6 @@
     "standardChannel" : "music",
     "sonos" : "IP_TO_SONOS",
     "token" : "SLACK:TOKEN",
-    "market" : "US"
+    "market" : "US",
+    "maxVolume" : 75
 }
