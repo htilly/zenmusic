@@ -359,7 +359,7 @@ function _stop(input, channel) {
     sonos.stop(function (err, stopped) {
         console.log([err, stopped])
         if(stopped) {
-            slack.sendMessage("Why.. WHYY!?", chennel.id);
+            slack.sendMessage("Why.. WHYY!?", channel.id);
         }
     });
 }
