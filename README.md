@@ -15,21 +15,21 @@ Uses https://github.com/bencevans/node-sonos to controll Sonos.
 
 **What do I need in order to get it to work?**
 
-1: A Sonos player (configured with Spotify).
-2: A slack-bot configured in #Slack
-3: A server running node.js
-4: Know the IP of your Sonos. Preferably a static one.
+1: A Sonos player (configured with Spotify).  
+2: A slack-bot configured in #Slack  
+3: A server running node.js  
+4: Know the IP of your Sonos. Preferably a static one.  
 
 **Firewall settings**
 
 Server running the index.js needs to be able to talk to the Sonos on port 1400 (TCP)
 Sonos needs to be configured and setup with Spotify and have access to internet.
 
-*Configure*
+**Configure**
 
 Set all values in config.json
 
-*What can it do?*
+**What can it do?**
 
 It will queue you requests and play it..  However if X amount of people for any strange reason doesn't like the current track, it will listen to the command "**gong**" and eventually skip to the next track.
 
@@ -48,7 +48,7 @@ List of commands (just type help in the channel)
 * `list` : list current queue
 * `status` : show the current status
 
-*ADMIN FUNCTIONS*
+**ADMIN FUNCTIONS**
 
 * `flush` : flush the current queue
 * `setvolume` _number_ : sets volume
@@ -58,12 +58,12 @@ List of commands (just type help in the channel)
 * `previous` : play previous track
     
  
-*KnownBugs*
+**KnownBugs**
 
 * Validate add / unique track doesn´t work. I.e - You can add same track 10 times in a row.
 * Vote does not move track in queue.
  
-*ToDo*
+**ToDo**
 
 * Code cleaning! =)
 * Simple "view" window of what is happening in the channel. I.e. - Put on big-screen of what is happening in #music
@@ -81,7 +81,7 @@ List of commands (just type help in the channel)
 * Delete range of songs from queue
 * Vote to flush entire queue
 
-*DONE*
+**DONE**
 
 * Added blacklist function. Enter usernames in "blacklist.txt".
 * Updated 'node-sonos' with getQueue and addSpotify. See: https://github.com/bencevans/node-sonos/commit/bfb995610c8aa20bda09e370b0f5d31ba0caa6a0
