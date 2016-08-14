@@ -7,20 +7,20 @@
 
 
 
-*What is it?*
+**What is it?**
 
 Quick hack created during one of Schibsted Swedens hackdays by staff from Centralen.
 It´s a #slack-bot that control Sonos (and spotify). Highly democratic bot :)
 Uses https://github.com/bencevans/node-sonos to controll Sonos.
 
-*What do I need in order to get it to work?*
+**What do I need in order to get it to work?**
 
 1: A Sonos player (configured with Spotify).
 2: A slack-bot configured in #Slack
 3: A server running node.js
 4: Know the IP of your Sonos. Preferably a static one.
 
-*Firewall settings*
+**Firewall settings**
 
 Server running the index.js needs to be able to talk to the Sonos on port 1400 (TCP)
 Sonos needs to be configured and setup with Spotify and have access to internet.
