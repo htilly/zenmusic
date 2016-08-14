@@ -4,7 +4,6 @@ var sonos = new Sonos(configure.sonos);
 var adminChannel = configure.adminChannel;
 var maxVolume = configure.maxVolume;
 var market = configure.market;
-var blacklist = configure.blacklist;
 var standardChannel = configure.standardChannel;
 var urllibsync = require('urllib-sync');
 var urlencode = require('urlencode');
