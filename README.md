@@ -83,6 +83,7 @@ List of commands (just type help in the channel)
 
 *DONE*
 
+* Added blacklist function. Enter usernames in "blacklist.txt".
 * Updated 'node-sonos' with getQueue and addSpotify. See: https://github.com/bencevans/node-sonos/commit/bfb995610c8aa20bda09e370b0f5d31ba0caa6a0
 * Added new function, search.
 * Added new function, Append. Reuse the old queue and add new track to the end of it.
