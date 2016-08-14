@@ -120,12 +120,16 @@ slack.on(RTM_EVENTS.MESSAGE, (message) => {
         var term = input[0].toLowerCase();
 
 
-// Very simple BAN function. Set username in config.json 
-		if (userName == blacklist) {
-            		slack.sendMessage("Nice try " + userName + ", you're banned :)", channel.id)
-            		return false;
-        	} else
+// Very simple BAN function. Set usernames in blacklist.txt
 
+var fs = require("fs"), searchString = userName;
+fs.readFile("blacklist.txt", function(err, content) {
+
+if (content.indexOf(searchString) !== -1)
+slack.sendMessage("Nice try " + userName + ", you're banned :)", channel.id)
+            return false;
+
+});
 
         console.log('term', term);
         switch(term) {
