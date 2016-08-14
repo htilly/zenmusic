@@ -4,6 +4,7 @@ var sonos = new Sonos(configure.sonos);
 var adminChannel = configure.adminChannel;
 var maxVolume = configure.maxVolume;
 var market = configure.market;
+var blacklist = configure.blacklist;
 var standardChannel = configure.standardChannel;
 var urllibsync = require('urllib-sync');
 var urlencode = require('urlencode');
@@ -117,6 +118,14 @@ slack.on(RTM_EVENTS.MESSAGE, (message) => {
     if (type === 'message' && (text != null) && (channel != null)) {
         input = text.split(' ');
         var term = input[0].toLowerCase();
+
+
+// Very simple BAN function. Set username in config.json 
+		if (userName == blacklist) {
+            		slack.sendMessage("Nice try " + userName + ", you're banned :)", channel.id)
+            		return false;
+        	} else
+
 
         console.log('term', term);
         switch(term) {
