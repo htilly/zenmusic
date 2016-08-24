@@ -533,7 +533,7 @@ function _append(input, channel) {
 		}
         });
     } else {
-        slack.sendMessage('Sorry could not find that track :(', channel.id);
+        slack.sendMessage('Sorry could not find that track :( Have your tried -search- instead of -add- ?', channel.id);
     }
 
     // return slack.sendMessage("I have now added the following in my queue: " + input[2] + " by " + input[1]+"\n"+"https://api.spotify.com/v1/search?q=" + input[2] + "+" + input[1]+"&type=track&limit=1");
