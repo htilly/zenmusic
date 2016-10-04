@@ -365,6 +365,7 @@ function _help(input, channel) {
     '`add` _text_ : Add song to the queue and start playing if idle.\n' +
     '`append` _text_ : Append a song to the previous playlist and start playing the same list again.\n' +
     '`gong` : The current track is bad! Vote for skipping this track\n' +
+    '`gongcheck` : How many gong votes there are currently, as well as who has GONGED.\n' +
     '`vote` _exactSongTitle_ : Vote for a specific song title in the queue.\n' +
     '`volume` : view current volume\n' +
     '`list` : list current queue\n' +
