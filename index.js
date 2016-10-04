@@ -162,6 +162,9 @@ slack.sendMessage("Nice try " + userName + ", you're banned :)", channel.id)
             case 'gong':
                 _gong(channel, userName);
             break;
+			case 'gongcheck':
+				_gongcheck(channel, userName);
+			break;
             case 'say':
                 // _say(input, channel);
             break;
@@ -295,33 +298,51 @@ function _gong(channel, userName) {
 
     _currentTrackTitle(channel, function(err, track) {
         console.log("_gong > _currentTrackTitle");
-    });
 
-    if(!(userName in gongScore)) {
-        gongScore[userName] = 1
-        gongCounter++;
-        slack.sendMessage("Is it really THAT bad?! Oh well.. This is GONG " + gongCounter + " out of " + gongLimit, channel.id);
-        if(gongCounter >= gongLimit) {
-            slack.sendMessage("The music got GOONGED!", channel.id);
-            _nextTrack(channel, true)
-            gongCounter = 0;
-            gongScore={}
-        }
-    } else{
-        if(gongScore[userName] >= gongLimitPerUser) {
-            slack.sendMessage("Are you trying to cheat " + userName + "? DENIED!", channel.id)
-        }else {
-            gongScore[userName] = gongScore[userName] + 1
-            gongCounter++;
-            slack.sendMessage("Is it really THAT bad?! Oh well.. This is GONG " + gongCounter + " out of " + gongLimit, channel.id);
-            if(gongCounter >= gongLimit) {
-                slack.sendMessage("The music got GOONGED!", channel.id);
-                _nextTrack(channel)
-                 gongCounter = 0;
-                 gongScore={}
-            }
-        }
-    }
+		// Need a delay before calling the rest
+
+		if(!(userName in gongScore)) {
+			gongScore[userName] = 1
+			gongCounter++;
+			slack.sendMessage("Is it really THAT bad?! Oh well.. This is GONG " + gongCounter + " out of " + gongLimit, channel.id);
+			if(gongCounter >= gongLimit) {
+				slack.sendMessage("The music got GOONGED!", channel.id);
+				_nextTrack(channel, true)
+				gongCounter = 0;
+				gongScore={}
+			}
+		} else{
+			if(gongScore[userName] >= gongLimitPerUser) {
+				slack.sendMessage("Are you trying to cheat " + userName + "? DENIED!", channel.id)
+			}else {
+				gongScore[userName] = gongScore[userName] + 1
+				gongCounter++;
+				slack.sendMessage("Is it really THAT bad?! Oh well.. This is GONG " + gongCounter + " out of " + gongLimit, channel.id);
+				if(gongCounter >= gongLimit) {
+					slack.sendMessage("The music got GOONGED!", channel.id);
+					_nextTrack(channel)
+					 gongCounter = 0;
+					 gongScore={}
+				}
+			}
+		}
+    });
+}
+
+function _gongcheck(channel, userName) {
+	console.log("_gongcheck...");
+	slack.sendMessage("The GONG is currently " + gongCounter + " out of " + gongLimit, channel.id);
+
+	var gongers = "";
+	for (var key in gongScore) {
+		if (gongers.length > 0) {
+			gongers += ", " + key;
+		} else {
+			gongers += key;
+		}
+	}
+
+	slack.sendMessage("The GONG'ERS are " + gongers, channel.id);
 }
 
 function _previous(input, channel) {
@@ -456,29 +477,40 @@ function _currentTrack(channel, cb) {
             psec = psec.length == 2 ? psec : '0'+psec;
 
 
-            var message = 'We´re dancing to *' + track.artist + '* - *' + track.title + '* ('+pmin+':'+psec+'/'+fmin+':'+fsec+')';
+            var message = 'We´re rocking out to *' + track.artist + '* - *' + track.title + '* ('+pmin+':'+psec+'/'+fmin+':'+fsec+')';
             slack.sendMessage(message, channel.id);
         }
     });
 }
 
-function _currentTrackTitle(channel) {
+function _currentTrackTitle(channel, cb) {
     sonos.currentTrack(function(err, track) {
         if(err) {
             console.log(err);
         } else {
             var _track = track.title;
             console.log("_currentTrackTitle > title: " + _track);
+            console.log("_currentTrackTitle > gongTrack: " + gongTrack);
 
             if (gongTrack !== "") {
               if (gongTrack !== _track) {
                 console.log("_currentTrackTitle > different track, reset!");
                 gongCounter = 0;
                 gongScore={};
-                gongTrack = _track;
-              }
-            }
+
+				//return cb(err, null);
+              } else {
+				  console.log("_currentTrackTitle > gongTrack is equal to _track");
+			  }
+            } else {
+                console.log("_currentTrackTitle > gongTrack is empty");
+			}
+
+			gongTrack = _track;
+
         }
+
+		cb(err, null);
     });
 }
 
