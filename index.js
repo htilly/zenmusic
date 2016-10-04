@@ -465,18 +465,14 @@ function _currentTrack(channel, cb) {
     });
 }
 
-function _currentTrackTitle(channel, cb) {
+function _currentTrackTitle(channel) {
     sonos.currentTrack(function(err, track) {
         if(err) {
             console.log(err);
-            if(cb) {
-                return cb(err, null);
-            }
         } else {
-            if(cb) {
-                return cb(null, track);
-            }
-            console.log("track.title: " + track.title);
+            var _track = track.title;
+            console.log("track.title: " + _track);
+            return _track;
         }
     });
 }
