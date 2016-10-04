@@ -470,11 +470,13 @@ function _currentTrackTitle(channel) {
             var _track = track.title;
             console.log("_currentTrackTitle > title: " + _track);
 
-            if (gongTrack !== _track) {
-              console.log("_currentTrackTitle > different track, reset!");
-              gongCounter = 0;
-              gongScore={};
-              gongTrack = _track;
+            if (gongTrack !== "") {
+              if (gongTrack !== _track) {
+                console.log("_currentTrackTitle > different track, reset!");
+                gongCounter = 0;
+                gongScore={};
+                gongTrack = _track;
+              }
             }
         }
     });
