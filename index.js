@@ -20,11 +20,13 @@ var voteVictory = 3;
 var voteLimit = 1;
 var votes = {};
 
+var gongTrack = ""; // What track was a GONG called on
+
 // UGLY hack to get it working on Heroku
 // Uncomment the bellow line if you are running in Heruko
 
 
-/* 
+/*
 
 var http = require('http');
 
@@ -46,10 +48,10 @@ const RTM_EVENTS = require('@slack/client').RTM_EVENTS;
 const MemoryDataStore = require('@slack/client').MemoryDataStore;
 
 let slack = new RtmClient(token, {
-  logLevel: 'error', 
+  logLevel: 'error',
   dataStore: new MemoryDataStore(),
   autoReconnect: true,
-  autoMark: true 
+  autoMark: true
 });
 
 
@@ -288,6 +290,16 @@ function _showQueue(channel, cb) {
 // If the GONG was called on the previous song, reset
 
 function _gong(channel, userName) {
+    var _track = _currentTrackTitle(channel);
+    console.log("_gong > _track: " + _track);
+
+    if (gongTrack !== _track) {
+      console.log("_gong > different track, reset!");
+      gongCounter = 0;
+      gongScore={};
+      gongTrack = _track;
+    }
+
     if(!(userName in gongScore)) {
         gongScore[userName] = 1
         gongCounter++;
@@ -304,13 +316,13 @@ function _gong(channel, userName) {
         }else {
             gongScore[userName] = gongScore[userName] + 1
             gongCounter++;
-                    slack.sendMessage("Is it really THAT bad?! Oh well.. This is GONG " + gongCounter + " out of " + gongLimit, channel.id);
-                    if(gongCounter >= gongLimit) {
-                        slack.sendMessage("The music got GOONGED!", channel.id);
-                        _nextTrack(channel)
-                         gongCounter = 0;
-                         gongScore={}
-                    }
+            slack.sendMessage("Is it really THAT bad?! Oh well.. This is GONG " + gongCounter + " out of " + gongLimit, channel.id);
+            if(gongCounter >= gongLimit) {
+                slack.sendMessage("The music got GOONGED!", channel.id);
+                _nextTrack(channel)
+                 gongCounter = 0;
+                 gongScore={}
+            }
         }
     }
 }
@@ -425,7 +437,6 @@ function _nextTrack(channel, byPassChannelValidation) {
 }
 
 function _currentTrack(channel, cb) {
-  console.log("_currentTrack > channel: " + channel);
     sonos.currentTrack(function(err, track) {
         if(err) {
             console.log(err);
@@ -454,6 +465,21 @@ function _currentTrack(channel, cb) {
     });
 }
 
+function _currentTrackTitle(channel, cb) {
+    sonos.currentTrack(function(err, track) {
+        if(err) {
+            console.log(err);
+            if(cb) {
+                return cb(err, null);
+            }
+        } else {
+            if(cb) {
+                return cb(null, track);
+            }
+            console.log("track.title: " + track.title);
+        }
+    });
+}
 
 function _append(input, channel) {
 
@@ -498,7 +524,7 @@ function _append(input, channel) {
                             //
                             // Old version..  New is supposed to fix 500 problem...
                             //  sonos.addSpotifyQueue(spid, function (err, res) {
-                            
+
                              sonos.addSpotify(spid, function (err, res) {
                                 var message = '';
                                 if(res) {
@@ -613,7 +639,7 @@ function _add(input, channel) {
                             //Then add the track to playlist...
                             // Old version..  New is supposed to fix 500 problem...
                             // sonos.addSpotifyQueue(spid, function (err, res) {
-                            
+
                             sonos.addSpotify(spid, function (err, res) {
                                 var message = '';
                                 if(res) {
@@ -866,4 +892,3 @@ console.log(string.indexOf(substring) > -1);
   track_number: 5,
   type: 'track',
   uri: 'spotify:track:7mAbzwRo89VEKfXbHWdJr8' }*/
-
