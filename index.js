@@ -284,6 +284,9 @@ function _showQueue(channel, cb) {
     });
 }
 
+// Need to track what song has had a GONG called
+// If the GONG was called on the previous song, reset
+
 function _gong(channel, userName) {
     if(!(userName in gongScore)) {
         gongScore[userName] = 1
@@ -422,6 +425,7 @@ function _nextTrack(channel, byPassChannelValidation) {
 }
 
 function _currentTrack(channel, cb) {
+  console.log("_currentTrack > channel: " + channel);
     sonos.currentTrack(function(err, track) {
         if(err) {
             console.log(err);
