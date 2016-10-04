@@ -290,15 +290,12 @@ function _showQueue(channel, cb) {
 // If the GONG was called on the previous song, reset
 
 function _gong(channel, userName) {
-    var _track = _currentTrackTitle(channel);
-    console.log("_gong > _track: " + _track);
 
-    if (gongTrack !== _track) {
-      console.log("_gong > different track, reset!");
-      gongCounter = 0;
-      gongScore={};
-      gongTrack = _track;
-    }
+  console.log("_gong...");
+
+    _currentTrackTitle(channel, function(err, track) {
+        console.log("_gong > _currentTrackTitle");
+    });
 
     if(!(userName in gongScore)) {
         gongScore[userName] = 1
@@ -466,17 +463,21 @@ function _currentTrack(channel, cb) {
 }
 
 function _currentTrackTitle(channel) {
-  var _output = "";
     sonos.currentTrack(function(err, track) {
         if(err) {
             console.log(err);
         } else {
             var _track = track.title;
-            console.log("track.title: " + _track);
-            _output = _track;
+            console.log("_currentTrackTitle > title: " + _track);
+
+            if (gongTrack !== _track) {
+              console.log("_currentTrackTitle > different track, reset!");
+              gongCounter = 0;
+              gongScore={};
+              gongTrack = _track;
+            }
         }
     });
-    return _output;
 }
 
 function _append(input, channel) {
