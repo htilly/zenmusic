@@ -466,15 +466,17 @@ function _currentTrack(channel, cb) {
 }
 
 function _currentTrackTitle(channel) {
+  var _output = "";
     sonos.currentTrack(function(err, track) {
         if(err) {
             console.log(err);
         } else {
             var _track = track.title;
             console.log("track.title: " + _track);
-            return _track;
+            _output = _track;
         }
     });
+    return _output;
 }
 
 function _append(input, channel) {
