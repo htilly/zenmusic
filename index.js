@@ -340,18 +340,26 @@ function _gong(channel, userName) {
 
 function _gongcheck(channel, userName) {
 	console.log("_gongcheck...");
-	slack.sendMessage("The GONG is currently " + gongCounter + " out of " + gongLimit, channel.id);
 
-	var gongers = "";
-	for (var key in gongScore) {
-		if (gongers.length > 0) {
-			gongers += ", " + key;
-		} else {
-			gongers += key;
-		}
-	}
+  _currentTrackTitle(channel, function(err, track) {
+      console.log("_gongcheck > track: " + track);
 
-	slack.sendMessage("The GONG'ERS are " + gongers, channel.id);
+    	slack.sendMessage("The GONG is currently " + gongCounter + " out of " + gongLimit, channel.id);
+
+    	var gongers = "";
+    	for (var key in gongScore) {
+    		if (gongers.length > 0) {
+    			gongers += ", " + key;
+    		} else {
+    			gongers += key;
+    		}
+    	}
+
+      if (gongers.length > 0) {
+      	slack.sendMessage("The GONG'ERS are " + gongers, channel.id);
+      }
+
+    });
 }
 
 function _previous(input, channel) {
@@ -495,10 +503,11 @@ function _currentTrack(channel, cb) {
 
 function _currentTrackTitle(channel, cb) {
     sonos.currentTrack(function(err, track) {
+      var _track = "";
         if(err) {
             console.log(err);
         } else {
-            var _track = track.title;
+            _track = track.title;
             console.log("_currentTrackTitle > title: " + _track);
             console.log("_currentTrackTitle > gongTrack: " + gongTrack);
 
@@ -520,7 +529,7 @@ function _currentTrackTitle(channel, cb) {
 
         }
 
-		cb(err, null);
+		cb(err, _track);
     });
 }
 
