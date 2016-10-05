@@ -16,6 +16,8 @@ var gongCounter = 0;
 var gongLimit = 3;
 var gongLimitPerUser = 1;
 var gongScore = {};
+var gongMessage = ["Is it really all that bad??", "Is it that distracting??", "Your eardrums are going to combust if this continues playing??", "Would some harp music be better??"];
+
 var voteVictory = 3;
 var voteLimit = 1;
 var votes = {};
@@ -299,8 +301,13 @@ function _gong(channel, userName) {
     _currentTrackTitle(channel, function(err, track) {
         console.log("_gong > _currentTrackTitle");
 
-		// Need a delay before calling the rest
+        // Get message
+        console.log("gongMessage.length: " + gongMessage.length);
+        var ran = Math.random() * ((gongMessage.length - 1) - 0) + 0;
+        var randomMessage = gongMessage[ran];
+        console.log("gongMessage: " + randomMessage);
 
+		// Need a delay before calling the rest
 		if(!(userName in gongScore)) {
 			gongScore[userName] = 1
 			gongCounter++;
