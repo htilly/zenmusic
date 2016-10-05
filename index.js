@@ -303,7 +303,9 @@ function _gong(channel, userName) {
 
         // Get message
         console.log("gongMessage.length: " + gongMessage.length);
-        var ran = Math.random() * ((gongMessage.length - 1) - 0) + 0;
+        var ran = Math.floor(Math.random() * gongMessage.length);
+        console.log("gongMessage > ran: " + ran);
+        console.log("gongMessage > gongMessage: " + gongMessage);
         var randomMessage = gongMessage[ran];
         console.log("gongMessage: " + randomMessage);
 
@@ -311,7 +313,7 @@ function _gong(channel, userName) {
 		if(!(userName in gongScore)) {
 			gongScore[userName] = 1
 			gongCounter++;
-			slack.sendMessage("Is it really THAT bad?! Oh well.. This is GONG " + gongCounter + " out of " + gongLimit, channel.id);
+			slack.sendMessage(randomMessage + " Oh well.. This is GONG " + gongCounter + " out of " + gongLimit, channel.id);
 			if(gongCounter >= gongLimit) {
 				slack.sendMessage("The music got GOONGED!", channel.id);
 				_nextTrack(channel, true)
@@ -324,7 +326,7 @@ function _gong(channel, userName) {
 			}else {
 				gongScore[userName] = gongScore[userName] + 1
 				gongCounter++;
-				slack.sendMessage("Is it really THAT bad?! Oh well.. This is GONG " + gongCounter + " out of " + gongLimit, channel.id);
+				slack.sendMessage(randomMessage + " Oh well.. This is GONG " + gongCounter + " out of " + gongLimit, channel.id);
 				if(gongCounter >= gongLimit) {
 					slack.sendMessage("The music got GOONGED!", channel.id);
 					_nextTrack(channel)
