@@ -299,7 +299,7 @@ function _gong(channel, userName) {
   console.log("_gong...");
 
     _currentTrackTitle(channel, function(err, track) {
-        console.log("_gong > _currentTrackTitle");
+        console.log("_gong > track: " + track);
 
         // Get message
         console.log("gongMessage.length: " + gongMessage.length);
@@ -313,7 +313,7 @@ function _gong(channel, userName) {
 		if(!(userName in gongScore)) {
 			gongScore[userName] = 1
 			gongCounter++;
-			slack.sendMessage(randomMessage + " Oh well.. This is GONG " + gongCounter + " out of " + gongLimit, channel.id);
+			slack.sendMessage(randomMessage + " Oh well.. This is GONG " + gongCounter + " out of " + gongLimit + " for " + track, channel.id);
 			if(gongCounter >= gongLimit) {
 				slack.sendMessage("The music got GOONGED!", channel.id);
 				_nextTrack(channel, true)
@@ -326,7 +326,7 @@ function _gong(channel, userName) {
 			}else {
 				gongScore[userName] = gongScore[userName] + 1
 				gongCounter++;
-				slack.sendMessage(randomMessage + " Oh well.. This is GONG " + gongCounter + " out of " + gongLimit, channel.id);
+				slack.sendMessage(randomMessage + " Oh well.. This is GONG " + gongCounter + " out of " + gongLimit + " for " + track, channel.id);
 				if(gongCounter >= gongLimit) {
 					slack.sendMessage("The music got GOONGED!", channel.id);
 					_nextTrack(channel)
@@ -344,7 +344,7 @@ function _gongcheck(channel, userName) {
   _currentTrackTitle(channel, function(err, track) {
       console.log("_gongcheck > track: " + track);
 
-    	slack.sendMessage("The GONG is currently " + gongCounter + " out of " + gongLimit, channel.id);
+    	slack.sendMessage("The GONG is currently " + gongCounter + " out of " + gongLimit + " for " + track, channel.id);
 
     	var gongers = "";
     	for (var key in gongScore) {
