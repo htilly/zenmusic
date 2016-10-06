@@ -167,6 +167,9 @@ slack.sendMessage("Nice try " + userName + ", you're banned :)", channel.id)
 			case 'gongcheck':
 				_gongcheck(channel, userName);
 			break;
+case 'ungong':
+  _ungong(channel, userName);
+break;
             case 'say':
                 // _say(input, channel);
             break;
@@ -361,6 +364,13 @@ function _gongcheck(channel, userName) {
 
     });
 }
+
+
+function _ungong(channel, userName) {
+	console.log("_ungong...");
+  slack.sendMessage("DENIED!! As much as you want to listen to this, afraid we belong to the Democratic Republic of Sonos.", channel.id);
+}
+
 
 function _previous(input, channel) {
 	if(channel.name !== adminChannel){
