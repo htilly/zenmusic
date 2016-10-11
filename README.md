@@ -43,6 +43,7 @@ List of commands (just type help in the channel)
 * `add` _text_ : Add song to the queue and start playing if idle.
 * `append` _text_ : Append a song to the previous playlist and start playing the same list again.
 * `gong` : The current track is bad! Vote for skipping this track
+* `gongcheck` : How many gong votes there are currently, as well as who has GONGED.
 * `vote` _exactSongTitle_ : Vote for a specific song title in the queue.
 * `volume` : view current volume
 * `list` : list current queue
