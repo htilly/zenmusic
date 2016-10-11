@@ -16,15 +16,19 @@ var gongCounter = 0;
 var gongLimit = 3;
 var gongLimitPerUser = 1;
 var gongScore = {};
+var gongMessage = ["Is it really all that bad??", "Is it that distracting??", "Your eardrums are going to combust if this continues playing??", "Would some harp music be better??"];
+
 var voteVictory = 3;
 var voteLimit = 1;
 var votes = {};
+
+var gongTrack = ""; // What track was a GONG called on
 
 // UGLY hack to get it working on Heroku
 // Uncomment the bellow line if you are running in Heruko
 
 
-/* 
+/*
 
 var http = require('http');
 
@@ -46,10 +50,10 @@ const RTM_EVENTS = require('@slack/client').RTM_EVENTS;
 const MemoryDataStore = require('@slack/client').MemoryDataStore;
 
 let slack = new RtmClient(token, {
-  logLevel: 'error', 
+  logLevel: 'error',
   dataStore: new MemoryDataStore(),
   autoReconnect: true,
-  autoMark: true 
+  autoMark: true
 });
 
 
@@ -160,6 +164,12 @@ slack.sendMessage("Nice try " + userName + ", you're banned :)", channel.id)
             case 'gong':
                 _gong(channel, userName);
             break;
+			case 'gongcheck':
+				_gongcheck(channel, userName);
+			break;
+case 'ungong':
+  _ungong(channel, userName);
+break;
             case 'say':
                 // _say(input, channel);
             break;
@@ -284,33 +294,83 @@ function _showQueue(channel, cb) {
     });
 }
 
+// Need to track what song has had a GONG called
+// If the GONG was called on the previous song, reset
+
 function _gong(channel, userName) {
-    if(!(userName in gongScore)) {
-        gongScore[userName] = 1
-        gongCounter++;
-        slack.sendMessage("Is it really THAT bad?! Oh well.. This is GONG " + gongCounter + " out of " + gongLimit, channel.id);
-        if(gongCounter >= gongLimit) {
-            slack.sendMessage("The music got GOONGED!", channel.id);
-            _nextTrack(channel, true)
-            gongCounter = 0;
-            gongScore={}
-        }
-    } else{
-        if(gongScore[userName] >= gongLimitPerUser) {
-            slack.sendMessage("Are you trying to cheat " + userName + "? DENIED!", channel.id)
-        }else {
-            gongScore[userName] = gongScore[userName] + 1
-            gongCounter++;
-                    slack.sendMessage("Is it really THAT bad?! Oh well.. This is GONG " + gongCounter + " out of " + gongLimit, channel.id);
-                    if(gongCounter >= gongLimit) {
-                        slack.sendMessage("The music got GOONGED!", channel.id);
-                        _nextTrack(channel)
-                         gongCounter = 0;
-                         gongScore={}
-                    }
-        }
-    }
+
+  console.log("_gong...");
+
+    _currentTrackTitle(channel, function(err, track) {
+        console.log("_gong > track: " + track);
+
+        // Get message
+        console.log("gongMessage.length: " + gongMessage.length);
+        var ran = Math.floor(Math.random() * gongMessage.length);
+        console.log("gongMessage > ran: " + ran);
+        console.log("gongMessage > gongMessage: " + gongMessage);
+        var randomMessage = gongMessage[ran];
+        console.log("gongMessage: " + randomMessage);
+
+		// Need a delay before calling the rest
+		if(!(userName in gongScore)) {
+			gongScore[userName] = 1
+			gongCounter++;
+			slack.sendMessage(randomMessage + " Oh well.. This is GONG " + gongCounter + " out of " + gongLimit + " for " + track, channel.id);
+			if(gongCounter >= gongLimit) {
+				slack.sendMessage("The music got GOONGED!", channel.id);
+				_nextTrack(channel, true)
+				gongCounter = 0;
+				gongScore={}
+			}
+		} else{
+			if(gongScore[userName] >= gongLimitPerUser) {
+				slack.sendMessage("Are you trying to cheat " + userName + "? DENIED!", channel.id)
+			}else {
+				gongScore[userName] = gongScore[userName] + 1
+				gongCounter++;
+				slack.sendMessage(randomMessage + " Oh well.. This is GONG " + gongCounter + " out of " + gongLimit + " for " + track, channel.id);
+				if(gongCounter >= gongLimit) {
+					slack.sendMessage("The music got GOONGED!", channel.id);
+					_nextTrack(channel)
+					 gongCounter = 0;
+					 gongScore={}
+				}
+			}
+		}
+    });
 }
+
+function _gongcheck(channel, userName) {
+	console.log("_gongcheck...");
+
+  _currentTrackTitle(channel, function(err, track) {
+      console.log("_gongcheck > track: " + track);
+
+    	slack.sendMessage("The GONG is currently " + gongCounter + " out of " + gongLimit + " for " + track, channel.id);
+
+    	var gongers = "";
+    	for (var key in gongScore) {
+    		if (gongers.length > 0) {
+    			gongers += ", " + key;
+    		} else {
+    			gongers += key;
+    		}
+    	}
+
+      if (gongers.length > 0) {
+      	slack.sendMessage("The GONG'ERS are " + gongers, channel.id);
+      }
+
+    });
+}
+
+
+function _ungong(channel, userName) {
+	console.log("_ungong...");
+  slack.sendMessage("DENIED!! As much as you want to listen to this, afraid we belong to the Democratic Republic of Sonos.", channel.id);
+}
+
 
 function _previous(input, channel) {
 	if(channel.name !== adminChannel){
@@ -332,6 +392,7 @@ function _help(input, channel) {
     '`add` _text_ : Add song to the queue and start playing if idle.\n' +
     '`append` _text_ : Append a song to the previous playlist and start playing the same list again.\n' +
     '`gong` : The current track is bad! Vote for skipping this track\n' +
+    '`gongcheck` : How many gong votes there are currently, as well as who has GONGED.\n' +
     '`vote` _exactSongTitle_ : Vote for a specific song title in the queue.\n' +
     '`volume` : view current volume\n' +
     '`list` : list current queue\n' +
@@ -444,12 +505,43 @@ function _currentTrack(channel, cb) {
             psec = psec.length == 2 ? psec : '0'+psec;
 
 
-            var message = 'We´re dancing to *' + track.artist + '* - *' + track.title + '* ('+pmin+':'+psec+'/'+fmin+':'+fsec+')';
+            var message = 'We´re rocking out to *' + track.artist + '* - *' + track.title + '* ('+pmin+':'+psec+'/'+fmin+':'+fsec+')';
             slack.sendMessage(message, channel.id);
         }
     });
 }
 
+function _currentTrackTitle(channel, cb) {
+    sonos.currentTrack(function(err, track) {
+      var _track = "";
+        if(err) {
+            console.log(err);
+        } else {
+            _track = track.title;
+            console.log("_currentTrackTitle > title: " + _track);
+            console.log("_currentTrackTitle > gongTrack: " + gongTrack);
+
+            if (gongTrack !== "") {
+              if (gongTrack !== _track) {
+                console.log("_currentTrackTitle > different track, reset!");
+                gongCounter = 0;
+                gongScore={};
+
+				//return cb(err, null);
+              } else {
+				  console.log("_currentTrackTitle > gongTrack is equal to _track");
+			  }
+            } else {
+                console.log("_currentTrackTitle > gongTrack is empty");
+			}
+
+			gongTrack = _track;
+
+        }
+
+		cb(err, _track);
+    });
+}
 
 function _append(input, channel) {
 
@@ -494,7 +586,7 @@ function _append(input, channel) {
                             //
                             // Old version..  New is supposed to fix 500 problem...
                             //  sonos.addSpotifyQueue(spid, function (err, res) {
-                            
+
                              sonos.addSpotify(spid, function (err, res) {
                                 var message = '';
                                 if(res) {
@@ -609,7 +701,7 @@ function _add(input, channel) {
                             //Then add the track to playlist...
                             // Old version..  New is supposed to fix 500 problem...
                             // sonos.addSpotifyQueue(spid, function (err, res) {
-                            
+
                             sonos.addSpotify(spid, function (err, res) {
                                 var message = '';
                                 if(res) {
@@ -862,4 +954,3 @@ console.log(string.indexOf(substring) > -1);
   track_number: 5,
   type: 'track',
   uri: 'spotify:track:7mAbzwRo89VEKfXbHWdJr8' }*/
-
