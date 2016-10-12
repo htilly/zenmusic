@@ -1,0 +1,8 @@
+{
+    "adminChannel" : "music-admin",
+    "standardChannel" : "music",
+    "sonos" : "IP_TO_SONOS",
+    "token" : "SLACK:TOKEN",
+    "market" : "US",
+    "maxVolume" : 75
+}
