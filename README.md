@@ -83,6 +83,7 @@ List of commands (just type help in the channel)
 * Restrict songs already in the queue
 * Delete range of songs from queue
 * Vote to flush entire queue
+* Implement some code-testing
 
 **DONE**
 
