@@ -957,3 +957,10 @@ console.log(string.indexOf(substring) > -1);
   track_number: 5,
   type: 'track',
   uri: 'spotify:track:7mAbzwRo89VEKfXbHWdJr8' }*/
+
+// Playing with Travis.
+// Just something that will return a value
+
+module.exports = function(number, locale) {
+    return number.toLocaleString(locale);
+};

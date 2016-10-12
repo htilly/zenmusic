@@ -1,5 +1,13 @@
-sudo: false
 language: node_js
+
 node_js:
-  - '6'
-  - '6.1'
+  - 6.3
+
+install:
+  - npm install
+
+script:
+  - npm run cover
+
+# Send coverage data to Coveralls
+after_script: "cat coverage/lcov.info | node_modules/coveralls/bin/coveralls.js"
