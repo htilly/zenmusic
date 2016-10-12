@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/htilly/zenmusic.svg?branch=master)](https://travis-ci.org/htilly/zenmusic)
+
 # zenmusic
 **Slack / Sonos / Spotify / Node.js - Control Sonos through #Slack**
 
