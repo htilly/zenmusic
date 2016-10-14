@@ -60,7 +60,11 @@ List of commands (just type help in the channel)
 * `next` : play next track
 * `previous` : play previous track
     
- 
+**Info**
+Please use it to get some music in the office / home. 
+We would appreciate if you drop a comment or send a pm... and please feel free to add / change stuff!! Much appreciated!
+
+
 **KnownBugs**
 
 * Validate add / unique track doesn´t work. I.e - You can add same track 10 times in a row.
