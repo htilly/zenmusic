@@ -148,6 +148,9 @@ slack.sendMessage("Nice try " + userName + ", you're banned :)", channel.id)
             case 'next':
                 _nextTrack(channel);
             break;
+	    case 'gongPlay':
+                _gongPlay(input, channel);
+            break;
             case 'stop':
                 _stop(input, channel);
             break;
@@ -333,6 +336,7 @@ function _gong(channel, userName) {
 				if(gongCounter >= gongLimit) {
 					slack.sendMessage("The music got GOONGED!", channel.id);
 					_nextTrack(channel)
+					_playGong(channel)	
 					 gongCounter = 0;
 					 gongScore={}
 				}
@@ -466,6 +470,14 @@ function _say(input, channel) {
         console.log([err, playing]);
     });
 }
+
+
+function _gongPlay(input, channel) {
+    sonos.play('http://raw.githubusercontent.com/htilly/zenmusic/master/doc/sound/gong.mp3', function (err, playing) {
+        console.log([err, playing])
+	});
+}
+
 
 function _nextTrack(channel, byPassChannelValidation) {
 	if(channel.name !== adminChannel && !byPassChannelValidation){
