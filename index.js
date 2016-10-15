@@ -13,7 +13,7 @@ token = configure.token;
 
 
 var gongCounter = 0;
-var gongLimit = 3;
+var gongLimit = 1;
 var gongLimitPerUser = 1;
 var gongScore = {};
 var gongMessage = ["Is it really all that bad??", "Is it that distracting??", "Your eardrums are going to combust if this continues playing??", "Would some harp music be better??"];
@@ -321,7 +321,8 @@ function _gong(channel, userName) {
 			gongCounter++;
 			slack.sendMessage(randomMessage + " Oh well.. This is GONG " + gongCounter + " out of " + gongLimit + " for " + track, channel.id);
 			if(gongCounter >= gongLimit) {
-				slack.sendMessage("The music got GOONGED!", channel.id);
+				slack.sendMessage("The music got GOONGED!!", channel.id);
+				// _gongPlay(channel, true);
 				_nextTrack(channel, true)
 				gongCounter = 0;
 				gongScore={}
@@ -335,8 +336,8 @@ function _gong(channel, userName) {
 				slack.sendMessage(randomMessage + " Oh well.. This is GONG " + gongCounter + " out of " + gongLimit + " for " + track, channel.id);
 				if(gongCounter >= gongLimit) {
 					slack.sendMessage("The music got GOONGED!", channel.id);
+			//		_gongPlay(channel);
 					_nextTrack(channel)
-					_playGong(channel)	
 					 gongCounter = 0;
 					 gongScore={}
 				}
@@ -472,7 +473,7 @@ function _say(input, channel) {
 }
 
 
-function _gongPlay(input, channel) {
+function _gongPlay(channel) {
     sonos.play('http://raw.githubusercontent.com/htilly/zenmusic/master/doc/sound/gong.mp3', function (err, playing) {
         console.log([err, playing])
 	});
@@ -489,7 +490,7 @@ function _nextTrack(channel, byPassChannelValidation) {
         if(err) {
             console.log(err);
         } else {
-            slack.sendMessage('Playing the next track...'), channel.id;
+            slack.sendMessage('Playing the next track...', channel.id);
         }
     });
 }
@@ -597,9 +598,9 @@ function _append(input, channel) {
                             //Add the track to playlist...
 
                             // Old version..  New is supposed to fix 500 problem...
-                            // sonos.addSpotifyQueue(spid, function (err, res) {
+                            sonos.addSpotifyQueue(spid, function (err, res) {
 
-                            sonos.addSpotify(spid, function (err, res) {
+                            //sonos.addSpotify(spid, function (err, res) {
                                 var message = '';
                                 if(res) {
                                     var queueLength = res[0].FirstTrackNumberEnqueued;
@@ -713,9 +714,9 @@ function _add(input, channel) {
                             //Then add the track to playlist...
 
                             // Old version..  New is supposed to fix 500 problem...
-                            // sonos.addSpotifyQueue(spid, function (err, res) {
+                            sonos.addSpotifyQueue(spid, function (err, res) {
 
-                            sonos.addSpotify(spid, function (err, res) {
+                            //sonos.addSpotify(spid, function (err, res) {
                                 var message = '';
                                 if(res) {
                                     var queueLength = res[0].FirstTrackNumberEnqueued;
@@ -744,9 +745,9 @@ function _add(input, channel) {
                     //Add the track to playlist...
 
                     // Old version..  New is supposed to fix 500 problem...
-                    // sonos.addSpotifyQueue(spid, function (err, res) {
+                    sonos.addSpotifyQueue(spid, function (err, res) {
 
-                    sonos.addSpotify(spid, function (err, res) {
+                    // sonos.addSpotify(spid, function (err, res) {
                         var message = '';
                         if(res) {
                             var queueLength = res[0].FirstTrackNumberEnqueued;
