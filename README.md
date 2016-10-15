@@ -31,6 +31,8 @@ Sonos needs to be configured and setup with Spotify and have access to internet.
 
 Set all values in config.json
 
+Logo for the bot in #Slack can be found at "doc/images/ZenMusic.png
+
 **What can it do?**
 
 It will queue you requests and play it..  However if X amount of people for any strange reason doesn't like the current track, it will listen to the command "**gong**" and eventually skip to the next track.
