@@ -322,7 +322,7 @@ function _gong(channel, userName) {
 			slack.sendMessage(randomMessage + " Oh well.. This is GONG " + gongCounter + " out of " + gongLimit + " for " + track, channel.id);
 			if(gongCounter >= gongLimit) {
 				slack.sendMessage("The music got GOONGED!!", channel.id);
-				// _gongPlay(channel, true);
+			//		 _gongPlay(channel, true);
 				_nextTrack(channel, true)
 				gongCounter = 0;
 				gongScore={}
