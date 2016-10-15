@@ -13,7 +13,7 @@ token = configure.token;
 
 
 var gongCounter = 0;
-var gongLimit = 1;
+var gongLimit = 3;
 var gongLimitPerUser = 1;
 var gongScore = {};
 var gongMessage = ["Is it really all that bad??", "Is it that distracting??", "Your eardrums are going to combust if this continues playing??", "Would some harp music be better??"];
@@ -598,9 +598,9 @@ function _append(input, channel) {
                             //Add the track to playlist...
 
                             // Old version..  New is supposed to fix 500 problem...
-                            sonos.addSpotifyQueue(spid, function (err, res) {
+                            // sonos.addSpotifyQueue(spid, function (err, res) {
 
-                            //sonos.addSpotify(spid, function (err, res) {
+                            sonos.addSpotify(spid, function (err, res) {
                                 var message = '';
                                 if(res) {
                                     var queueLength = res[0].FirstTrackNumberEnqueued;
@@ -714,9 +714,9 @@ function _add(input, channel) {
                             //Then add the track to playlist...
 
                             // Old version..  New is supposed to fix 500 problem...
-                            sonos.addSpotifyQueue(spid, function (err, res) {
+                            // sonos.addSpotifyQueue(spid, function (err, res) {
 
-                            //sonos.addSpotify(spid, function (err, res) {
+                            sonos.addSpotify(spid, function (err, res) {
                                 var message = '';
                                 if(res) {
                                     var queueLength = res[0].FirstTrackNumberEnqueued;
@@ -745,9 +745,9 @@ function _add(input, channel) {
                     //Add the track to playlist...
 
                     // Old version..  New is supposed to fix 500 problem...
-                    sonos.addSpotifyQueue(spid, function (err, res) {
+                    // sonos.addSpotifyQueue(spid, function (err, res) {
 
-                    // sonos.addSpotify(spid, function (err, res) {
+                    sonos.addSpotify(spid, function (err, res) {
                         var message = '';
                         if(res) {
                             var queueLength = res[0].FirstTrackNumberEnqueued;
