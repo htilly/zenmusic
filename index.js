@@ -13,7 +13,7 @@ token = configure.token;
 
 
 var gongCounter = 0;
-var gongLimit = 3;
+var gongLimit = 1;
 var gongLimitPerUser = 1;
 var gongScore = {};
 var gongMessage = ["Is it really all that bad??", "Is it that distracting??", "Your eardrums are going to combust if this continues playing??", "Would some harp music be better??"];
@@ -201,6 +201,9 @@ break;
             break;
             default:
             break;
+       case 'gongplay':
+                  _gongPlay(channel);
+            break;
         }
     } else {
         typeError = type !== 'message' ? "unexpected type " + type + "." : null;
@@ -254,6 +257,65 @@ function _setVolume(input, channel) {
     }
 
 }
+
+
+
+
+
+
+function _gongPlay(channel, cb) {
+   sonos.getQueue(function (err, result) {
+        if (err) {
+            if(cb) {
+                return (err, null);
+            }
+            console.log(err)
+            slack.sendMessage('Couldn\'t fetch the queue', channel.id);
+
+        } else {
+            if(cb) {
+                return cb(null, result.items);
+            }
+                                   _currentTrack(channel, function(err, track) {
+               var currentTrackID = ""
+                 result.items.map(
+                    function(item, i){
+                        if(item['title'] === track.title) {
+                        currentTrackID += i
+                        }
+                    }
+                )
+                var nextTrackID = parseInt (currentTrackID)+1;
+                 console.log("DEBUG 1");
+                 console.log("DEBUG - Show trackID", currentTrackID, " and next will be: ", nextTrackID);
+
+                 sonos.queue('http://www.tilly.nu/gong.mp3', nextTrackID, function (err, playing){
+                                                console.log([err, playing]);
+                                        });
+		return (nextTrackID);
+
+
+            });
+        if (err) {
+            if(cb) {
+                return (err, null);
+            }
+            console.log(err);
+            slack.sendMessage('Couldn\'t fetch the queue', channel.id);
+
+        } else {
+            if(cb) {
+                return cb(null, result.items);
+                        }
+ console.log("DEBUG: 2 - Get the MP3 over http");
+                        }
+                }
+                });
+        }
+
+
+
+
 
 function _getQueue() {
     var res = null;
@@ -322,7 +384,7 @@ function _gong(channel, userName) {
 			slack.sendMessage(randomMessage + " Oh well.. This is GONG " + gongCounter + " out of " + gongLimit + " for " + track, channel.id);
 			if(gongCounter >= gongLimit) {
 				slack.sendMessage("The music got GOONGED!!", channel.id);
-			//		 _gongPlay(channel, true);
+			        _gongPlay(channel)	
 				_nextTrack(channel, true)
 				gongCounter = 0;
 				gongScore={}
@@ -336,7 +398,6 @@ function _gong(channel, userName) {
 				slack.sendMessage(randomMessage + " Oh well.. This is GONG " + gongCounter + " out of " + gongLimit + " for " + track, channel.id);
 				if(gongCounter >= gongLimit) {
 					slack.sendMessage("The music got GOONGED!", channel.id);
-			//		_gongPlay(channel);
 					_nextTrack(channel)
 					 gongCounter = 0;
 					 gongScore={}
@@ -473,11 +534,6 @@ function _say(input, channel) {
 }
 
 
-function _gongPlay(channel) {
-    sonos.play('http://raw.githubusercontent.com/htilly/zenmusic/master/doc/sound/gong.mp3', function (err, playing) {
-        console.log([err, playing])
-	});
-}
 
 
 function _nextTrack(channel, byPassChannelValidation) {
@@ -598,9 +654,9 @@ function _append(input, channel) {
                             //Add the track to playlist...
 
                             // Old version..  New is supposed to fix 500 problem...
-                            // sonos.addSpotifyQueue(spid, function (err, res) {
+                            sonos.addSpotifyQueue(spid, function (err, res) {
 
-                            sonos.addSpotify(spid, function (err, res) {
+                            //sonos.addSpotify(spid, function (err, res) {
                                 var message = '';
                                 if(res) {
                                     var queueLength = res[0].FirstTrackNumberEnqueued;
@@ -714,9 +770,9 @@ function _add(input, channel) {
                             //Then add the track to playlist...
 
                             // Old version..  New is supposed to fix 500 problem...
-                            // sonos.addSpotifyQueue(spid, function (err, res) {
+                            sonos.addSpotifyQueue(spid, function (err, res) {
 
-                            sonos.addSpotify(spid, function (err, res) {
+                            // sonos.addSpotify(spid, function (err, res) {
                                 var message = '';
                                 if(res) {
                                     var queueLength = res[0].FirstTrackNumberEnqueued;
@@ -745,9 +801,9 @@ function _add(input, channel) {
                     //Add the track to playlist...
 
                     // Old version..  New is supposed to fix 500 problem...
-                    // sonos.addSpotifyQueue(spid, function (err, res) {
+                    sonos.addSpotifyQueue(spid, function (err, res) {
 
-                    sonos.addSpotify(spid, function (err, res) {
+                    // sonos.addSpotify(spid, function (err, res) {
                         var message = '';
                         if(res) {
                             var queueLength = res[0].FirstTrackNumberEnqueued;
