@@ -148,7 +148,7 @@ slack.sendMessage("Nice try " + userName + ", you're banned :)", channel.id)
             case 'next':
                 _nextTrack(channel);
             break;
-	    case 'gongPlay':
+	        case 'gongPlay':
                 _gongPlay(input, channel);
             break;
             case 'stop':
@@ -170,9 +170,9 @@ slack.sendMessage("Nice try " + userName + ", you're banned :)", channel.id)
 			case 'gongcheck':
 				_gongcheck(channel, userName);
 			break;
-case 'ungong':
-  _ungong(channel, userName);
-break;
+            case 'ungong':
+                _ungong(channel, userName);
+            break;
             case 'say':
                 // _say(input, channel);
             break;
@@ -201,8 +201,8 @@ break;
             break;
             default:
             break;
-       case 'gongplay':
-                  _gongPlay(channel);
+            case 'gongplay':
+                _gongPlay(channel);
             break;
         }
     } else {
@@ -276,7 +276,7 @@ function _gongPlay(channel, cb) {
             if(cb) {
                 return cb(null, result.items);
             }
-                                   _currentTrack(channel, function(err, track) {
+            _currentTrack(channel, function(err, track) {
                var currentTrackID = ""
                  result.items.map(
                     function(item, i){
@@ -384,8 +384,13 @@ function _gong(channel, userName) {
 			slack.sendMessage(randomMessage + " Oh well.. This is GONG " + gongCounter + " out of " + gongLimit + " for " + track, channel.id);
 			if(gongCounter >= gongLimit) {
 				slack.sendMessage("The music got GOONGED!!", channel.id);
-			        _gongPlay(channel)	
-				_nextTrack(channel, true)
+			        _gongPlay(channel)
+
+                    if(gongCounter >= gongLimit) {
+                        console.log("DEBUG: 3 - Playing GONG");
+				    _nextTrack(channel, true)
+                    }
+
 				gongCounter = 0;
 				gongScore={}
 			}
