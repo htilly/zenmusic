@@ -1,5 +1,9 @@
+var fs = require('fs');
 var Sonos = require('sonos').Sonos
-var configure = require('./config.json');
+var configFile = 'config.json';
+var configure = JSON.parse(
+    fs.readFileSync(configFile)
+);
 var sonos = new Sonos(configure.sonos);
 var adminChannel = configure.adminChannel;
 var maxVolume = configure.maxVolume;
@@ -7,7 +11,6 @@ var market = configure.market;
 var standardChannel = configure.standardChannel;
 var urllibsync = require('urllib-sync');
 var urlencode = require('urlencode');
-var fs = require('fs');
 var blacklistFile = 'blacklist.txt';
 var useBlacklist = false;
 

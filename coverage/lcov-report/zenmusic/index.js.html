@@ -1,0 +1,3008 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Code coverage report for zenmusic/index.js</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../prettify.css" />
+    <link rel="stylesheet" href="../base.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+<body>
+<div class='wrapper'>
+  <div class='pad1'>
+    <h1>
+      <a href="../index.html">all files</a> / <a href="index.html">zenmusic/</a> index.js
+    </h1>
+    <div class='clearfix'>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">12.26% </span>
+        <span class="quiet">Statements</span>
+        <span class='fraction'>58/473</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">0.47% </span>
+        <span class="quiet">Branches</span>
+        <span class='fraction'>1/211</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">3.28% </span>
+        <span class="quiet">Functions</span>
+        <span class='fraction'>2/61</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">12.29% </span>
+        <span class="quiet">Lines</span>
+        <span class='fraction'>58/472</span>
+      </div>
+    </div>
+  </div>
+  <div class='status-line low'></div>
+<pre><table class="coverage">
+<tr><td class="line-count quiet">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+135
+136
+137
+138
+139
+140
+141
+142
+143
+144
+145
+146
+147
+148
+149
+150
+151
+152
+153
+154
+155
+156
+157
+158
+159
+160
+161
+162
+163
+164
+165
+166
+167
+168
+169
+170
+171
+172
+173
+174
+175
+176
+177
+178
+179
+180
+181
+182
+183
+184
+185
+186
+187
+188
+189
+190
+191
+192
+193
+194
+195
+196
+197
+198
+199
+200
+201
+202
+203
+204
+205
+206
+207
+208
+209
+210
+211
+212
+213
+214
+215
+216
+217
+218
+219
+220
+221
+222
+223
+224
+225
+226
+227
+228
+229
+230
+231
+232
+233
+234
+235
+236
+237
+238
+239
+240
+241
+242
+243
+244
+245
+246
+247
+248
+249
+250
+251
+252
+253
+254
+255
+256
+257
+258
+259
+260
+261
+262
+263
+264
+265
+266
+267
+268
+269
+270
+271
+272
+273
+274
+275
+276
+277
+278
+279
+280
+281
+282
+283
+284
+285
+286
+287
+288
+289
+290
+291
+292
+293
+294
+295
+296
+297
+298
+299
+300
+301
+302
+303
+304
+305
+306
+307
+308
+309
+310
+311
+312
+313
+314
+315
+316
+317
+318
+319
+320
+321
+322
+323
+324
+325
+326
+327
+328
+329
+330
+331
+332
+333
+334
+335
+336
+337
+338
+339
+340
+341
+342
+343
+344
+345
+346
+347
+348
+349
+350
+351
+352
+353
+354
+355
+356
+357
+358
+359
+360
+361
+362
+363
+364
+365
+366
+367
+368
+369
+370
+371
+372
+373
+374
+375
+376
+377
+378
+379
+380
+381
+382
+383
+384
+385
+386
+387
+388
+389
+390
+391
+392
+393
+394
+395
+396
+397
+398
+399
+400
+401
+402
+403
+404
+405
+406
+407
+408
+409
+410
+411
+412
+413
+414
+415
+416
+417
+418
+419
+420
+421
+422
+423
+424
+425
+426
+427
+428
+429
+430
+431
+432
+433
+434
+435
+436
+437
+438
+439
+440
+441
+442
+443
+444
+445
+446
+447
+448
+449
+450
+451
+452
+453
+454
+455
+456
+457
+458
+459
+460
+461
+462
+463
+464
+465
+466
+467
+468
+469
+470
+471
+472
+473
+474
+475
+476
+477
+478
+479
+480
+481
+482
+483
+484
+485
+486
+487
+488
+489
+490
+491
+492
+493
+494
+495
+496
+497
+498
+499
+500
+501
+502
+503
+504
+505
+506
+507
+508
+509
+510
+511
+512
+513
+514
+515
+516
+517
+518
+519
+520
+521
+522
+523
+524
+525
+526
+527
+528
+529
+530
+531
+532
+533
+534
+535
+536
+537
+538
+539
+540
+541
+542
+543
+544
+545
+546
+547
+548
+549
+550
+551
+552
+553
+554
+555
+556
+557
+558
+559
+560
+561
+562
+563
+564
+565
+566
+567
+568
+569
+570
+571
+572
+573
+574
+575
+576
+577
+578
+579
+580
+581
+582
+583
+584
+585
+586
+587
+588
+589
+590
+591
+592
+593
+594
+595
+596
+597
+598
+599
+600
+601
+602
+603
+604
+605
+606
+607
+608
+609
+610
+611
+612
+613
+614
+615
+616
+617
+618
+619
+620
+621
+622
+623
+624
+625
+626
+627
+628
+629
+630
+631
+632
+633
+634
+635
+636
+637
+638
+639
+640
+641
+642
+643
+644
+645
+646
+647
+648
+649
+650
+651
+652
+653
+654
+655
+656
+657
+658
+659
+660
+661
+662
+663
+664
+665
+666
+667
+668
+669
+670
+671
+672
+673
+674
+675
+676
+677
+678
+679
+680
+681
+682
+683
+684
+685
+686
+687
+688
+689
+690
+691
+692
+693
+694
+695
+696
+697
+698
+699
+700
+701
+702
+703
+704
+705
+706
+707
+708
+709
+710
+711
+712
+713
+714
+715
+716
+717
+718
+719
+720
+721
+722
+723
+724
+725
+726
+727
+728
+729
+730
+731
+732
+733
+734
+735
+736
+737
+738
+739
+740
+741
+742
+743
+744
+745
+746
+747
+748
+749
+750
+751
+752
+753
+754
+755
+756
+757
+758
+759
+760
+761
+762
+763
+764
+765
+766
+767
+768
+769
+770
+771
+772
+773
+774
+775
+776
+777
+778
+779
+780
+781
+782
+783
+784
+785
+786
+787
+788
+789
+790
+791
+792
+793
+794
+795
+796
+797
+798
+799
+800
+801
+802
+803
+804
+805
+806
+807
+808
+809
+810
+811
+812
+813
+814
+815
+816
+817
+818
+819
+820
+821
+822
+823
+824
+825
+826
+827
+828
+829
+830
+831
+832
+833
+834
+835
+836
+837
+838
+839
+840
+841
+842
+843
+844
+845
+846
+847
+848
+849
+850
+851
+852
+853
+854
+855
+856
+857
+858
+859
+860
+861
+862
+863
+864
+865
+866
+867
+868
+869
+870
+871
+872
+873
+874
+875
+876
+877
+878
+879
+880
+881
+882
+883
+884
+885
+886
+887
+888
+889
+890
+891
+892
+893
+894
+895
+896
+897
+898
+899
+900
+901
+902
+903
+904
+905
+906
+907
+908
+909
+910
+911
+912
+913
+914
+915
+916
+917
+918
+919
+920
+921
+922
+923
+924
+925
+926
+927
+928
+929
+930
+931
+932
+933
+934
+935
+936
+937
+938
+939
+940
+941
+942
+943
+944
+945
+946
+947
+948
+949
+950
+951
+952
+953
+954
+955
+956
+957
+958
+959
+960
+961
+962
+963
+964
+965
+966
+967
+968
+969
+970
+971
+972
+973
+974
+975
+976
+977
+978
+979
+980
+981
+982</td><td class="line-coverage quiet"><span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">8×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">var fs = require('fs');
+var Sonos = require('sonos').Sonos
+var configFile = 'config.json';
+var configure = JSON.parse(
+    fs.readFileSync(configFile)
+);
+var sonos = new Sonos(configure.sonos);
+var adminChannel = configure.adminChannel;
+var maxVolume = configure.maxVolume;
+var market = configure.market;
+var standardChannel = configure.standardChannel;
+var urllibsync = require('urllib-sync');
+var urlencode = require('urlencode');
+var blacklistFile = 'blacklist.txt';
+var useBlacklist = false;
+&nbsp;
+token = configure.token;
+&nbsp;
+var gongCounter = 0;
+var gongLimit = 3;
+var gongLimitPerUser = 1;
+var gongScore = {};
+var gongMessage = ["Is it really all that bad??", "Is it that distracting??", "Your eardrums are going to combust if this continues playing??", "Would some harp music be better??"];
+&nbsp;
+var voteVictory = 3;
+var voteLimit = 1;
+var votes = {};
+&nbsp;
+var gongTrack = ""; // What track was a GONG called on
+&nbsp;
+// UGLY hack to get it working on Heroku
+// Uncomment the bellow line if you are running in Heruko
+&nbsp;
+&nbsp;
+/*
+&nbsp;
+var http = require('http');
+&nbsp;
+http.createServer(function(request, response) {
+  var body = [];
+  request.on('data', function(chunk) {
+    body.push(chunk);
+  }).on('end', function() {
+    body = Buffer.concat(body).toString();
+    response.end(body);
+  });
+}).listen(process.env.PORT || 5000);
+&nbsp;
+*/
+&nbsp;
+&nbsp;
+fs.stat(blacklistFile, function fsStat(err, stats) {
+    <span class="missing-if-branch" title="else path not taken" >E</span>if (!err) {
+        useBlacklist = true;
+    }
+});
+&nbsp;
+const RtmClient = require('@slack/client').RtmClient;
+const RTM_EVENTS = require('@slack/client').RTM_EVENTS;
+const MemoryDataStore = require('@slack/client').MemoryDataStore;
+&nbsp;
+let slack = new RtmClient(token, {
+  logLevel: 'error',
+  dataStore: new MemoryDataStore(),
+  autoReconnect: true,
+  autoMark: true
+});
+&nbsp;
+&nbsp;
+slack.on('open', <span class="fstat-no" title="function not covered" >function() {</span>
+<span class="cstat-no" title="statement not covered" >    var channel, channels, group, groups, id, messages, unreads;</span>
+<span class="cstat-no" title="statement not covered" >    channels = [standardChannel];</span>
+<span class="cstat-no" title="statement not covered" >    groups = [];</span>
+//   unreads = slack.getUnreadCount();
+<span class="cstat-no" title="statement not covered" >    channels = (<span class="fstat-no" title="function not covered" >function() {</span></span>
+<span class="cstat-no" title="statement not covered" >        var _ref, _results;</span>
+<span class="cstat-no" title="statement not covered" >        _ref = slack.channels;</span>
+<span class="cstat-no" title="statement not covered" >        _results = [];</span>
+<span class="cstat-no" title="statement not covered" >        for (id in _ref) {</span>
+<span class="cstat-no" title="statement not covered" >            channel = _ref[id];</span>
+<span class="cstat-no" title="statement not covered" >            if (channel.is_member) {</span>
+<span class="cstat-no" title="statement not covered" >                _results.push("#" + channel.name);</span>
+            }
+        }
+<span class="cstat-no" title="statement not covered" >        return _results;</span>
+    })();
+&nbsp;
+<span class="cstat-no" title="statement not covered" >    groups = (<span class="fstat-no" title="function not covered" >function() {</span></span>
+<span class="cstat-no" title="statement not covered" >        var _ref, _results;</span>
+<span class="cstat-no" title="statement not covered" >        _ref = slack.groups;</span>
+<span class="cstat-no" title="statement not covered" >        _results = [];</span>
+<span class="cstat-no" title="statement not covered" >        for (id in _ref) {</span>
+<span class="cstat-no" title="statement not covered" >            group = _ref[id];</span>
+<span class="cstat-no" title="statement not covered" >            if (group.is_open &amp;&amp; !group.is_archived) {</span>
+<span class="cstat-no" title="statement not covered" >                _results.push(group.name);</span>
+            }
+        }
+<span class="cstat-no" title="statement not covered" >        return _results;</span>
+    })();
+&nbsp;
+//    console.log("Welcome to Slack. You are @" + slack.self + " of " + slack.team);
+//    console.log('You are in: ' + channels.join(', '));
+//    console.log('As well as: ' + groups.join(', '));
+//    messages = unreads === 1 ? 'message' : 'messages';
+ //   var channel = slack.getChannelByName(standardChannel);
+<span class="cstat-no" title="statement not covered" >    var message = ":notes: " + "Im back!!" + "\n";</span>
+    // slack.sendMessage(message);
+&nbsp;
+<span class="cstat-no" title="statement not covered" >    return console.log("You have " + unreads + " unread " + messages);</span>
+&nbsp;
+});
+&nbsp;
+&nbsp;
+&nbsp;
+slack.on(RTM_EVENTS.MESSAGE, (message) =&gt; {
+<span class="cstat-no" title="statement not covered" >   let channel, channelError, channelName, errors, response, text, textError, ts, type, typeError, user, userName;</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >    channel = slack.dataStore.getChannelGroupOrDMById(message.channel);</span>
+<span class="cstat-no" title="statement not covered" >    user = slack.dataStore.getUserById(message.user);</span>
+<span class="cstat-no" title="statement not covered" >    response = '';</span>
+<span class="cstat-no" title="statement not covered" >    type = message.type, ts = message.ts, text = message.text;</span>
+<span class="cstat-no" title="statement not covered" >    channelName = (channel != null ? channel.is_channel : void 0) ? '#' : '';</span>
+<span class="cstat-no" title="statement not covered" >    channelName = channelName + (channel ? channel.name : 'UNKNOWN_CHANNEL');</span>
+<span class="cstat-no" title="statement not covered" >    userName = (user != null ? user.name : void 0) != null ? "@" + user.name : "UNKNOWN_USER";</span>
+<span class="cstat-no" title="statement not covered" >    console.log("Received: " + type + " " + channelName + " " + userName + " " + ts + " \"" + text + "\"");</span>
+<span class="cstat-no" title="statement not covered" >    if (type === 'message' &amp;&amp; (text != null) &amp;&amp; (channel != null)) {</span>
+&nbsp;
+        // Very simple BAN function. Set usernames in blacklist.txt
+<span class="cstat-no" title="statement not covered" >        if (useBlacklist) {</span>
+<span class="cstat-no" title="statement not covered" >            var blacklist = fs.readFileSync(blacklistFile);</span>
+<span class="cstat-no" title="statement not covered" >            if (blacklist.indexOf(userName) !== -1) {</span>
+<span class="cstat-no" title="statement not covered" >                console.log('User ' + userName + ' is blacklisted');</span>
+<span class="cstat-no" title="statement not covered" >                slack.sendMessage("Nice try " + userName + ", you're banned :)", channel.id)</span>
+<span class="cstat-no" title="statement not covered" >                return false;</span>
+            }
+        }
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        input = text.split(' ');</span>
+<span class="cstat-no" title="statement not covered" >        var term = input[0].toLowerCase();</span>
+<span class="cstat-no" title="statement not covered" >        console.log('term', term);</span>
+<span class="cstat-no" title="statement not covered" >        switch(term) {</span>
+            case 'add':
+<span class="cstat-no" title="statement not covered" >                _add(input, channel);</span>
+<span class="cstat-no" title="statement not covered" >            break;</span>
+            case 'search':
+<span class="cstat-no" title="statement not covered" >                _search(input, channel);</span>
+<span class="cstat-no" title="statement not covered" >            break;</span>
+            case 'append':
+<span class="cstat-no" title="statement not covered" >                _append(input, channel);</span>
+<span class="cstat-no" title="statement not covered" >            break;</span>
+            case 'next':
+<span class="cstat-no" title="statement not covered" >                _nextTrack(channel);</span>
+<span class="cstat-no" title="statement not covered" >            break;</span>
+            case 'gongPlay':
+<span class="cstat-no" title="statement not covered" >                _gongPlay(input, channel);</span>
+<span class="cstat-no" title="statement not covered" >            break;</span>
+            case 'stop':
+<span class="cstat-no" title="statement not covered" >                _stop(input, channel);</span>
+<span class="cstat-no" title="statement not covered" >            break;</span>
+            case 'flush':
+<span class="cstat-no" title="statement not covered" >                _flush(input, channel);</span>
+<span class="cstat-no" title="statement not covered" >            break;</span>
+            case 'play':
+<span class="cstat-no" title="statement not covered" >                _play(input, channel);</span>
+<span class="cstat-no" title="statement not covered" >            break;</span>
+            case 'help':
+<span class="cstat-no" title="statement not covered" >                _help(input, channel);</span>
+<span class="cstat-no" title="statement not covered" >            break;</span>
+            case 'dong':
+            case 'gong':
+<span class="cstat-no" title="statement not covered" >                _gong(channel, userName);</span>
+<span class="cstat-no" title="statement not covered" >            break;</span>
+            case 'gongcheck':
+<span class="cstat-no" title="statement not covered" >                _gongcheck(channel, userName);</span>
+<span class="cstat-no" title="statement not covered" >            break;</span>
+            case 'ungong':
+<span class="cstat-no" title="statement not covered" >                _ungong(channel, userName);</span>
+<span class="cstat-no" title="statement not covered" >            break;</span>
+            case 'say':
+                // _say(input, channel);
+<span class="cstat-no" title="statement not covered" >            break;</span>
+            case 'current':
+<span class="cstat-no" title="statement not covered" >                _currentTrack(channel);</span>
+<span class="cstat-no" title="statement not covered" >            break;</span>
+            case 'vote':
+<span class="cstat-no" title="statement not covered" >                _vote(text, channel, userName);</span>
+<span class="cstat-no" title="statement not covered" >            break;</span>
+            case 'previous':
+<span class="cstat-no" title="statement not covered" >                _previous(input, channel);</span>
+<span class="cstat-no" title="statement not covered" >            break;</span>
+            case 'list':
+            case 'ls':
+            case 'playlist':
+<span class="cstat-no" title="statement not covered" >                _showQueue(channel);</span>
+<span class="cstat-no" title="statement not covered" >            break;</span>
+            case 'volume':
+<span class="cstat-no" title="statement not covered" >                _getVolume(channel);</span>
+<span class="cstat-no" title="statement not covered" >            break;</span>
+            case 'setvolume':
+<span class="cstat-no" title="statement not covered" >                _setVolume(input, channel);</span>
+<span class="cstat-no" title="statement not covered" >            break;</span>
+            case 'status':
+<span class="cstat-no" title="statement not covered" >                _status(channel);</span>
+<span class="cstat-no" title="statement not covered" >            break;</span>
+            default:
+<span class="cstat-no" title="statement not covered" >            break;</span>
+        }
+    } else {
+<span class="cstat-no" title="statement not covered" >        typeError = type !== 'message' ? "unexpected type " + type + "." : null;</span>
+<span class="cstat-no" title="statement not covered" >        textError = text == null ? 'text was undefined.' : null;</span>
+<span class="cstat-no" title="statement not covered" >        channelError = channel == null ? 'channel was undefined.' : null;</span>
+<span class="cstat-no" title="statement not covered" >        errors = [typeError, textError, channelError].filter(<span class="fstat-no" title="function not covered" >function(element) {</span></span>
+<span class="cstat-no" title="statement not covered" >            return element !== null;</span>
+        }).join(' ');
+<span class="cstat-no" title="statement not covered" >        return console.log("Could not respond. " + errors);</span>
+  }
+});
+&nbsp;
+slack.on('error', <span class="fstat-no" title="function not covered" >function(error) {</span>
+<span class="cstat-no" title="statement not covered" >    return console.error("Error: " + error);</span>
+});
+&nbsp;
+slack.login();
+&nbsp;
+&nbsp;
+&nbsp;
+<span class="fstat-no" title="function not covered" >function _getVolume(channel) {</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >    sonos.getVolume(<span class="fstat-no" title="function not covered" >function(err, vol) {</span></span>
+<span class="cstat-no" title="statement not covered" >        console.log(err, vol);</span>
+<span class="cstat-no" title="statement not covered" >        slack.sendMessage('Vol is ' + vol + ' deadly dB _(ddB)_', channel.id);</span>
+    });
+}
+&nbsp;
+<span class="fstat-no" title="function not covered" >function _setVolume(input, channel) {</span>
+<span class="cstat-no" title="statement not covered" >    if(channel.name !== adminChannel){</span>
+<span class="cstat-no" title="statement not covered" >        console.log("Only admins are allowed for this action!")</span>
+<span class="cstat-no" title="statement not covered" >        slack.sendMessage("Only admins are allowed for this action!", channel.id)</span>
+<span class="cstat-no" title="statement not covered" >        return</span>
+    }
+&nbsp;
+<span class="cstat-no" title="statement not covered" >    var vol = input[1];</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >    if(isNaN(vol)) {</span>
+<span class="cstat-no" title="statement not covered" >        slack.sendMessage('Nope.', channel.id);</span>
+<span class="cstat-no" title="statement not covered" >        return;</span>
+    } else {
+<span class="cstat-no" title="statement not covered" >        vol = Number(vol);</span>
+<span class="cstat-no" title="statement not covered" >        console.log(vol);</span>
+<span class="cstat-no" title="statement not covered" >        if(vol &gt; maxVolume) {</span>
+<span class="cstat-no" title="statement not covered" >            slack.sendMessage('You also could have tinnitus _(say: tih-neye-tus)_', channel.id);</span>
+        } else {
+<span class="cstat-no" title="statement not covered" >            sonos.setVolume(vol, <span class="fstat-no" title="function not covered" >function(err, data) {</span></span>
+<span class="cstat-no" title="statement not covered" >                _getVolume(channel);</span>
+            });
+        }
+    }
+&nbsp;
+}
+&nbsp;
+<span class="fstat-no" title="function not covered" >function _getQueue() {</span>
+<span class="cstat-no" title="statement not covered" >    var res = null;</span>
+<span class="cstat-no" title="statement not covered" >   sonos.getQueue(<span class="fstat-no" title="function not covered" >function (err, result) {</span></span>
+<span class="cstat-no" title="statement not covered" >        res =  result;</span>
+    });
+<span class="cstat-no" title="statement not covered" >    return res;</span>
+}
+&nbsp;
+<span class="fstat-no" title="function not covered" >function _showQueue(channel, cb) {</span>
+<span class="cstat-no" title="statement not covered" >   sonos.getQueue(<span class="fstat-no" title="function not covered" >function (err, result) {</span></span>
+<span class="cstat-no" title="statement not covered" >        if (err) {</span>
+<span class="cstat-no" title="statement not covered" >            if(cb) {</span>
+<span class="cstat-no" title="statement not covered" >                return (err, null);</span>
+            }
+<span class="cstat-no" title="statement not covered" >            console.log(err)</span>
+<span class="cstat-no" title="statement not covered" >            slack.sendMessage('Couldn\'t fetch the queue', channel.id);</span>
+&nbsp;
+        } else {
+<span class="cstat-no" title="statement not covered" >            if(cb) {</span>
+<span class="cstat-no" title="statement not covered" >                return cb(null, result.items);</span>
+            }
+<span class="cstat-no" title="statement not covered" >            _currentTrack(channel, <span class="fstat-no" title="function not covered" >function(err, track) {</span></span>
+<span class="cstat-no" title="statement not covered" >                var message = "Total tracks in queue: " + result.total + "\n"</span>
+                + "====================="
+<span class="cstat-no" title="statement not covered" >                result.items.map(</span>
+<span class="fstat-no" title="function not covered" >                    function(item, i){</span>
+<span class="cstat-no" title="statement not covered" >                        message += "\n";</span>
+<span class="cstat-no" title="statement not covered" >                        if(item['title'] === track.title) {</span>
+<span class="cstat-no" title="statement not covered" >                message += ":notes: " + "_#" + i + "_ *Title:* " + item['title'];</span>
+<span class="cstat-no" title="statement not covered" >                message += " *Artist:* " + item['artist'];</span>
+                        } else {
+<span class="cstat-no" title="statement not covered" >                            message += "&gt;_#" + i + "_ *Title:* " + item['title'];</span>
+<span class="cstat-no" title="statement not covered" >                            message += " *Artist:* " + item['artist'];</span>
+                        }
+                    }
+                )
+<span class="cstat-no" title="statement not covered" >                slack.sendMessage(message, channel.id);</span>
+            });
+        }
+    });
+}
+&nbsp;
+// Need to track what song has had a GONG called
+// If the GONG was called on the previous song, reset
+&nbsp;
+<span class="fstat-no" title="function not covered" >function _gong(channel, userName) {</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  console.log("_gong...");</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >    _currentTrackTitle(channel, <span class="fstat-no" title="function not covered" >function(err, track) {</span></span>
+<span class="cstat-no" title="statement not covered" >        console.log("_gong &gt; track: " + track);</span>
+&nbsp;
+        // Get message
+<span class="cstat-no" title="statement not covered" >        console.log("gongMessage.length: " + gongMessage.length);</span>
+<span class="cstat-no" title="statement not covered" >        var ran = Math.floor(Math.random() * gongMessage.length);</span>
+<span class="cstat-no" title="statement not covered" >        console.log("gongMessage &gt; ran: " + ran);</span>
+<span class="cstat-no" title="statement not covered" >        console.log("gongMessage &gt; gongMessage: " + gongMessage);</span>
+<span class="cstat-no" title="statement not covered" >        var randomMessage = gongMessage[ran];</span>
+<span class="cstat-no" title="statement not covered" >        console.log("gongMessage: " + randomMessage);</span>
+&nbsp;
+        // Need a delay before calling the rest
+<span class="cstat-no" title="statement not covered" >        if(!(userName in gongScore)) {</span>
+<span class="cstat-no" title="statement not covered" >            gongScore[userName] = 1</span>
+<span class="cstat-no" title="statement not covered" >            gongCounter++;</span>
+<span class="cstat-no" title="statement not covered" >            slack.sendMessage(randomMessage + " Oh well.. This is GONG " + gongCounter + " out of " + gongLimit + " for " + track, channel.id);</span>
+<span class="cstat-no" title="statement not covered" >            if(gongCounter &gt;= gongLimit) {</span>
+<span class="cstat-no" title="statement not covered" >                slack.sendMessage("The music got GOONGED!!", channel.id);</span>
+                // _gongPlay(channel, true);
+<span class="cstat-no" title="statement not covered" >                _nextTrack(channel, true)</span>
+<span class="cstat-no" title="statement not covered" >                gongCounter = 0;</span>
+<span class="cstat-no" title="statement not covered" >                gongScore={}</span>
+            }
+        } else{
+<span class="cstat-no" title="statement not covered" >            if(gongScore[userName] &gt;= gongLimitPerUser) {</span>
+<span class="cstat-no" title="statement not covered" >                slack.sendMessage("Are you trying to cheat " + userName + "? DENIED!", channel.id)</span>
+            }else {
+<span class="cstat-no" title="statement not covered" >                gongScore[userName] = gongScore[userName] + 1</span>
+<span class="cstat-no" title="statement not covered" >                gongCounter++;</span>
+<span class="cstat-no" title="statement not covered" >                slack.sendMessage(randomMessage + " Oh well.. This is GONG " + gongCounter + " out of " + gongLimit + " for " + track, channel.id);</span>
+<span class="cstat-no" title="statement not covered" >                if(gongCounter &gt;= gongLimit) {</span>
+<span class="cstat-no" title="statement not covered" >                    slack.sendMessage("The music got GOONGED!", channel.id);</span>
+            //      _gongPlay(channel);
+<span class="cstat-no" title="statement not covered" >                    _nextTrack(channel)</span>
+<span class="cstat-no" title="statement not covered" >                     gongCounter = 0;</span>
+<span class="cstat-no" title="statement not covered" >                     gongScore={}</span>
+                }
+            }
+        }
+    });
+}
+&nbsp;
+<span class="fstat-no" title="function not covered" >function _gongcheck(channel, userName) {</span>
+<span class="cstat-no" title="statement not covered" >    console.log("_gongcheck...");</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  _currentTrackTitle(channel, <span class="fstat-no" title="function not covered" >function(err, track) {</span></span>
+<span class="cstat-no" title="statement not covered" >      console.log("_gongcheck &gt; track: " + track);</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        slack.sendMessage("The GONG is currently " + gongCounter + " out of " + gongLimit + " for " + track, channel.id);</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        var gongers = "";</span>
+<span class="cstat-no" title="statement not covered" >        for (var key in gongScore) {</span>
+<span class="cstat-no" title="statement not covered" >            if (gongers.length &gt; 0) {</span>
+<span class="cstat-no" title="statement not covered" >                gongers += ", " + key;</span>
+            } else {
+<span class="cstat-no" title="statement not covered" >                gongers += key;</span>
+            }
+        }
+&nbsp;
+<span class="cstat-no" title="statement not covered" >      if (gongers.length &gt; 0) {</span>
+<span class="cstat-no" title="statement not covered" >        slack.sendMessage("The GONG'ERS are " + gongers, channel.id);</span>
+      }
+&nbsp;
+    });
+}
+&nbsp;
+&nbsp;
+<span class="fstat-no" title="function not covered" >function _ungong(channel, userName) {</span>
+<span class="cstat-no" title="statement not covered" >    console.log("_ungong...");</span>
+<span class="cstat-no" title="statement not covered" >  slack.sendMessage("DENIED!! As much as you want to listen to this, afraid we belong to the Democratic Republic of Sonos.", channel.id);</span>
+}
+&nbsp;
+&nbsp;
+<span class="fstat-no" title="function not covered" >function _previous(input, channel) {</span>
+<span class="cstat-no" title="statement not covered" >    if(channel.name !== adminChannel){</span>
+<span class="cstat-no" title="statement not covered" >        console.log("Only admins are allowed for this action!")</span>
+<span class="cstat-no" title="statement not covered" >        slack.sendMessage("Only admins are allowed for this action!", channel.id)</span>
+<span class="cstat-no" title="statement not covered" >        return</span>
+    }
+<span class="cstat-no" title="statement not covered" >    sonos.previous(<span class="fstat-no" title="function not covered" >function(err, previous) {</span></span>
+<span class="cstat-no" title="statement not covered" >        console.log(err, previous);</span>
+    });
+}
+&nbsp;
+<span class="fstat-no" title="function not covered" >function _help(input, channel) {</span>
+<span class="cstat-no" title="statement not covered" >    var message = 'Current commands!\n' +</span>
+    '=====================\n' +
+    '`current` : list current track\n' +
+    '`status` : show current status of Sonos\n' +
+    '`search` _text_ : search for a track, does NOT add it to the queue\n' +
+    '`add` _text_ : Add song to the queue and start playing if idle.\n' +
+    '`append` _text_ : Append a song to the previous playlist and start playing the same list again.\n' +
+    '`gong` : The current track is bad! Vote for skipping this track\n' +
+    '`gongcheck` : How many gong votes there are currently, as well as who has GONGED.\n' +
+    '`vote` _exactSongTitle_ : Vote for a specific song title in the queue.\n' +
+    '`volume` : view current volume\n' +
+    '`list` : list current queue\n' +
+    '------ ADMIN FUNCTIONS ------\n' +
+    '`flush` : flush the current queue\n' +
+    '`setvolume` _number_ : sets volume\n' +
+    '`play` : play track\n' +
+    '`stop` : stop life\n' +
+    '`next` : play next track\n' +
+    '`previous` : play previous track\n' +
+    '=====================\n'
+<span class="cstat-no" title="statement not covered" >    slack.sendMessage(message, channel.id);</span>
+}
+&nbsp;
+<span class="fstat-no" title="function not covered" >function _play(input, channel) {</span>
+<span class="cstat-no" title="statement not covered" >    if(channel.name !== adminChannel){</span>
+<span class="cstat-no" title="statement not covered" >        console.log("Only admins are allowed for this action!")</span>
+<span class="cstat-no" title="statement not covered" >        slack.sendMessage("Only admins are allowed for this action!", channel.id)</span>
+<span class="cstat-no" title="statement not covered" >        return</span>
+    }
+<span class="cstat-no" title="statement not covered" >    sonos.selectQueue(<span class="fstat-no" title="function not covered" >function (err, result) {</span></span>
+<span class="cstat-no" title="statement not covered" >        sonos.play(<span class="fstat-no" title="function not covered" >function (err, playing) {</span></span>
+<span class="cstat-no" title="statement not covered" >             console.log([err, playing])</span>
+<span class="cstat-no" title="statement not covered" >                if(playing) {</span>
+<span class="cstat-no" title="statement not covered" >                slack.sendMessage("WHHHHHYYYYYY? Just do an *add* and the music should start..  you´re making me confused....", channel.id);</span>
+                }
+            });
+    });
+}
+&nbsp;
+<span class="fstat-no" title="function not covered" >function _stop(input, channel) {</span>
+<span class="cstat-no" title="statement not covered" >    if(channel.name !== adminChannel){</span>
+<span class="cstat-no" title="statement not covered" >        console.log("Only admins are allowed for this action!")</span>
+<span class="cstat-no" title="statement not covered" >        slack.sendMessage("Only admins are allowed for this action!")</span>
+<span class="cstat-no" title="statement not covered" >        return</span>
+    }
+<span class="cstat-no" title="statement not covered" >    sonos.stop(<span class="fstat-no" title="function not covered" >function (err, stopped) {</span></span>
+<span class="cstat-no" title="statement not covered" >        console.log([err, stopped])</span>
+<span class="cstat-no" title="statement not covered" >        if(stopped) {</span>
+<span class="cstat-no" title="statement not covered" >            slack.sendMessage("Why.. WHYY!?", channel.id);</span>
+        }
+    });
+}
+&nbsp;
+<span class="fstat-no" title="function not covered" >function _flush(input, channel) {</span>
+<span class="cstat-no" title="statement not covered" >    if(channel.name !== adminChannel){</span>
+<span class="cstat-no" title="statement not covered" >        console.log("Only admins are allowed for this action!")</span>
+<span class="cstat-no" title="statement not covered" >        slack.sendMessage("Only admins are allowed for this action!", channel.id)</span>
+<span class="cstat-no" title="statement not covered" >        return</span>
+    }
+<span class="cstat-no" title="statement not covered" >    sonos.flush(<span class="fstat-no" title="function not covered" >function (err, flushed) {</span></span>
+<span class="cstat-no" title="statement not covered" >        console.log([err, flushed])</span>
+<span class="cstat-no" title="statement not covered" >        if(flushed) {</span>
+<span class="cstat-no" title="statement not covered" >            slack.sendMessage('Ok.. clean slate..  Let´s make it better this time!!', channel.id);</span>
+        }
+    });
+}
+&nbsp;
+&nbsp;
+&nbsp;
+<span class="fstat-no" title="function not covered" >function _say(input, channel) {</span>
+<span class="cstat-no" title="statement not covered" >    var text = input[1];</span>
+    // Replace all spaces with a _ because Sonos doesn't support spaces
+<span class="cstat-no" title="statement not covered" >    text = text.replace(/ /g, '_');</span>
+&nbsp;
+    // For supported languages see www.voicerss.org/api/documentation.aspx
+    // This url just redirects to voicerss because of the specific url format for the sonos
+<span class="cstat-no" title="statement not covered" >    var url = 'http://i872953.iris.fhict.nl/speech/en-us_' + encodeURIComponent(text) + '.mp3';</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >    sonos.queueNext(url, <span class="fstat-no" title="function not covered" >function (err, playing) {</span></span>
+<span class="cstat-no" title="statement not covered" >        console.log([err, playing]);</span>
+    });
+}
+&nbsp;
+&nbsp;
+<span class="fstat-no" title="function not covered" >function _gongPlay(channel) {</span>
+<span class="cstat-no" title="statement not covered" >    sonos.play('http://raw.githubusercontent.com/htilly/zenmusic/master/doc/sound/gong.mp3', <span class="fstat-no" title="function not covered" >function (err, playing) {</span></span>
+<span class="cstat-no" title="statement not covered" >        console.log([err, playing])</span>
+    });
+}
+&nbsp;
+&nbsp;
+<span class="fstat-no" title="function not covered" >function _nextTrack(channel, byPassChannelValidation) {</span>
+<span class="cstat-no" title="statement not covered" >    if(channel.name !== adminChannel &amp;&amp; !byPassChannelValidation){</span>
+<span class="cstat-no" title="statement not covered" >        console.log("Only admins are allowed for this action!")</span>
+<span class="cstat-no" title="statement not covered" >        slack.sendMessage("Only admins are allowed for this action!", channel.id)</span>
+<span class="cstat-no" title="statement not covered" >        return</span>
+    }
+<span class="cstat-no" title="statement not covered" >    sonos.next(<span class="fstat-no" title="function not covered" >function (err, nexted) {</span></span>
+<span class="cstat-no" title="statement not covered" >        if(err) {</span>
+<span class="cstat-no" title="statement not covered" >            console.log(err);</span>
+        } else {
+<span class="cstat-no" title="statement not covered" >            slack.sendMessage('Playing the next track...', channel.id);</span>
+        }
+    });
+}
+&nbsp;
+<span class="fstat-no" title="function not covered" >function _currentTrack(channel, cb) {</span>
+<span class="cstat-no" title="statement not covered" >    sonos.currentTrack(<span class="fstat-no" title="function not covered" >function(err, track) {</span></span>
+<span class="cstat-no" title="statement not covered" >        if(err) {</span>
+<span class="cstat-no" title="statement not covered" >            console.log(err);</span>
+<span class="cstat-no" title="statement not covered" >            if(cb) {</span>
+<span class="cstat-no" title="statement not covered" >                return cb(err, null);</span>
+            }
+        } else {
+<span class="cstat-no" title="statement not covered" >            if(cb) {</span>
+<span class="cstat-no" title="statement not covered" >                return cb(null, track);</span>
+            }
+<span class="cstat-no" title="statement not covered" >            console.log(track);</span>
+<span class="cstat-no" title="statement not covered" >            var fmin = ''+Math.floor(track.duration/60);</span>
+<span class="cstat-no" title="statement not covered" >            fmin = fmin.length == 2 ? fmin : '0'+fmin;</span>
+<span class="cstat-no" title="statement not covered" >            var fsec = ''+track.duration%60;</span>
+<span class="cstat-no" title="statement not covered" >            fsec = fsec.length == 2 ? fsec : '0'+fsec;</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >            var pmin = ''+Math.floor(track.position/60);</span>
+<span class="cstat-no" title="statement not covered" >            pmin = pmin.length == 2 ? pmin : '0'+pmin;</span>
+<span class="cstat-no" title="statement not covered" >            var psec = ''+track.position%60;</span>
+<span class="cstat-no" title="statement not covered" >            psec = psec.length == 2 ? psec : '0'+psec;</span>
+&nbsp;
+&nbsp;
+<span class="cstat-no" title="statement not covered" >            var message = 'We´re rocking out to *' + track.artist + '* - *' + track.title + '* ('+pmin+':'+psec+'/'+fmin+':'+fsec+')';</span>
+<span class="cstat-no" title="statement not covered" >            slack.sendMessage(message, channel.id);</span>
+        }
+    });
+}
+&nbsp;
+<span class="fstat-no" title="function not covered" >function _currentTrackTitle(channel, cb) {</span>
+<span class="cstat-no" title="statement not covered" >    sonos.currentTrack(<span class="fstat-no" title="function not covered" >function(err, track) {</span></span>
+<span class="cstat-no" title="statement not covered" >      var _track = "";</span>
+<span class="cstat-no" title="statement not covered" >        if(err) {</span>
+<span class="cstat-no" title="statement not covered" >            console.log(err);</span>
+        } else {
+<span class="cstat-no" title="statement not covered" >            _track = track.title;</span>
+<span class="cstat-no" title="statement not covered" >            console.log("_currentTrackTitle &gt; title: " + _track);</span>
+<span class="cstat-no" title="statement not covered" >            console.log("_currentTrackTitle &gt; gongTrack: " + gongTrack);</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >            if (gongTrack !== "") {</span>
+<span class="cstat-no" title="statement not covered" >              if (gongTrack !== _track) {</span>
+<span class="cstat-no" title="statement not covered" >                console.log("_currentTrackTitle &gt; different track, reset!");</span>
+<span class="cstat-no" title="statement not covered" >                gongCounter = 0;</span>
+<span class="cstat-no" title="statement not covered" >                gongScore={};</span>
+&nbsp;
+                //return cb(err, null);
+              } else {
+<span class="cstat-no" title="statement not covered" >                  console.log("_currentTrackTitle &gt; gongTrack is equal to _track");</span>
+              }
+            } else {
+<span class="cstat-no" title="statement not covered" >                console.log("_currentTrackTitle &gt; gongTrack is empty");</span>
+            }
+&nbsp;
+<span class="cstat-no" title="statement not covered" >            gongTrack = _track;</span>
+&nbsp;
+        }
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        cb(err, _track);</span>
+    });
+}
+&nbsp;
+<span class="fstat-no" title="function not covered" >function _append(input, channel) {</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >    var query = '';</span>
+<span class="cstat-no" title="statement not covered" >    for(var i = 1; i &lt; input.length; i++) {</span>
+<span class="cstat-no" title="statement not covered" >        query += urlencode(input[i]);</span>
+<span class="cstat-no" title="statement not covered" >        if(i &lt; input.length-1) {</span>
+<span class="cstat-no" title="statement not covered" >            query += ' ';</span>
+        }
+    }
+&nbsp;
+<span class="cstat-no" title="statement not covered" >    var getapi = urllibsync.request('https://api.spotify.com/v1/search?q=' + query + '&amp;type=track&amp;limit=1&amp;market=' + market);</span>
+<span class="cstat-no" title="statement not covered" >    var data = JSON.parse(getapi.data.toString());</span>
+<span class="cstat-no" title="statement not covered" >    console.log(data);</span>
+<span class="cstat-no" title="statement not covered" >    if(data.tracks.items &amp;&amp; data.tracks.items.length &gt; 0) {</span>
+<span class="cstat-no" title="statement not covered" >        var spid = data.tracks.items[0].id;</span>
+<span class="cstat-no" title="statement not covered" >        var uri = data.tracks.items[0].uri;</span>
+<span class="cstat-no" title="statement not covered" >        var external_url = data.tracks.items[0].external_urls.spotify;</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        var albumImg = data.tracks.items[0].album.images[2].url;</span>
+<span class="cstat-no" title="statement not covered" >        var trackName = data.tracks.items[0].artists[0].name + ' - ' + data.tracks.items[0].name;</span>
+&nbsp;
+&nbsp;
+        /*
+        var present = false;
+        _showQueue(channel, function(err, res) {
+            res.map(function(it) {
+                if(it.uri.indexOf(spid) &gt; -1) {
+                    present = true;
+                }
+            });
+        });
+        */
+&nbsp;
+<span class="cstat-no" title="statement not covered" >                sonos.getCurrentState(<span class="fstat-no" title="function not covered" >function (err, state) {</span></span>
+<span class="cstat-no" title="statement not covered" >            if(err) {</span>
+<span class="cstat-no" title="statement not covered" >                console.log(err);</span>
+            } else {
+<span class="cstat-no" title="statement not covered" >                        if (state === 'stopped') {</span>
+                    // Ok, lets start again..  NO Flush
+                            //Add the track to playlist...
+&nbsp;
+                            // Old version..  New is supposed to fix 500 problem...
+                            // sonos.addSpotifyQueue(spid, function (err, res) {
+&nbsp;
+<span class="cstat-no" title="statement not covered" >                            sonos.addSpotify(spid, <span class="fstat-no" title="function not covered" >function (err, res) {</span></span>
+<span class="cstat-no" title="statement not covered" >                                var message = '';</span>
+<span class="cstat-no" title="statement not covered" >                                if(res) {</span>
+<span class="cstat-no" title="statement not covered" >                                    var queueLength = res[0].FirstTrackNumberEnqueued;</span>
+<span class="cstat-no" title="statement not covered" >                                    console.log('queueLength', queueLength);</span>
+<span class="cstat-no" title="statement not covered" >                                    message = 'I have added "' + trackName + '" to the queue!\n'+albumImg+'\nPosition in queue is ' + queueLength;</span>
+                                } else {
+<span class="cstat-no" title="statement not covered" >                                    message = 'Error!';</span>
+<span class="cstat-no" title="statement not covered" >                                    console.log(err);</span>
+                                }
+<span class="cstat-no" title="statement not covered" >                                slack.sendMessage(message, channel.id);</span>
+<span class="cstat-no" title="statement not covered" >                                if(res) {</span>
+                                    // And finally..  lets start rocking...
+<span class="cstat-no" title="statement not covered" >                                    sonos.selectQueue(<span class="fstat-no" title="function not covered" >function (err, result) {</span></span>
+<span class="cstat-no" title="statement not covered" >                                        sonos.play(<span class="fstat-no" title="function not covered" >function (err, playing) {</span></span>
+<span class="cstat-no" title="statement not covered" >                                            console.log([err, playing])</span>
+<span class="cstat-no" title="statement not covered" >                                            if(playing) {</span>
+<span class="cstat-no" title="statement not covered" >                                                slack.sendMessage('Appending to old playlist... lack of creativity?!', channel.id);</span>
+                                            }
+                                        });
+                                    });
+                                }
+                   });
+                            } else <span class="cstat-no" title="statement not covered" >if (state === 'playing') {</span>
+                    //Tell them to use add...
+<span class="cstat-no" title="statement not covered" >                   slack.sendMessage("Already playing...  use add..", channel.id)</span>
+                        } else <span class="cstat-no" title="statement not covered" >if (state === 'paused') {</span>
+<span class="cstat-no" title="statement not covered" >                        slack.sendMessage("I'm frozen! Alive!", channel.id)</span>
+                    } else <span class="cstat-no" title="statement not covered" >if (state === 'transitioning') {</span>
+<span class="cstat-no" title="statement not covered" >                        slack.sendMessage("Mayday, mayday! I'm sinking!!", channel.id)</span>
+                    } else <span class="cstat-no" title="statement not covered" >if (state === 'no_media') {</span>
+<span class="cstat-no" title="statement not covered" >                        slack.sendMessage("Nothing to play, nothing to do. I'm rethinking my life", channel.id)</span>
+                    } else {
+<span class="cstat-no" title="statement not covered" >                      slack.sendMessage("No freaking idea. What is this [" + state + "]?", channel.id)</span>
+                    }
+        }
+        });
+    } else {
+<span class="cstat-no" title="statement not covered" >        slack.sendMessage('Sorry could not find that track :( Have your tried using *search* to find it?', channel.id);</span>
+    }
+&nbsp;
+    // return slack.sendMessage("I have now added the following in my queue: " + input[2] + " by " + input[1]+"\n"+"https://api.spotify.com/v1/search?q=" + input[2] + "+" + input[1]+"&amp;type=track&amp;limit=1");
+}
+&nbsp;
+&nbsp;
+&nbsp;
+<span class="fstat-no" title="function not covered" >function _add(input, channel) {</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >    var query = '';</span>
+<span class="cstat-no" title="statement not covered" >    for(var i = 1; i &lt; input.length; i++) {</span>
+<span class="cstat-no" title="statement not covered" >        query += urlencode(input[i]);</span>
+<span class="cstat-no" title="statement not covered" >        if(i &lt; input.length-1) {</span>
+<span class="cstat-no" title="statement not covered" >            query += ' ';</span>
+        }
+    }
+&nbsp;
+<span class="cstat-no" title="statement not covered" >    var getapi = urllibsync.request('https://api.spotify.com/v1/search?q=' + query + '&amp;type=track&amp;limit=1&amp;market=' + market);</span>
+<span class="cstat-no" title="statement not covered" >    var data = JSON.parse(getapi.data.toString());</span>
+<span class="cstat-no" title="statement not covered" >    console.log(data);</span>
+<span class="cstat-no" title="statement not covered" >    if(data.tracks &amp;&amp; data.tracks.items &amp;&amp; data.tracks.items.length &gt; 0) {</span>
+<span class="cstat-no" title="statement not covered" >        var spid = data.tracks.items[0].id;</span>
+<span class="cstat-no" title="statement not covered" >        var uri = data.tracks.items[0].uri;</span>
+<span class="cstat-no" title="statement not covered" >        var external_url = data.tracks.items[0].external_urls.spotify;</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        var albumImg = data.tracks.items[0].album.images[2].url;</span>
+<span class="cstat-no" title="statement not covered" >        var trackName = data.tracks.items[0].artists[0].name + ' - ' + data.tracks.items[0].name;</span>
+&nbsp;
+&nbsp;
+        /*
+        var present = false;
+        _showQueue(channel, function(err, res) {
+            res.map(function(it) {
+                if(it.uri.indexOf(spid) &gt; -1) {
+                    present = true;
+                }
+            });
+        });
+        */
+&nbsp;
+        /*var curQ = _getQueue();
+        console.log('  the length' + curQ.items.length);
+&nbsp;
+        var present = false;
+        for(var i = 1; i &lt; curQ.items.length; i++) {
+            console.log('  the item' + curQ.items[i]);
+        } */
+&nbsp;
+/*
+        sonos.getQueue(function (err, result) {
+            var present = false;
+            for(var i = 1; i &lt; result.items.length; i++) {
+                console.log('  the item' + result.items[i]);
+                if(!present &amp;&amp; result.items[i].uri.indexOf(spid) &gt; -1) {
+                    console.log(' Found the requested track in the queue')
+                    present = true;
+                }
+            }
+&nbsp;
+        });
+*/
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        sonos.getCurrentState(<span class="fstat-no" title="function not covered" >function (err, state) {</span></span>
+<span class="cstat-no" title="statement not covered" >            if(err) {</span>
+<span class="cstat-no" title="statement not covered" >                console.log(err);</span>
+            } else {
+<span class="cstat-no" title="statement not covered" >                if (state === 'stopped') {</span>
+                    // Ok, lets start again..  Flush old playlist
+<span class="cstat-no" title="statement not covered" >                    sonos.flush(<span class="fstat-no" title="function not covered" >function (err, flushed) {</span></span>
+<span class="cstat-no" title="statement not covered" >                        console.log([err, flushed])</span>
+<span class="cstat-no" title="statement not covered" >                        if(flushed) {</span>
+<span class="cstat-no" title="statement not covered" >                            slack.sendMessage('Clean slate..  Let´s make it better this time!!', channel.id);</span>
+                            //Then add the track to playlist...
+&nbsp;
+                            // Old version..  New is supposed to fix 500 problem...
+                            // sonos.addSpotifyQueue(spid, function (err, res) {
+&nbsp;
+<span class="cstat-no" title="statement not covered" >                            sonos.addSpotify(spid, <span class="fstat-no" title="function not covered" >function (err, res) {</span></span>
+<span class="cstat-no" title="statement not covered" >                                var message = '';</span>
+<span class="cstat-no" title="statement not covered" >                                if(res) {</span>
+<span class="cstat-no" title="statement not covered" >                                    var queueLength = res[0].FirstTrackNumberEnqueued;</span>
+<span class="cstat-no" title="statement not covered" >                                    console.log('queueLength', queueLength);</span>
+<span class="cstat-no" title="statement not covered" >                                    message = 'I have added "' + trackName + '" to the queue!\n'+albumImg+'\nPosition in queue is ' + queueLength;</span>
+                                } else {
+<span class="cstat-no" title="statement not covered" >                                    message = 'Error!';</span>
+<span class="cstat-no" title="statement not covered" >                                    console.log(err);</span>
+                                }
+<span class="cstat-no" title="statement not covered" >                                slack.sendMessage(message, channel.id);</span>
+<span class="cstat-no" title="statement not covered" >                                if(res) {</span>
+                                    // And finally..  lets start rocking...
+<span class="cstat-no" title="statement not covered" >                                    sonos.selectQueue(<span class="fstat-no" title="function not covered" >function (err, result) {</span></span>
+<span class="cstat-no" title="statement not covered" >                                        sonos.play(<span class="fstat-no" title="function not covered" >function (err, playing) {</span></span>
+<span class="cstat-no" title="statement not covered" >                                            console.log([err, playing])</span>
+<span class="cstat-no" title="statement not covered" >                                            if(playing) {</span>
+<span class="cstat-no" title="statement not covered" >                                                slack.sendMessage('Flushed old playlist...  Time to rock again!', channel.id);</span>
+                                            }
+                                        });
+                                    });
+                                }
+                            });
+                        }
+                    });
+                } else <span class="cstat-no" title="statement not covered" >if (state === 'playing') {</span>
+                    //Add the track to playlist...
+&nbsp;
+                    // Old version..  New is supposed to fix 500 problem...
+                    // sonos.addSpotifyQueue(spid, function (err, res) {
+&nbsp;
+<span class="cstat-no" title="statement not covered" >                    sonos.addSpotify(spid, <span class="fstat-no" title="function not covered" >function (err, res) {</span></span>
+<span class="cstat-no" title="statement not covered" >                        var message = '';</span>
+<span class="cstat-no" title="statement not covered" >                        if(res) {</span>
+<span class="cstat-no" title="statement not covered" >                            var queueLength = res[0].FirstTrackNumberEnqueued;</span>
+<span class="cstat-no" title="statement not covered" >                            console.log('queueLength', queueLength);</span>
+<span class="cstat-no" title="statement not covered" >                            message = 'I have added "' + trackName + '" to the queue!\n'+albumImg+'\nPosition in queue is ' + queueLength;</span>
+                        } else {
+<span class="cstat-no" title="statement not covered" >                            message = 'Error!';</span>
+<span class="cstat-no" title="statement not covered" >                            console.log(err);</span>
+                        }
+<span class="cstat-no" title="statement not covered" >                        slack.sendMessage(message, channel.id)</span>
+                    });
+                } else <span class="cstat-no" title="statement not covered" >if (state === 'paused') {</span>
+<span class="cstat-no" title="statement not covered" >                    slack.sendMessage("I'm frozen! Alive!", channel.id)</span>
+                } else <span class="cstat-no" title="statement not covered" >if (state === 'transitioning') {</span>
+<span class="cstat-no" title="statement not covered" >                    slack.sendMessage("Mayday, mayday! I'm sinking!!", channel.id)</span>
+                } else <span class="cstat-no" title="statement not covered" >if (state === 'no_media') {</span>
+<span class="cstat-no" title="statement not covered" >                    slack.sendMessage("Nothing to play, nothing to do. I'm rethinking my life", channel.id)</span>
+                } else {
+<span class="cstat-no" title="statement not covered" >                  slack.sendMessage("No freaking idea. What is this [" + state + "]?", channel.id)</span>
+                }
+            }
+        });
+    } else {
+<span class="cstat-no" title="statement not covered" >        slack.sendMessage('Sorry could not find that track :( Have your tried using *search* to find it?', channel.id);</span>
+    }
+&nbsp;
+    // return slack.sendMessage("I have now added the following in my queue: " + input[2] + " by " + input[1]+"\n"+"https://api.spotify.com/v1/search?q=" + input[2] + "+" + input[1]+"&amp;type=track&amp;limit=1");
+}
+&nbsp;
+/*
+function _search(input, channel) {
+&nbsp;
+    var query = '';
+    for(var i = 1; i &lt; input.length; i++) {
+        query += urlencode(input[i]);
+        if(i &lt; input.length-1) {
+            query += ' ';
+        }
+    }
+&nbsp;
+    var getapi = urllibsync.request('https://api.spotify.com/v1/search?q=' + query + '&amp;type=track&amp;limit=3');
+    var data = JSON.parse(getapi.data.toString());
+    console.log(data);
+     if(data.tracks &amp;&amp; data.tracks.items &amp;&amp; data.tracks.items.length &gt; 0) {
+        var spid = data.tracks.items[0].id;
+        var uri = data.tracks.items[0].uri;
+        var external_url = data.tracks.items[0].external_urls.spotify;
+&nbsp;
+        var albumImg = data.tracks.items[0].album.images[2].url;
+        var trackName = data.tracks.items[0].artists[0].name + ' - ' + data.tracks.items[0].name;
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+            //Print the result...
+            message = 'I found the following track: "' + trackName + '" if you want to play it, use the add command..\n';
+            slack.sendMessage(message, channel.id)
+&nbsp;
+&nbsp;
+            } else {
+            slack.sendMessage('Sorry could not find that track :(', channel.id);
+    }
+}
+&nbsp;
+*/
+<span class="fstat-no" title="function not covered" >function _search(input, channel) {</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >    var query = '';</span>
+<span class="cstat-no" title="statement not covered" >    for(var i = 1; i &lt; input.length; i++) {</span>
+<span class="cstat-no" title="statement not covered" >        query += urlencode(input[i]);</span>
+<span class="cstat-no" title="statement not covered" >        if(i &lt; input.length-1) {</span>
+<span class="cstat-no" title="statement not covered" >            query += ' ';</span>
+        }
+    }
+&nbsp;
+<span class="cstat-no" title="statement not covered" >    var getapi = urllibsync.request('https://api.spotify.com/v1/search?q=' + query + '&amp;type=track&amp;limit=3&amp;market=' + market);</span>
+<span class="cstat-no" title="statement not covered" >    var data = JSON.parse(getapi.data.toString());</span>
+<span class="cstat-no" title="statement not covered" >    console.log(data);</span>
+<span class="cstat-no" title="statement not covered" >    if(data.tracks &amp;&amp; data.tracks.items &amp;&amp; data.tracks.items.length &gt; 0) {</span>
+<span class="cstat-no" title="statement not covered" >        var trackNames = [];</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        for(var i = 1; i &lt;= data.tracks.items.length; i++) {</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >            var spid = data.tracks.items[i-1].id;</span>
+<span class="cstat-no" title="statement not covered" >            var uri = data.tracks.items[i-1].uri;</span>
+<span class="cstat-no" title="statement not covered" >            var external_url = data.tracks.items[i-1].external_urls.spotify;</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >            var albumImg = data.tracks.items[i-1].album.images[2].url;</span>
+<span class="cstat-no" title="statement not covered" >            var trackName = data.tracks.items[i-1].artists[0].name + ' - ' + data.tracks.items[i-1].name;</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >            trackNames.push(trackName);</span>
+&nbsp;
+        }
+&nbsp;
+        //Print the result...
+<span class="cstat-no" title="statement not covered" >        message = 'I found the following track(s):\n```\n' + trackNames.join('\n') + '\n```\nIf you want to play it, use the `add` command..\n';</span>
+<span class="cstat-no" title="statement not covered" >        slack.sendMessage(message, channel.id)</span>
+&nbsp;
+    } else {
+<span class="cstat-no" title="statement not covered" >        slack.sendMessage('Sorry could not find that track :(', channel.id);</span>
+    }
+}
+&nbsp;
+&nbsp;
+&nbsp;
+<span class="fstat-no" title="function not covered" >function _vote(text, channel, userName) {</span>
+<span class="cstat-no" title="statement not covered" >    var trackName = text.substring(text.indexOf(' ')+1)</span>
+<span class="cstat-no" title="statement not covered" >    sonos.getQueue(<span class="fstat-no" title="function not covered" >function (err, result) {</span></span>
+<span class="cstat-no" title="statement not covered" >        if (err || !result) {</span>
+<span class="cstat-no" title="statement not covered" >            console.log(err)</span>
+<span class="cstat-no" title="statement not covered" >            slack.sendMessage('Couldn\'t fetch the queue', channel.id);</span>
+        } else {
+<span class="cstat-no" title="statement not covered" >            for(var i = 0; i &lt; result.items.length; i++)</span>
+            {
+<span class="cstat-no" title="statement not covered" >                var item = result.items[i]</span>
+<span class="cstat-no" title="statement not covered" >                if(item['title'] === trackName){</span>
+<span class="cstat-no" title="statement not covered" >                    if(trackName in votes)</span>
+                    {
+<span class="cstat-no" title="statement not covered" >                        var listOfVotes = votes[trackName]</span>
+<span class="cstat-no" title="statement not covered" >                        var votedTimes = 0</span>
+<span class="cstat-no" title="statement not covered" >                        for(var i = 0; i &lt; listOfVotes.length; ++i)</span>
+                        {
+<span class="cstat-no" title="statement not covered" >                            if(listOfVotes[i] === userName)</span>
+                            {
+<span class="cstat-no" title="statement not covered" >                                votedTimes++;</span>
+                            }
+                        }
+&nbsp;
+<span class="cstat-no" title="statement not covered" >                        if(votedTimes &gt;= voteLimit)</span>
+                        {
+<span class="cstat-no" title="statement not covered" >                            slack.sendMessage("Voting so many times " + userName + "! DENIED!", channel.id)</span>
+<span class="cstat-no" title="statement not covered" >                            return</span>
+                        }else
+                        {
+<span class="cstat-no" title="statement not covered" >                            votes[trackName].push(userName)</span>
+<span class="cstat-no" title="statement not covered" >                            slack.sendMessage("Valid vote by " + userName + "!", channel.id)</span>
+<span class="cstat-no" title="statement not covered" >                            votedTimes++</span>
+                        }
+<span class="cstat-no" title="statement not covered" >                        if(votedTimes &gt;= voteVictory)</span>
+                        {
+<span class="cstat-no" title="statement not covered" >                            slack.sendMessage("Vote passed! Will put " + trackName + " on top! Will reset votes for this track.", channel.id)</span>
+<span class="cstat-no" title="statement not covered" >                            delete votes[trackName]</span>
+                            // Should play item
+<span class="cstat-no" title="statement not covered" >                            _currentTrack(channel,</span>
+<span class="fstat-no" title="function not covered" >                                function(error, track){</span>
+<span class="cstat-no" title="statement not covered" >                                    sonos.addSpotifyTagToPositionInQueue(item['uri'], track.positionInQueue + 1, <span class="fstat-no" title="function not covered" >function (err, result) {</span></span>
+<span class="cstat-no" title="statement not covered" >                                        if (err) {<span class="cstat-no" title="statement not covered" >console.log(err)}</span></span>
+                                            else{<span class="cstat-no" title="statement not covered" >_nextTrack(channel, true);}</span>
+                                    })
+                                }
+                            )
+                        }
+                    }else{
+<span class="cstat-no" title="statement not covered" >                        votes[trackName] = [userName]</span>
+<span class="cstat-no" title="statement not covered" >                        slack.sendMessage("Valid vote by " + userName + "!", channel.id)</span>
+                    }
+<span class="cstat-no" title="statement not covered" >                    return</span>
+                }
+            }
+        }
+    })
+}
+&nbsp;
+<span class="fstat-no" title="function not covered" >function _status(channel){</span>
+<span class="cstat-no" title="statement not covered" >    sonos.getCurrentState(<span class="fstat-no" title="function not covered" >function (err, state) {</span></span>
+<span class="cstat-no" title="statement not covered" >        if(err) {</span>
+<span class="cstat-no" title="statement not covered" >                console.log(err);</span>
+            } else {
+<span class="cstat-no" title="statement not covered" >                if (state === 'stopped') {</span>
+<span class="cstat-no" title="statement not covered" >                  slack.sendMessage("Sonos is currently sleeping!", channel.id)</span>
+            } else <span class="cstat-no" title="statement not covered" >if (state === 'playing') {</span>
+<span class="cstat-no" title="statement not covered" >                slack.sendMessage("Sonos is rocking!", channel.id)</span>
+            } else <span class="cstat-no" title="statement not covered" >if (state === 'paused') {</span>
+<span class="cstat-no" title="statement not covered" >                slack.sendMessage("I'm frozen! Alive!", channel.id)</span>
+                } else <span class="cstat-no" title="statement not covered" >if (state === 'transitioning') {</span>
+<span class="cstat-no" title="statement not covered" >                slack.sendMessage("Mayday, mayday! I'm sinking!!", channel.id)</span>
+                } else <span class="cstat-no" title="statement not covered" >if (state === 'no_media') {</span>
+<span class="cstat-no" title="statement not covered" >                slack.sendMessage("Nothing to play, nothing to do. I'm rethinking my life", channel.id)</span>
+                }else{
+<span class="cstat-no" title="statement not covered" >                    slack.sendMessage("No freaking idea. What is this [" + state + "]?", channel.id)</span>
+            }
+            }
+        });
+}
+/*
+var string = "foo",
+    substring = "oo";
+console.log(string.indexOf(substring) &gt; -1);
+*/
+&nbsp;
+/*{ album:
+   { album_type: 'album',
+     available_markets: [ 'DK', 'FI', 'IS', 'NO', 'SE' ],
+     external_urls: { spotify: 'https://open.spotify.com/album/1bXZgkeQPmgQuFbpyPvU64' },
+     href: 'https://api.spotify.com/v1/albums/1bXZgkeQPmgQuFbpyPvU64',
+     id: '1bXZgkeQPmgQuFbpyPvU64',
+     images: [ [Object], [Object], [Object] ],
+     name: 'Meliora',
+     type: 'album',
+     uri: 'spotify:album:1bXZgkeQPmgQuFbpyPvU64' },
+  artists:
+   [ { external_urls: [Object],
+       href: 'https://api.spotify.com/v1/artists/1Qp56T7n950O3EGMsSl81D',
+       id: '1Qp56T7n950O3EGMsSl81D',
+       name: 'Ghost B.C.',
+       type: 'artist',
+       uri: 'spotify:artist:1Qp56T7n950O3EGMsSl81D' } ],
+  available_markets: [ 'DK', 'FI', 'IS', 'NO', 'SE' ],
+  disc_number: 1,
+  duration_ms: 253178,
+  explicit: false,
+  external_ids: { isrc: 'SEUM71500676' },
+  external_urls: { spotify: 'https://open.spotify.com/track/7mAbzwRo89VEKfXbHWdJr8' },
+  href: 'https://api.spotify.com/v1/tracks/7mAbzwRo89VEKfXbHWdJr8',
+  id: '7mAbzwRo89VEKfXbHWdJr8',
+  name: 'He Is',
+  popularity: 68,
+  preview_url: 'https://p.scdn.co/mp3-preview/efa92c62f5ada9c50b75ac46740904e3375b2205',
+  track_number: 5,
+  type: 'track',
+  uri: 'spotify:track:7mAbzwRo89VEKfXbHWdJr8' }*/
+&nbsp;
+// Playing with Travis.
+// Just something that will return a value
+&nbsp;
+module.exports = function(number, locale) {
+    return number.toLocaleString(locale);
+};
+&nbsp;</pre></td></tr>
+</table></pre>
+<div class='push'></div><!-- for sticky footer -->
+</div><!-- /wrapper -->
+<div class='footer quiet pad2 space-top1 center small'>
+  Code coverage
+  generated by <a href="http://istanbul-js.org/" target="_blank">istanbul</a> at Wed Nov 30 2016 20:53:13 GMT+0100 (CET)
+</div>
+</div>
+<script src="../prettify.js"></script>
+<script>
+window.onload = function () {
+        if (typeof prettyPrint === 'function') {
+            prettyPrint();
+        }
+};
+</script>
+<script src="../sorter.js"></script>
+</body>
+</html>
