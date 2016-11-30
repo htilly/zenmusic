@@ -827,28 +827,27 @@ function _search(input, channel) {
     var data = JSON.parse(getapi.data.toString());
     console.log(data);
     if(data.tracks && data.tracks.items && data.tracks.items.length > 0) {
+        var trackNames = [];
 
         for(var i = 1; i <= data.tracks.items.length; i++) {
 
+            var spid = data.tracks.items[i-1].id;
+            var uri = data.tracks.items[i-1].uri;
+            var external_url = data.tracks.items[i-1].external_urls.spotify;
 
+            var albumImg = data.tracks.items[i-1].album.images[2].url;
+            var trackName = data.tracks.items[i-1].artists[0].name + ' - ' + data.tracks.items[i-1].name;
 
-        var spid = data.tracks.items[i-1].id;
-        var uri = data.tracks.items[i-1].uri;
-        var external_url = data.tracks.items[i-1].external_urls.spotify;
-
-        var albumImg = data.tracks.items[i-1].album.images[2].url;
-        var trackName = data.tracks.items[i-1].artists[0].name + ' - ' + data.tracks.items[i-1].name;
-
-
-
-
-            //Print the result...
-            message = 'I found the following track: "' + trackName + '" if you want to play it, use the add command..\n';
-            slack.sendMessage(message, channel.id)
+            trackNames.push(trackName);
 
         }
-            } else {
-            slack.sendMessage('Sorry could not find that track :(', channel.id);
+
+        //Print the result...
+        message = 'I found the following track(s):\n```\n' + trackNames.join('\n') + '\n```\nIf you want to play it, use the `add` command..\n';
+        slack.sendMessage(message, channel.id)
+
+    } else {
+        slack.sendMessage('Sorry could not find that track :(', channel.id);
     }
 }
 
