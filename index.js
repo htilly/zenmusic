@@ -70,7 +70,6 @@ let slack = new RtmClient(token, {
   autoMark: true
 });
 
-
 slack.on('open', function() {
     var channel, channels, group, groups, id, messages, unreads;
     channels = [standardChannel];
@@ -113,8 +112,6 @@ slack.on('open', function() {
     return console.log("You have " + unreads + " unread " + messages);
 
 });
-
-
 
 slack.on(RTM_EVENTS.MESSAGE, (message) => {
    let channel, channelError, channelName, errors, response, text, textError, ts, type, typeError, user, userName;
@@ -419,8 +416,8 @@ function _help(input, channel) {
     '`next` : play next track\n' +
     '`previous` : play previous track\n' +
     '`blacklist` : show users on blacklist\n' +
-    '`blacklist add username` : add `username` (without @) to blacklist\n' +
-    '`blacklist del username` : remove `username` (without @) from blacklist\n' +
+    '`blacklist add @username` : add `@username` to the blacklist\n' +
+    '`blacklist del @username` : remove `@username` from the blacklist\n' +
     '=====================\n'
     slack.sendMessage(message, channel.id);
 }
@@ -955,10 +952,13 @@ function _blacklist(input, channel){
     }
 
     var action = ((input[1]) ? input[1] : '');
-    var username = ((input[2]) ? '@'+input[2] : '');
+    var slackUser = ((input[2]) ? slack.dataStore.getUserById(input[2].slice(2, -1)) : '');
+    if (slackUser != '') {
+        var username = '@'+slackUser.name;
+    }
 
     if (action == '') {
-        message = 'The following user(s) are blacklisted:\n```\n' + blacklist.join('\n') + '\n```';
+        message = 'The following users are blacklisted:\n```\n' + blacklist.join('\n') + '\n```';
 
     } else if (action == 'add' && username != '') {
         var i = blacklist.indexOf(username);
