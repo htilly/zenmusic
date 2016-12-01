@@ -4,8 +4,9 @@
   "description": "Zen sonos project",
   "main": "index.js",
   "scripts": {
+    "pretest": "if [ ! -f 'config.json' ]; then cp config.json.example config.json; fi",
     "test": "mocha --reporter spec",
-     "cover": "node_modules/istanbul/lib/cli.js cover node_modules/mocha/bin/_mocha -- -R spec test/*"
+    "cover": "npm run pretest; node_modules/istanbul/lib/cli.js cover node_modules/mocha/bin/_mocha -- --opts test/mocha.opts test/* -R spec"
   },
   "keywords": [
     "sonos",
@@ -28,8 +29,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "htmlencode": "0.0.4",
     "@slack/client": "^3.5.1",
+    "htmlencode": "0.0.4",
+    "nconf": "^0.8.4",
     "sonos": "git+https://github.com/bencevans/node-sonos.git#master",
     "urlencode": "^1.1.0",
     "urllib-sync": "^1.1.2"

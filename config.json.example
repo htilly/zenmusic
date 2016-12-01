@@ -4,5 +4,6 @@
     "sonos" : "IP_TO_SONOS",
     "token" : "SLACK:TOKEN",
     "market" : "US",
-    "maxVolume" : 75
+    "maxVolume" : 75,
+    "blacklist" : "@justin.bieber, @one.direction"
 }
