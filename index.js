@@ -1,20 +1,30 @@
-var fs = require('fs');
 var Sonos = require('sonos').Sonos
-var configFile = 'config.json';
-var configure = JSON.parse(
-    fs.readFileSync(configFile)
-);
-var sonos = new Sonos(configure.sonos);
-var adminChannel = configure.adminChannel;
-var maxVolume = configure.maxVolume;
-var market = configure.market;
-var standardChannel = configure.standardChannel;
 var urllibsync = require('urllib-sync');
 var urlencode = require('urlencode');
-var blacklistFile = 'blacklist.txt';
-var useBlacklist = false;
+var fs = require('fs');
+var config = require('nconf');
 
-token = configure.token;
+config.argv()
+  .env()
+  .file({ file: 'config.json' })
+  .defaults({
+    'adminChannel':    'music-admin',
+    'standardChannel': 'music',
+    'maxVolume':       '75',
+    'market':          'US',
+    'blacklist':       []
+  });
+
+var adminChannel = config.get('adminChannel');
+var standardChannel = config.get('standardChannel');
+var sonos = new Sonos(config.get('sonos'));
+var token = config.get('token');
+var maxVolume = config.get('maxVolume');
+var market = config.get('market');
+var blacklist = config.get('blacklist');
+if(!Array.isArray(blacklist)) {
+    blacklist = blacklist.replace(/\s*(,|^|$)\s*/g, "$1").split(/\s*,\s*/);
+}
 
 var gongCounter = 0;
 var gongLimit = 3;
@@ -48,12 +58,6 @@ http.createServer(function(request, response) {
 
 */
 
-
-fs.stat(blacklistFile, function fsStat(err, stats) {
-    if (!err) {
-        useBlacklist = true;
-    }
-});
 
 const RtmClient = require('@slack/client').RtmClient;
 const RTM_EVENTS = require('@slack/client').RTM_EVENTS;
@@ -125,86 +129,86 @@ slack.on(RTM_EVENTS.MESSAGE, (message) => {
     console.log("Received: " + type + " " + channelName + " " + userName + " " + ts + " \"" + text + "\"");
     if (type === 'message' && (text != null) && (channel != null)) {
 
-        // Very simple BAN function. Set usernames in blacklist.txt
-        if (useBlacklist) {
-            var blacklist = fs.readFileSync(blacklistFile);
-            if (blacklist.indexOf(userName) !== -1) {
-                console.log('User ' + userName + ' is blacklisted');
-                slack.sendMessage("Nice try " + userName + ", you're banned :)", channel.id)
-                return false;
-            }
-        }
+        if (blacklist.indexOf(userName) !== -1) {
+            console.log('User ' + userName + ' is blacklisted');
+            slack.sendMessage("Nice try " + userName + ", you're banned :)", channel.id)
+            return false;
 
-        input = text.split(' ');
-        var term = input[0].toLowerCase();
-        console.log('term', term);
-        switch(term) {
-            case 'add':
-                _add(input, channel);
-            break;
-            case 'search':
-                _search(input, channel);
-            break;
-            case 'append':
-                _append(input, channel);
-            break;
-            case 'next':
-                _nextTrack(channel);
-            break;
-            case 'gongPlay':
-                _gongPlay(input, channel);
-            break;
-            case 'stop':
-                _stop(input, channel);
-            break;
-            case 'flush':
-                _flush(input, channel);
-            break;
-            case 'play':
-                _play(input, channel);
-            break;
-            case 'help':
-                _help(input, channel);
-            break;
-            case 'dong':
-            case 'gong':
-                _gong(channel, userName);
-            break;
-            case 'gongcheck':
-                _gongcheck(channel, userName);
-            break;
-            case 'ungong':
-                _ungong(channel, userName);
-            break;
-            case 'say':
-                // _say(input, channel);
-            break;
-            case 'current':
-                _currentTrack(channel);
-            break;
-            case 'vote':
-                _vote(text, channel, userName);
-            break;
-            case 'previous':
-                _previous(input, channel);
-            break;
-            case 'list':
-            case 'ls':
-            case 'playlist':
-                _showQueue(channel);
-            break;
-            case 'volume':
-                _getVolume(channel);
-            break;
-            case 'setvolume':
-                _setVolume(input, channel);
-            break;
-            case 'status':
-                _status(channel);
-            break;
-            default:
-            break;
-        }
+        } else {
+
+            input = text.split(' ');
+            var term = input[0].toLowerCase();
+            console.log('term', term);
+            switch(term) {
+                case 'add':
+                    _add(input, channel);
+                break;
+                case 'search':
+                    _search(input, channel);
+                break;
+                case 'append':
+                    _append(input, channel);
+                break;
+                case 'next':
+                    _nextTrack(channel);
+                break;
+                case 'gongPlay':
+                    _gongPlay(input, channel);
+                break;
+                case 'stop':
+                    _stop(input, channel);
+                break;
+                case 'flush':
+                    _flush(input, channel);
+                break;
+                case 'play':
+                    _play(input, channel);
+                break;
+                case 'help':
+                    _help(input, channel);
+                break;
+                case 'dong':
+                case 'gong':
+                    _gong(channel, userName);
+                break;
+                case 'gongcheck':
+                    _gongcheck(channel, userName);
+                break;
+                case 'ungong':
+                    _ungong(channel, userName);
+                break;
+                case 'say':
+                    // _say(input, channel);
+                break;
+                case 'current':
+                    _currentTrack(channel);
+                break;
+                case 'vote':
+                    _vote(text, channel, userName);
+                break;
+                case 'previous':
+                    _previous(input, channel);
+                break;
+                case 'list':
+                case 'ls':
+                case 'playlist':
+                    _showQueue(channel);
+                break;
+                case 'volume':
+                    _getVolume(channel);
+                break;
+                case 'setvolume':
+                    _setVolume(input, channel);
+                break;
+                case 'status':
+                    _status(channel);
+                break;
+                default:
+                break;
+            }
+
+        } // end if blacklist
+
     } else {
         typeError = type !== 'message' ? "unexpected type " + type + "." : null;
         textError = text == null ? 'text was undefined.' : null;

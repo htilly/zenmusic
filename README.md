@@ -27,9 +27,18 @@ Uses https://github.com/bencevans/node-sonos to controll Sonos.
 Server running the index.js needs to be able to talk to the Sonos on port 1400 (TCP)
 Sonos needs to be configured and setup with Spotify and have access to internet.
 
-**Configure**
-
-Set all values in config.json
+**Configuration**
+You must provide the token of your Slack bot and the IP of your Sonos in either config.json (see config.json.example), as arguments or as environment variables.
+Examples:
+```bash
+node index.js --token "MySlackBotToken" --sonos "192.168.0.1"
+```
+or
+```bash
+token="MySlackBotToken" sonos="192.168.0.1" node index.js
+```
+You can also provide any of the other variables from config.json.example as arguments or environment variables.
+The blacklist can be provided as either an array in config.json, or as a comma-separated string when using arguments or environment variables.
 
 Logo for the bot in #Slack can be found at "doc/images/ZenMusic.png
 
