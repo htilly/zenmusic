@@ -441,7 +441,7 @@ function _play(input, channel) {
 function _stop(input, channel) {
     if(channel.name !== adminChannel){
         console.log("Only admins are allowed for this action!")
-        slack.sendMessage("Only admins are allowed for this action!")
+        slack.sendMessage("Only admins are allowed for this action!", channel.id)
         return
     }
     sonos.stop(function (err, stopped) {
@@ -947,7 +947,7 @@ function _status(channel){
 function _blacklist(input, channel){
     if (channel.name !== adminChannel) {
         console.log("Only admins are allowed for this action!")
-        slack.sendMessage("Only admins are allowed for this action!")
+        slack.sendMessage("Only admins are allowed for this action!", channel.id)
         return
     }
 
