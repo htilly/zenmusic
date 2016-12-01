@@ -953,32 +953,39 @@ function _blacklist(input, channel){
 
     var action = ((input[1]) ? input[1] : '');
     var slackUser = ((input[2]) ? slack.dataStore.getUserById(input[2].slice(2, -1)) : '');
-    if (slackUser != '') {
+
+    if (input[2] != '' && typeof slackUser !== 'undefined') {
         var username = '@'+slackUser.name;
+    } else if (input[2] != '') {
+        message = 'The user ' + (input[2]) + ' is not a valid Slack user.';
     }
 
     if (action == '') {
         message = 'The following users are blacklisted:\n```\n' + blacklist.join('\n') + '\n```';
 
-    } else if (action == 'add' && username != '') {
-        var i = blacklist.indexOf(username);
-        if (i == -1) {
-            blacklist.push(username);
-            message = 'The user ' + username + ' has been added to the blacklist.';
-        } else {
-            message = 'The user ' + username + ' is already on the blacklist.';
-        }
+    } else if (typeof username !== 'undefined') {
 
-    } else if (action == 'del' && username != '') {
-        var i = blacklist.indexOf(username);
-        if (i != -1) {
-            blacklist.splice(i, 1);
-            message = 'The user ' + username + ' has been removed from the blacklist.';
+        if (action == 'add') {
+            var i = blacklist.indexOf(username);
+            if (i == -1) {
+                blacklist.push(username);
+                message = 'The user ' + username + ' has been added to the blacklist.';
+            } else {
+                message = 'The user ' + username + ' is already on the blacklist.';
+            }
+
+        } else if (action == 'del') {
+            var i = blacklist.indexOf(username);
+            if (i != -1) {
+                blacklist.splice(i, 1);
+                message = 'The user ' + username + ' has been removed from the blacklist.';
+            } else {
+                message = 'The user ' + username + ' is not on the blacklist.';
+            }
+
         } else {
-            message = 'The user ' + username + ' is not on the blacklist.';
+            message = 'Usage: `blacklist add|del @username`';
         }
-    } else {
-        message = 'Usage: `blacklist add|del username`';
     }
     slack.sendMessage(message, channel.id)
 }
