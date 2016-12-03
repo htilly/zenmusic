@@ -77,6 +77,13 @@ Please use it to get some music in the office / home.
 
 We would appreciate if you drop a comment or send a pm... and please feel free to add / change stuff!! Much appreciated!
 
+**Installation**
+
+For installation, see the file INSTALL.
+
+Or have a look at the Wiki.
+https://github.com/htilly/zenmusic/wiki
+
 
 **KnownBugs**
 
