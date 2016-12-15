@@ -425,7 +425,7 @@ function _help(input, channel) {
 function _play(input, channel) {
     if(channel.name !== adminChannel){
         console.log("Only admins are allowed for this action!")
-        slack.sendMessage("Only admins are allowed for this action!", channel.id)
+        slack.sendMessage("Only admins are allowed for this action! Try using *add* and I will start playing your music!", channel.id)
         return
     }
     sonos.selectQueue(function (err, result) {
