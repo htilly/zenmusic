@@ -133,7 +133,7 @@ slack.on(RTM_EVENTS.MESSAGE, (message) => {
 
         } else {
 
-            input = text.split(' ');
+            var input = text.split(' ');
             var term = input[0].toLowerCase();
             console.log('term', term);
             switch(term) {
@@ -853,7 +853,7 @@ function _search(input, channel) {
         }
 
         //Print the result...
-        message = 'I found the following track(s):\n```\n' + trackNames.join('\n') + '\n```\nIf you want to play it, use the `add` command..\n';
+        var message = 'I found the following track(s):\n```\n' + trackNames.join('\n') + '\n```\nIf you want to play it, use the `add` command..\n';
         slack.sendMessage(message, channel.id)
 
     } else {
