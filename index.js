@@ -109,7 +109,7 @@ slack.on('open', function() {
     var message = ":notes: " + "Im back!!" + "\n";
     // slack.sendMessage(message);
 
-    return console.log("You have " + unreads + " unread " + messages);
+    return console.log("Starting...");
 
 });
 
