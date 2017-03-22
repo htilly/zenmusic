@@ -902,7 +902,7 @@ function _vote(text, channel, userName) {
                             slack.sendMessage("Valid vote by " + userName + "!", channel.id)
                             votedTimes++
                         }
-                        if(votedTimes >= voteVictory)
+                        if(listOfVotes.length >= voteVictory)
                         {
                             slack.sendMessage("Vote passed! Will put " + trackName + " on top! Will reset votes for this track.", channel.id)
                             delete votes[trackName]
