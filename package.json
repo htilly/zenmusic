@@ -34,7 +34,8 @@
     "nconf": "^0.8.4",
     "sonos": "git+https://github.com/bencevans/node-sonos.git#master",
     "urlencode": "^1.1.0",
-    "urllib-sync": "^1.1.2"
+    "urllib-sync": "^1.1.2",
+    "html-entities": "^1.2.0"
   },
   "engines": {
     "node": ">=6.0.0"
