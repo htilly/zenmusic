@@ -3,6 +3,7 @@ var urllibsync = require('urllib-sync');
 var urlencode = require('urlencode');
 var fs = require('fs');
 var config = require('nconf');
+var Entities = require('html-entities').AllHtmlEntities;
 
 config.argv()
   .env()
@@ -865,6 +866,11 @@ function _search(input, channel) {
 
 function _vote(text, channel, userName) {
     var trackName = text.substring(text.indexOf(' ')+1)
+
+    //Decode any htmlentities as returned in the trackName
+    entities = new Entities();
+    trackName = entities.decode(trackName)
+
     sonos.getQueue(function (err, result) {
         if (err || !result) {
             console.log(err)
