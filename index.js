@@ -162,6 +162,12 @@ slack.on(RTM_EVENTS.MESSAGE, (message) => {
                 case 'play':
                     _play(input, channel);
                 break;
+                case 'pause':
+                    _pause(input, channel);
+                break;
+                case 'playpause':
+                    _playpause(input, channel);
+                break;
                 case 'help':
                     _help(input, channel);
                 break;
@@ -414,6 +420,8 @@ function _help(input, channel) {
     '`setvolume` _number_ : sets volume\n' +
     '`play` : play track\n' +
     '`stop` : stop life\n' +
+    '`pause` : pause life\n' +
+    '`playpause` : resume after pause\n' +
     '`next` : play next track\n' +
     '`previous` : play previous track\n' +
     '`blacklist` : show users on blacklist\n' +
@@ -450,6 +458,34 @@ function _stop(input, channel) {
         if(stopped) {
             slack.sendMessage("Why.. WHYY!?", channel.id);
         }
+    });
+}
+
+function _pause(input, channel) {
+    if(channel.name !== adminChannel){
+        console.log("Only admins are allowed for this action!")
+        slack.sendMessage("Only admins are allowed for this action!!", channel.id)
+        return
+    }
+    sonos.selectQueue(function (err, result) {
+        sonos.pause(function (err, paused) {
+             console.log([err, paused])
+                slack.sendMessage(".. takning a nap....", channel.id);
+            });
+    });
+}
+
+function _playpause(input, channel) {
+    if(channel.name !== adminChannel){
+        console.log("Only admins are allowed for this action!")
+        slack.sendMessage("Only admins are allowed for this action! Try using *add* and I will start playing your music!", channel.id)
+        return
+    }
+        sonos.play(function (err, playing) {
+             console.log([err, playing])
+                if(playing) {
+                slack.sendMessage("..resuming after sleep...", channel.id);
+            }
     });
 }
 
