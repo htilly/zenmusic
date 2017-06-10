@@ -862,6 +862,10 @@ function _search(input, channel) {
 
 */
 function _search(input, channel) {
+	let accessToken = _getAccessToken(channel.id);
+	if (!accessToken) {
+		return false;
+	}
 
     var query = '';
     for(var i = 1; i < input.length; i++) {
@@ -871,7 +875,7 @@ function _search(input, channel) {
         }
     }
 
-    var getapi = urllibsync.request('https://api.spotify.com/v1/search?q=' + query + '&type=track&limit=3&market=' + market);
+    var getapi = urllibsync.request('https://api.spotify.com/v1/search?q=' + query + '&type=track&limit=3&market=' + market + '&access_token=' + accessToken);
     var data = JSON.parse(getapi.data.toString());
     console.log(data);
     if(data.tracks && data.tracks.items && data.tracks.items.length > 0) {
