@@ -23,6 +23,7 @@ var token = config.get('token');
 var maxVolume = config.get('maxVolume');
 var market = config.get('market');
 var blacklist = config.get('blacklist');
+var apiKey = config.get('apiKey');
 if(!Array.isArray(blacklist)) {
     blacklist = blacklist.replace(/\s*(,|^|$)\s*/g, "$1").split(/\s*,\s*/);
 }
