@@ -1033,6 +1033,22 @@ function _blacklist(input, channel){
     slack.sendMessage(message, channel.id)
 }
 
+function _getAccessToken(channelid) {
+    if (apiKey === '') {
+        slack.sendMessage('You did not set up an API key. Naughty.', channelid);
+        return false;
+    }
+
+    let getToken = urllibsync.request('https://accounts.spotify.com/api/token', {
+        method: "POST",
+        data: { 'grant_type': 'client_credentials' },
+        headers: { 'Authorization': 'Basic ' + apiKey }
+    });
+    let tokendata = JSON.parse(getToken.data.toString());
+    return tokendata.access_token;
+}
+
+
 /*
 var string = "foo",
     substring = "oo";
