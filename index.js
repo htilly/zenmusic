@@ -766,9 +766,9 @@ function _add(input, channel) {
                             //Then add the track to playlist...
 
                             // Old version..  New is supposed to fix 500 problem...
-                            sonos.addSpotifyQueue(spid, function (err, res) {
+                            //sonos.addSpotifyQueue(spid, function (err, res) {
 
-                            // sonos.addSpotify(spid, function (err, res) {
+                            sonos.addSpotify(spid, function (err, res) {
                                 var message = '';
                                 if(res) {
                                     var queueLength = res[0].FirstTrackNumberEnqueued;
@@ -947,7 +947,7 @@ function _vote(text, channel, userName) {
                             slack.sendMessage("Valid vote by " + userName + "!", channel.id)
                             votedTimes++
                         }
-                        if(votedTimes >= voteVictory)
+                        if(listOfVotes.length >= voteVictory)
                         {
                             slack.sendMessage("Vote passed! Will put " + trackName + " on top! Will reset votes for this track.", channel.id)
                             delete votes[trackName]
