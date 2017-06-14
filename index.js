@@ -23,6 +23,7 @@ var token = config.get('token');
 var maxVolume = config.get('maxVolume');
 var market = config.get('market');
 var blacklist = config.get('blacklist');
+var apiKey = config.get('apiKey');
 if(!Array.isArray(blacklist)) {
     blacklist = blacklist.replace(/\s*(,|^|$)\s*/g, "$1").split(/\s*,\s*/);
 }
@@ -161,6 +162,12 @@ slack.on(RTM_EVENTS.MESSAGE, (message) => {
                 break;
                 case 'play':
                     _play(input, channel);
+                break;
+                case 'pause':
+                    _pause(input, channel);
+                break;
+                case 'playpause':
+                    _playpause(input, channel);
                 break;
                 case 'help':
                     _help(input, channel);
@@ -414,6 +421,8 @@ function _help(input, channel) {
     '`setvolume` _number_ : sets volume\n' +
     '`play` : play track\n' +
     '`stop` : stop life\n' +
+    '`pause` : pause life\n' +
+    '`playpause` : resume after pause\n' +
     '`next` : play next track\n' +
     '`previous` : play previous track\n' +
     '`blacklist` : show users on blacklist\n' +
@@ -450,6 +459,34 @@ function _stop(input, channel) {
         if(stopped) {
             slack.sendMessage("Why.. WHYY!?", channel.id);
         }
+    });
+}
+
+function _pause(input, channel) {
+    if(channel.name !== adminChannel){
+        console.log("Only admins are allowed for this action!")
+        slack.sendMessage("Only admins are allowed for this action!!", channel.id)
+        return
+    }
+    sonos.selectQueue(function (err, result) {
+        sonos.pause(function (err, paused) {
+             console.log([err, paused])
+                slack.sendMessage(".. takning a nap....", channel.id);
+            });
+    });
+}
+
+function _playpause(input, channel) {
+    if(channel.name !== adminChannel){
+        console.log("Only admins are allowed for this action!")
+        slack.sendMessage("Only admins are allowed for this action! Try using *add* and I will start playing your music!", channel.id)
+        return
+    }
+        sonos.play(function (err, playing) {
+             console.log([err, playing])
+                if(playing) {
+                slack.sendMessage("..resuming after sleep...", channel.id);
+            }
     });
 }
 
@@ -658,7 +695,11 @@ function _append(input, channel) {
 
 
 function _add(input, channel) {
-
+	let accessToken = _getAccessToken(channel.id);
+	if (!accessToken) {
+		return false;
+	}
+	
     var query = '';
     for(var i = 1; i < input.length; i++) {
         query += urlencode(input[i]);
@@ -667,7 +708,7 @@ function _add(input, channel) {
         }
     }
 
-    var getapi = urllibsync.request('https://api.spotify.com/v1/search?q=' + query + '&type=track&limit=1&market=' + market);
+    var getapi = urllibsync.request('https://api.spotify.com/v1/search?q=' + query + '&type=track&limit=1&market=' + market + '&access_token=' + accessToken);
     var data = JSON.parse(getapi.data.toString());
     console.log(data);
     if(data.tracks && data.tracks.items && data.tracks.items.length > 0) {
@@ -725,9 +766,9 @@ function _add(input, channel) {
                             //Then add the track to playlist...
 
                             // Old version..  New is supposed to fix 500 problem...
-                            // sonos.addSpotifyQueue(spid, function (err, res) {
+                            sonos.addSpotifyQueue(spid, function (err, res) {
 
-                            sonos.addSpotify(spid, function (err, res) {
+                            // sonos.addSpotify(spid, function (err, res) {
                                 var message = '';
                                 if(res) {
                                     var queueLength = res[0].FirstTrackNumberEnqueued;
@@ -825,6 +866,10 @@ function _search(input, channel) {
 
 */
 function _search(input, channel) {
+	let accessToken = _getAccessToken(channel.id);
+	if (!accessToken) {
+		return false;
+	}
 
     var query = '';
     for(var i = 1; i < input.length; i++) {
@@ -834,7 +879,7 @@ function _search(input, channel) {
         }
     }
 
-    var getapi = urllibsync.request('https://api.spotify.com/v1/search?q=' + query + '&type=track&limit=3&market=' + market);
+    var getapi = urllibsync.request('https://api.spotify.com/v1/search?q=' + query + '&type=track&limit=3&market=' + market + '&access_token=' + accessToken);
     var data = JSON.parse(getapi.data.toString());
     console.log(data);
     if(data.tracks && data.tracks.items && data.tracks.items.length > 0) {
@@ -995,6 +1040,22 @@ function _blacklist(input, channel){
     }
     slack.sendMessage(message, channel.id)
 }
+
+function _getAccessToken(channelid) {
+    if (apiKey === '') {
+        slack.sendMessage('You did not set up an API key. Naughty.', channelid);
+        return false;
+    }
+
+    let getToken = urllibsync.request('https://accounts.spotify.com/api/token', {
+        method: "POST",
+        data: { 'grant_type': 'client_credentials' },
+        headers: { 'Authorization': 'Basic ' + apiKey }
+    });
+    let tokendata = JSON.parse(getToken.data.toString());
+    return tokendata.access_token;
+}
+
 
 /*
 var string = "foo",
