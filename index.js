@@ -606,9 +606,9 @@ function _currentTrackTitle(channel, cb) {
 
 function _append(input, channel) {
 	let accessToken = _getAccessToken(channel.id);
- +	if (!accessToken) {
- +		return false;
- +	}
+ 	if (!accessToken) {
+ 		return false;
+ 	}
 
     var query = '';
     for(var i = 1; i < input.length; i++) {
