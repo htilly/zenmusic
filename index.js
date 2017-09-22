@@ -415,20 +415,23 @@ function _help(input, channel) {
     '`gongcheck` : How many gong votes there are currently, as well as who has GONGED.\n' +
     '`vote` _exactSongTitle_ : Vote for a specific song title in the queue.\n' +
     '`volume` : view current volume\n' +
-    '`list` : list current queue\n' +
-    '------ ADMIN FUNCTIONS ------\n' +
-    '`flush` : flush the current queue\n' +
-    '`setvolume` _number_ : sets volume\n' +
-    '`play` : play track\n' +
-    '`stop` : stop life\n' +
-    '`pause` : pause life\n' +
-    '`playpause` : resume after pause\n' +
-    '`next` : play next track\n' +
-    '`previous` : play previous track\n' +
-    '`blacklist` : show users on blacklist\n' +
-    '`blacklist add @username` : add `@username` to the blacklist\n' +
-    '`blacklist del @username` : remove `@username` from the blacklist\n' +
-    '=====================\n'
+    '`list` : list current queue\n';
+
+    if(channel.name == adminChannel){
+        message += '------ ADMIN FUNCTIONS ------\n' +
+        '`flush` : flush the current queue\n' +
+        '`setvolume` _number_ : sets volume\n' +
+        '`play` : play track\n' +
+        '`stop` : stop life\n' +
+        '`pause` : pause life\n' +
+        '`playpause` : resume after pause\n' +
+        '`next` : play next track\n' +
+        '`previous` : play previous track\n' +
+        '`blacklist` : show users on blacklist\n' +
+        '`blacklist add @username` : add `@username` to the blacklist\n' +
+        '`blacklist del @username` : remove `@username` from the blacklist\n';
+    }
+    message += '=====================\n'
     slack.sendMessage(message, channel.id);
 }
 
