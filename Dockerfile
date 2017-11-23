@@ -1,7 +1,6 @@
-FROM alpine:latest
+FROM resin/%%RESIN_MACHINE_NAME%%-node:slim
 
 WORKDIR /opt
-RUN apk add --no-cache git nodejs
 ADD . /opt
 RUN npm install --production
 CMD ["node", "index.js"]
