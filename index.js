@@ -7,7 +7,7 @@ var Entities = require('html-entities').AllHtmlEntities;
 
 config.argv()
   .env()
-  .file({ file: 'config.json' })
+  .file({ file: '/Users/sine-mac-dev/dev/zenmusic/config.json' })
   .defaults({
     'adminChannel':    'music-admin',
     'standardChannel': 'music',
@@ -179,6 +179,7 @@ slack.on(RTM_EVENTS.MESSAGE, (message) => {
                     _help(input, channel);
                 break;
                 case 'dong':
+                case ':gong:':
                 case 'gong':
                 case ':gong:':
                     _gong(channel, userName);
@@ -207,6 +208,9 @@ slack.on(RTM_EVENTS.MESSAGE, (message) => {
                 case 'playlist':
                     _showQueue(channel);
                 break;
+                case 'count(list)':
+	            _countQueue(channel);
+		break;
                 case 'volume':
                     _getVolume(channel);
                 break;
@@ -286,8 +290,25 @@ function _getQueue() {
     return res;
 }
 
+function _countQueue(channel, cb) {
+    sonos.getQueue(function (err, result) {
+	if (err) {
+	    if(cb) {
+		return (err, null);
+	    }
+	    console.log(err);
+	    slack.sendMessage('Error getting queue length', channel.id);
+	} else {
+	    if (cb) {
+		return cb(null);
+	    }
+	    slack.sendMessage(result.total, channel.id);
+	}
+    });
+}
+
 function _showQueue(channel, cb) {
-   sonos.getQueue(function (err, result) {
+    sonos.getQueue(function (err, result) {
         if (err) {
             if(cb) {
                 return (err, null);
