@@ -32,7 +32,12 @@ var gongCounter = 0;
 var gongLimit = 3;
 var gongLimitPerUser = 1;
 var gongScore = {};
-var gongMessage = ["Is it really all that bad??", "Is it that distracting??", "Your eardrums are going to combust if this continues playing??", "Would some harp music be better??"];
+var gongMessage = [
+    "Is it really all that bad?",
+    "Is it that distracting?",
+    "Your eardrums are going to combust if this continues playing?",
+    "Would some harp music be better?"
+];
 
 var voteVictory = 3;
 var voteLimit = 1;
@@ -167,6 +172,7 @@ slack.on(RTM_EVENTS.MESSAGE, (message) => {
                     _pause(input, channel);
                 break;
                 case 'playpause':
+                case 'resume':
                     _playpause(input, channel);
                 break;
                 case 'help':
@@ -174,6 +180,7 @@ slack.on(RTM_EVENTS.MESSAGE, (message) => {
                 break;
                 case 'dong':
                 case 'gong':
+                case ':gong:':
                     _gong(channel, userName);
                 break;
                 case 'gongcheck':
@@ -186,6 +193,7 @@ slack.on(RTM_EVENTS.MESSAGE, (message) => {
                     // _say(input, channel);
                 break;
                 case 'current':
+                case 'wtf':
                     _currentTrack(channel);
                 break;
                 case 'vote':
@@ -246,8 +254,8 @@ function _getVolume(channel) {
 
 function _setVolume(input, channel) {
     if(channel.name !== adminChannel){
-        console.log("Only admins are allowed for this action!")
-        slack.sendMessage("Only admins are allowed for this action!", channel.id)
+        console.log("Only admins are allowed to perform this action!")
+        slack.sendMessage("Who do you think you are? Not gonna happen.", channel.id)
         return
     }
 
@@ -260,7 +268,7 @@ function _setVolume(input, channel) {
         vol = Number(vol);
         console.log(vol);
         if(vol > maxVolume) {
-            slack.sendMessage('You also could have tinnitus _(say: tih-neye-tus)_', channel.id);
+            slack.sendMessage("That's a bit extreme... lower please.", channel.id);
         } else {
             sonos.setVolume(vol, function(err, data) {
                 _getVolume(channel);
@@ -285,7 +293,7 @@ function _showQueue(channel, cb) {
                 return (err, null);
             }
             console.log(err)
-            slack.sendMessage('Couldn\'t fetch the queue', channel.id);
+            slack.sendMessage("Couldn't fetch the queue", channel.id);
 
         } else {
             if(cb) {
@@ -336,7 +344,7 @@ function _gong(channel, userName) {
             gongCounter++;
             slack.sendMessage(randomMessage + " Oh well.. This is GONG " + gongCounter + " out of " + gongLimit + " for " + track, channel.id);
             if(gongCounter >= gongLimit) {
-                slack.sendMessage("The music got GOONGED!!", channel.id);
+                slack.sendMessage("The music got GONGED!!", channel.id);
                 // _gongPlay(channel, true);
                 _nextTrack(channel, true)
                 gongCounter = 0;
@@ -350,7 +358,7 @@ function _gong(channel, userName) {
                 gongCounter++;
                 slack.sendMessage(randomMessage + " Oh well.. This is GONG " + gongCounter + " out of " + gongLimit + " for " + track, channel.id);
                 if(gongCounter >= gongLimit) {
-                    slack.sendMessage("The music got GOONGED!", channel.id);
+                    slack.sendMessage("The music got GONGED!", channel.id);
             //      _gongPlay(channel);
                     _nextTrack(channel)
                      gongCounter = 0;
@@ -388,14 +396,14 @@ function _gongcheck(channel, userName) {
 
 function _ungong(channel, userName) {
     console.log("_ungong...");
-  slack.sendMessage("DENIED!! As much as you want to listen to this, afraid we belong to the Democratic Republic of Sonos.", channel.id);
+  slack.sendMessage("DENIED!! As much as you want to listen to this, afraid we belong to the Democratic Republic of Sine.", channel.id);
 }
 
 
 function _previous(input, channel) {
     if(channel.name !== adminChannel){
-        console.log("Only admins are allowed for this action!")
-        slack.sendMessage("Only admins are allowed for this action!", channel.id)
+        console.log("Only admins are allowed to perform this action!")
+        slack.sendMessage("Only admins are allowed to perform this action! It helps us to feel superior...", channel.id)
         return
     }
     sonos.previous(function(err, previous) {
@@ -437,8 +445,8 @@ function _help(input, channel) {
 
 function _play(input, channel) {
     if(channel.name !== adminChannel){
-        console.log("Only admins are allowed for this action!")
-        slack.sendMessage("Only admins are allowed for this action! Try using *add* and I will start playing your music!", channel.id)
+        console.log("Only admins are allowed to perform this action!")
+        slack.sendMessage("Only admins are allowed to perform this action! Try using *add* and I will start playing your music!", channel.id)
         return
     }
     sonos.selectQueue(function (err, result) {
@@ -453,22 +461,22 @@ function _play(input, channel) {
 
 function _stop(input, channel) {
     if(channel.name !== adminChannel){
-        console.log("Only admins are allowed for this action!")
-        slack.sendMessage("Only admins are allowed for this action!", channel.id)
+        console.log("Only admins are allowed to perform this action!")
+        slack.sendMessage("Only admins are allowed to perform this action!", channel.id)
         return
     }
     sonos.stop(function (err, stopped) {
         console.log([err, stopped])
         if(stopped) {
-            slack.sendMessage("Why.. WHYY!?", channel.id);
+            slack.sendMessage("Why.. WHYY!?  sigh... stopping.", channel.id);
         }
     });
 }
 
 function _pause(input, channel) {
     if(channel.name !== adminChannel){
-        console.log("Only admins are allowed for this action!")
-        slack.sendMessage("Only admins are allowed for this action!!", channel.id)
+        console.log("Only admins are allowed to perform this action!")
+        slack.sendMessage("Only admins are allowed to perform this action!!", channel.id)
         return
     }
     sonos.selectQueue(function (err, result) {
@@ -481,8 +489,8 @@ function _pause(input, channel) {
 
 function _playpause(input, channel) {
     if(channel.name !== adminChannel){
-        console.log("Only admins are allowed for this action!")
-        slack.sendMessage("Only admins are allowed for this action! Try using *add* and I will start playing your music!", channel.id)
+        console.log("Only admins are allowed to perform this action!")
+        slack.sendMessage("Only admins are allowed to perform this action! Try using *add* and I will start playing your music!", channel.id)
         return
     }
         sonos.play(function (err, playing) {
@@ -495,8 +503,8 @@ function _playpause(input, channel) {
 
 function _flush(input, channel) {
     if(channel.name !== adminChannel){
-        console.log("Only admins are allowed for this action!")
-        slack.sendMessage("Only admins are allowed for this action!", channel.id)
+        console.log("Only admins are allowed to perform this action!")
+        slack.sendMessage("Only admins are allowed to perform this action!", channel.id)
         return
     }
     sonos.flush(function (err, flushed) {
@@ -533,8 +541,8 @@ function _gongPlay(channel) {
 
 function _nextTrack(channel, byPassChannelValidation) {
     if(channel.name !== adminChannel && !byPassChannelValidation){
-        console.log("Only admins are allowed for this action!")
-        slack.sendMessage("Only admins are allowed for this action!", channel.id)
+        console.log("Only admins are allowed to perform this action!")
+        slack.sendMessage("Only admins are allowed to perform this action!", channel.id)
         return
     }
     sonos.next(function (err, nexted) {
@@ -706,7 +714,7 @@ function _add(input, channel) {
 	if (!accessToken) {
 		return false;
 	}
-	
+
     var query = '';
     for(var i = 1; i < input.length; i++) {
         query += urlencode(input[i]);
@@ -819,18 +827,18 @@ function _add(input, channel) {
                         slack.sendMessage(message, channel.id)
                     });
                 } else if (state === 'paused') {
-                    slack.sendMessage("I'm frozen! Alive!", channel.id)
+                    slack.sendMessage("I'm currently paused, sorry.", channel.id)
                 } else if (state === 'transitioning') {
-                    slack.sendMessage("Mayday, mayday! I'm sinking!!", channel.id)
+                    slack.sendMessage("I'm transitioning - whatever that means.", channel.id)
                 } else if (state === 'no_media') {
-                    slack.sendMessage("Nothing to play, nothing to do. I'm rethinking my life", channel.id)
+                    slack.sendMessage("Nothing to play, nothing to do. I'm rethinking my life...", channel.id)
                 } else {
                   slack.sendMessage("No freaking idea. What is this [" + state + "]?", channel.id)
                 }
             }
         });
     } else {
-        slack.sendMessage('Sorry could not find that track :( Have your tried using *search* to find it?', channel.id);
+        slack.sendMessage('Sorry, I could not find that track :( Have your tried using *search* to find it?', channel.id);
     }
 
     // return slack.sendMessage("I have now added the following in my queue: " + input[2] + " by " + input[1]+"\n"+"https://api.spotify.com/v1/search?q=" + input[2] + "+" + input[1]+"&type=track&limit=1");
@@ -1004,8 +1012,8 @@ function _status(channel){
 
 function _blacklist(input, channel){
     if (channel.name !== adminChannel) {
-        console.log("Only admins are allowed for this action!")
-        slack.sendMessage("Only admins are allowed for this action!", channel.id)
+        console.log("Only admins are allowed to perform this action!")
+        slack.sendMessage("Only admins are allowed to perform this action!", channel.id)
         return
     }
 
