@@ -474,7 +474,7 @@ function _play(input, channel) {
         sonos.play(function (err, playing) {
              console.log([err, playing])
                 if(playing) {
-                slack.sendMessage("WHHHHHYYYYYY? Just do an *add* and the music should start..  you´re making me confused....", channel.id);
+                slack.sendMessage(`WHHHHHYYYYYY? Just do an *add* and the music should start..  you're making me confused....`, channel.id);
                 }
             });
     });
@@ -531,7 +531,7 @@ function _flush(input, channel) {
     sonos.flush(function (err, flushed) {
         console.log([err, flushed])
         if(flushed) {
-            slack.sendMessage('Ok.. clean slate..  Let´s make it better this time!!', channel.id);
+            slack.sendMessage(`Ok.. clean slate..  Let's make it better this time!!`, channel.id);
         }
     });
 }
@@ -598,7 +598,7 @@ function _currentTrack(channel, cb) {
             psec = psec.length == 2 ? psec : '0'+psec;
 
 
-            var message = 'We´re rocking out to *' + track.artist + '* - *' + track.title + '* ('+pmin+':'+psec+'/'+fmin+':'+fsec+')';
+            var message = `We're rocking out to *${track.artist}* - *${track.title}* (${pmin}:${psec}/${fmin}:${fsec})`;
             slack.sendMessage(message, channel.id);
         }
     });
@@ -798,7 +798,7 @@ function _add(input, channel) {
                     sonos.flush(function (err, flushed) {
                         console.log([err, flushed])
                         if(flushed) {
-                            slack.sendMessage('Clean slate..  Let´s make it better this time!!', channel.id);
+                            slack.sendMessage(`Clean slate..  Let's make it better this time!!`, channel.id);
                             //Then add the track to playlist...
 
                             // Old version..  New is supposed to fix 500 problem...
