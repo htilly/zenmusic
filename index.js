@@ -691,7 +691,7 @@ function _append(input, channel) {
                                     console.log('queueLength', queueLength);
                                     message = 'I have added "' + trackName + '" to the queue!\n'+albumImg+'\nPosition in queue is ' + queueLength;
                                 } else {
-                                    message = 'Error!';
+                                    message = 'Error! No spotify account?';
                                     console.log(err);
                                 }
                                 slack.sendMessage(message, channel.id);
@@ -811,7 +811,7 @@ function _add(input, channel) {
                                     console.log('queueLength', queueLength);
                                     message = 'I have added "' + trackName + '" to the queue!\n'+albumImg+'\nPosition in queue is ' + queueLength;
                                 } else {
-                                    message = 'Error!';
+                                    message = 'Error! No spotify account?';
                                     console.log(err);
                                 }
                                 slack.sendMessage(message, channel.id);
@@ -842,7 +842,7 @@ function _add(input, channel) {
                             console.log('queueLength', queueLength);
                             message = 'I have added "' + trackName + '" to the queue!\n'+albumImg+'\nPosition in queue is ' + queueLength;
                         } else {
-                            message = 'Error!';
+                            message = 'Error! No spotify account?';
                             console.log(err);
                         }
                         slack.sendMessage(message, channel.id)
