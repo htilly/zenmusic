@@ -440,7 +440,7 @@ function _help(input, channel) {
         '`search` _text_ : search for a track, does NOT add it to the queue\n' +
         '`add` _text_ : Add song to the queue and start playing if idle.\n' +
         '`gong` : The current track is bad! ' + gongLimit + ' gongs will skip the track\n' +
-        '`gongcheck` : How many gong votes there are currently, as well as who has GONGED.\n' +
+        '`gongcheck` : How many gong votes there are currently, as well as who has gonged.\n' +
         '`vote` : The current track is great! ' + voteLimit + ' votes will prevent the track from being gonged\n' +
         '`volume` : view current volume\n' +
         '`list` : list current queue\n';
