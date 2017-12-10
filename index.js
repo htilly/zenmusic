@@ -361,10 +361,10 @@ function _gong(channel, userName) {
         }
 
         if (gongScore[userName] >= gongLimitPerUser) {
-            _slackMessage("Are you trying to cheat " + userName + "? DENIED!", channel.id);
+            _slackMessage("Are you trying to cheat? DENIED!", channel.id);
         } else {
             if (userName in voteScore) {
-                _slackMessage("Having regrets, " + userName + "? We're glad you came to your senses...", channel.id);
+                _slackMessage("Having regrets? We're glad you came to your senses...", channel.id);
             }
 
             gongScore[userName] = gongScore[userName] + 1
@@ -390,15 +390,15 @@ function _vote(channel, userName) {
         }
 
         if (voteScore[userName] >= voteLimitPerUser) {
-            _slackMessage("Are you trying to cheat " + userName + "? DENIED!", channel.id)
+            _slackMessage("Are you trying to cheat? DENIED!", channel.id)
         } else {
             if (userName in gongScore) {
-                _slackMessage("Changed your mind, " + userName + "? Well, ok then...", channel.id);
+                _slackMessage("Changed your mind? Well, ok then...", channel.id);
             }
 
             voteScore[userName] = voteScore[userName] + 1
             voteCounter++;
-            _slackMessage(userName + ", this is VOTE " + voteCounter + "/" + voteLimit + " for " + track, channel.id);
+            _slackMessage("This is VOTE " + voteCounter + "/" + voteLimit + " for " + track, channel.id);
             if (voteCounter >= voteLimit) {
                 _slackMessage("This track is now immune to GONG! (just this once)", channel.id);
                 voteCounter = 0;
@@ -715,9 +715,7 @@ function _addToSpotify(userName, spid, cb) {
 
         var queueLength = res[0].FirstTrackNumberEnqueued;
         _log('queueLength', queueLength);
-        message = 'Sure '
-            + userName
-            + ', Added "'
+        message = 'Sure, Added "'
             + trackName
             + '" to the queue!\n'
             + albumImg
@@ -760,7 +758,7 @@ function _searchSpotify(input, channel, userName, limit) {
     var data = JSON.parse(getapi.data.toString());
     _log(data);
     if (!data.tracks || !data.tracks.items || data.tracks.items.length == 0) {
-        _slackMessage('Sorry ' + userName + ', I could not find that track :(', channel.id);
+        _slackMessage('Sorry, I could not find that track :(', channel.id);
         return;
     }
 
