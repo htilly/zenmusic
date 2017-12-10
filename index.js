@@ -161,7 +161,7 @@ slack.on(RTM_EVENTS.MESSAGE, (message) => {
             _gongcheck(channel, userName);
             break;
         case 'vote':
-            _vote(text, channel, userName);
+            _vote(channel, userName);
             break;
         case 'list':
         case 'ls':
