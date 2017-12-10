@@ -650,16 +650,16 @@ function _add(input, channel, userName) {
             _log(err);
         } else {
             if (state === 'stopped') {
-                _addToSpotify(userName, spid, function () {
+                _addToSpotify(userName, spid, albumImg, trackName, function () {
                     // Start playing the queue automatically.
                     _play('play', channel);
                 });
 
             } else if (state === 'playing') {
                 //Add the track to playlist...
-                _addToSpotify(userName, spid);
+                _addToSpotify(userName, spid, albumImg, trackName);
             } else if (state === 'paused') {
-                _addToSpotify(userName, spid, function () {
+                _addToSpotify(userName, spid, albumImg, trackName, function () {
                     if (channel.name === adminChannel) {
                         _slackMessage("Sonos is currently PAUSED. Type `resume` to start playing...", channel.id);
                     }
@@ -704,7 +704,7 @@ function _search(input, channel, userName) {
     _slackMessage(message, channel.id)
 }
 
-function _addToSpotify(userName, spid, cb) {
+function _addToSpotify(userName, spid, albumImg, trackName, cb) {
     sonos.addSpotify(spid, function (err, res) {
         var message = '';
         if (!res) {
