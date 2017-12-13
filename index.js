@@ -113,12 +113,13 @@ slack.on(RTM_EVENTS.MESSAGE, (message) => {
     let channel, channelError, channelName, errors, response, text, textError, ts, type, typeError, user, userName;
 
     channel = slack.dataStore.getChannelGroupOrDMById(message.channel);
-    user = slack.dataStore.getUserById(message.user);
+    // user = slack.dataStore.getUserById(message.user);
     response = '';
     type = message.type, ts = message.ts, text = message.text;
     channelName = (channel != null ? channel.is_channel : void 0) ? '#' : '';
     channelName = channelName + (channel ? channel.name : 'UNKNOWN_CHANNEL');
-    userName = (user != null ? user.name : void 0) != null ? "@" + user.name : "UNKNOWN_USER";
+    userName = "<@" + message.user + ">";
+    // userName = (user != null ? user.display_name : void 0) != null ? "@" + user.name : "UNKNOWN_USER";
     _log("Received: " + type + " " + channelName + " " + userName + " " + ts + " \"" + text + "\"");
     if (type !== 'message' || (text == null) || (channel == null)) {
         typeError = type !== 'message' ? "unexpected type " + type + "." : null;
@@ -143,10 +144,10 @@ slack.on(RTM_EVENTS.MESSAGE, (message) => {
     _log('term', term);
     switch (term) {
         case 'add':
-            _add(input, channel);
+            _add(input, channel, userName);
             break;
         case 'search':
-            _search(input, channel);
+            _search(input, channel, userName);
             break;
         case 'current':
         case 'wtf':
@@ -213,7 +214,7 @@ slack.on(RTM_EVENTS.MESSAGE, (message) => {
                 _previous(input, channel);
                 break;
             case 'setvolume':
-                _setVolume(input, channel);
+                _setVolume(input, channel, userName);
                 break;
             case 'blacklist':
                 _blacklist(input, channel);
@@ -246,11 +247,11 @@ function _getVolume(channel) {
 
     sonos.getVolume(function (err, vol) {
         _log(err, vol);
-        _slackMessage('Vol is ' + vol + ' deadly dB _(ddB)_', channel.id);
+        _slackMessage('Volume is ' + vol + ' deadly dB _(ddB)_', channel.id);
     });
 }
 
-function _setVolume(input, channel) {
+function _setVolume(input, channel, userName) {
     if (channel.name !== adminChannel) {
         return
     }
@@ -264,7 +265,7 @@ function _setVolume(input, channel) {
         vol = Number(vol);
         _log(vol);
         if (vol > maxVolume) {
-            _slackMessage("That's a bit extreme... lower please.", channel.id);
+            _slackMessage("That's a bit extreme, " + userName + "... lower please.", channel.id);
         } else {
             sonos.setVolume(vol, function (err, data) {
                 _getVolume(channel);
@@ -345,7 +346,7 @@ function _gong(channel, userName) {
         // NOTE: The gongTrack is checked in _currentTrackTitle() so we
         // need to let that go through before checking if gong is banned.
         if (gongBanned) {
-            _slackMessage("Sorry, the people have voted and this track cannot be gonged...", channel.id);
+            _slackMessage("Sorry " + userName + ", the people have voted and this track cannot be gonged...", channel.id);
             return;
         }
 
@@ -361,10 +362,10 @@ function _gong(channel, userName) {
         }
 
         if (gongScore[userName] >= gongLimitPerUser) {
-            _slackMessage("Are you trying to cheat? DENIED!", channel.id);
+            _slackMessage("Are you trying to cheat, " + userName + "? DENIED!", channel.id);
         } else {
             if (userName in voteScore) {
-                _slackMessage("Having regrets? We're glad you came to your senses...", channel.id);
+                _slackMessage("Having regrets, " + userName + "? We're glad you came to your senses...", channel.id);
             }
 
             gongScore[userName] = gongScore[userName] + 1
@@ -390,10 +391,10 @@ function _vote(channel, userName) {
         }
 
         if (voteScore[userName] >= voteLimitPerUser) {
-            _slackMessage("Are you trying to cheat? DENIED!", channel.id)
+            _slackMessage("Are you trying to cheat, " + userName + "? DENIED!", channel.id)
         } else {
             if (userName in gongScore) {
-                _slackMessage("Changed your mind? Well, ok then...", channel.id);
+                _slackMessage("Changed your mind, " + userName + "? Well, ok then...", channel.id);
             }
 
             voteScore[userName] = voteScore[userName] + 1
@@ -697,7 +698,7 @@ function _search(input, channel, userName) {
 
     //Print the result...
     var message = userName
-        + 'I found the following track(s):\n```\n'
+        + ', I found the following track(s):\n```\n'
         + trackNames.join('\n')
         + '\n```\nIf you want to play it, use the `add` command..\n';
 
@@ -715,7 +716,9 @@ function _addToSpotify(userName, spid, albumImg, trackName, channel, cb) {
 
         var queueLength = res[0].FirstTrackNumberEnqueued;
         _log('queueLength', queueLength);
-        message = 'Sure, Added "'
+        message = 'Sure '
+            + userName
+            + ', Added "'
             + trackName
             + '" to the queue!\n'
             + albumImg
@@ -758,7 +761,7 @@ function _searchSpotify(input, channel, userName, limit) {
     var data = JSON.parse(getapi.data.toString());
     _log(data);
     if (!data.tracks || !data.tracks.items || data.tracks.items.length == 0) {
-        _slackMessage('Sorry, I could not find that track :(', channel.id);
+        _slackMessage('Sorry ' + userName + ', I could not find that track :(', channel.id);
         return;
     }
 
