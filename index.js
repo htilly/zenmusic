@@ -169,6 +169,9 @@ slack.on(RTM_EVENTS.MESSAGE, (message) => {
         case 'playlist':
             _showQueue(channel);
             break;
+        case 'sl':
+            _sl(channel, userName);
+            break;
         case 'volume':
             _getVolume(channel);
             break;
@@ -777,6 +780,16 @@ function _status(channel) {
 
         _slackMessage("Sonos state is '" + state + "'", channel.id);
     });
+}
+
+function _sl(channel, userName) {
+    train = "      oooOOOOOOOOOOO\"\n"
+        + "     o   ____          :::::::::::::::::: :::::::::::::::::: __|-----|__\n"
+        + "     Y_,_|[]| --++++++ |[][][][][][][][]| |[][][][][][][][]| |  [] []  |\n"
+        + "    {|_|_|__|;|______|;|________________|;|________________|;|_________|;\n"
+        + "     /oo--OO   oo  oo   oo oo      oo oo   oo oo      oo oo   oo     oo\n"
+        + "+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+\n";
+    _slackMessage("Just for you, " + userName + "\n```\n" + train + "\n```\n", channel.id);
 }
 
 function _blacklist(input, channel) {
