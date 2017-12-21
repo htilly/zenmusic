@@ -1,4 +1,3 @@
-var Sonos = require('sonos').Sonos
 var urllibsync = require('urllib-sync');
 var urlencode = require('urlencode');
 var fs = require('fs');
@@ -29,7 +28,15 @@ if (!Array.isArray(blacklist)) {
     blacklist = blacklist.replace(/\s*(,|^|$)\s*/g, "$1").split(/\s*,\s*/);
 }
 
+var SONOS = require('sonos')
+var Sonos = SONOS.Sonos
 var sonos = new Sonos(config.get('sonos'));
+
+if (market !== "US") {
+      sonos.setSpotifyRegion(SONOS.SpotifyRegion.EU);
+        _log("Setting Spotify region to EU...");
+        _log(market);
+}
 
 var gongCounter = 0;
 var gongLimit = 3;
