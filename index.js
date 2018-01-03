@@ -153,6 +153,9 @@ slack.on(RTM_EVENTS.MESSAGE, (message) => {
         case 'add':
             _add(input, channel, userName);
             break;
+	case 'append':
+	    _append(input, channel, userName);
+	    break;
         case 'search':
             _search(input, channel, userName);
             break;
@@ -177,6 +180,7 @@ slack.on(RTM_EVENTS.MESSAGE, (message) => {
             _showQueue(channel);
             break;
         case 'sl':
+	case 'train':
             _sl(channel, userName);
             break;
         case 'volume':
@@ -449,7 +453,8 @@ function _help(input, channel) {
         '`current` : list current track\n' +
         '`status` : show current status of Sonos\n' +
         '`search` _text_ : search for a track, does NOT add it to the queue\n' +
-        '`add` _text_ : Add song to the queue and start playing if idle.\n' +
+        '`add` _text_ : Add song to the queue and start playing if idle. Will start with a fresh queue.\n' +
+        '`append` _text_ : Append a song to the previous playlist and start playing the same list again.\n' +
         '`gong` : The current track is bad! ' + gongLimit + ' gongs will skip the track\n' +
         '`gongcheck` : How many gong votes there are currently, as well as who has gonged.\n' +
         '`vote` : The current track is great! ' + voteLimit + ' votes will prevent the track from being gonged\n' +
@@ -661,9 +666,62 @@ function _add(input, channel, userName) {
             _log(err);
         } else {
             if (state === 'stopped') {
+		_flush(input, channel);
+
                 _addToSpotify(userName, spid, albumImg, trackName, channel, function () {
+                _log("Adding track:", trackName);
                     // Start playing the queue automatically.
                     _play('play', channel);
+
+                });
+
+            } else if (state === 'playing') {
+                //Add the track to playlist...
+                _addToSpotify(userName, spid, albumImg, trackName, channel);
+            } else if (state === 'paused') {
+                _addToSpotify(userName, spid, albumImg, trackName, channel, function () {
+                    if (channel.name === adminChannel) {
+                        _slackMessage("Sonos is currently PAUSED. Type `resume` to start playing...", channel.id);
+                    }
+                });
+
+            } else if (state === 'transitioning') {
+                _slackMessage("Sonos says it is 'transitioning'. We've got no idea what that means either...", channel.id);
+            } else if (state === 'no_media') {
+                _slackMessage("Sonos reports 'no media'. Any idea what that means?", channel.id);
+            } else {
+                _slackMessage("Sonos reports its state as '" + state + "'. Any idea what that means? I've got nothing.", channel.id);
+            }
+        }
+    });
+}
+
+
+
+function _append(input, channel, userName) {
+    var data = _searchSpotify(input, channel, userName, 1);
+    if (!data) {
+        return;
+    }
+
+    var spid = data.tracks.items[0].id;
+    var uri = data.tracks.items[0].uri;
+    var external_url = data.tracks.items[0].external_urls.spotify;
+
+    var albumImg = data.tracks.items[0].album.images[2].url;
+    var trackName = data.tracks.items[0].artists[0].name + ' - ' + data.tracks.items[0].name;
+
+    sonos.getCurrentState(function (err, state) {
+        if (err) {
+            _log(err);
+        } else {
+            if (state === 'stopped') {
+                _addToSpotify(userName, spid, albumImg, trackName, channel, function () {
+                 _log("Adding track:", trackName);
+
+                    // Start playing the queue automatically.
+                    _play('play', channel);
+
                 });
 
             } else if (state === 'playing') {
