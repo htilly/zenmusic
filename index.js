@@ -459,7 +459,7 @@ function _help(input, channel) {
         '`gongcheck` : How many gong votes there are currently, as well as who has gonged.\n' +
         '`vote` : The current track is great! ' + voteLimit + ' votes will prevent the track from being gonged\n' +
         '`volume` : view current volume\n' +
-        '`list` : list current queue\n';
+        '`list` : list current queue\n'; 
 
     if (channel.name == adminChannel) {
         message += '------ ADMIN FUNCTIONS ------\n' +
@@ -473,9 +473,9 @@ function _help(input, channel) {
             '`previous` : play previous track\n' +
             '`blacklist` : show users on blacklist\n' +
             '`blacklist add @username` : add `@username` to the blacklist\n' +
-            '`blacklist del @username` : remove `@username` from the blacklist\n';
+            '`blacklist del @username` : remove `@username` from the blacklist\n'; 
     }
-    message += '=====================\n'
+    message += '========== ZenMusic@GitHub ===========\n'
     _slackMessage(message, channel.id);
 }
 
