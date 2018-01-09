@@ -496,6 +496,17 @@ function _play(input, channel) {
     });
 }
 
+
+function _playInt(input, channel) {
+    sonos.selectQueue(function (err, result) {
+        sonos.play(function (err, playing) {
+            _log([err, playing])
+        });
+    });
+}
+    
+
+
 function _stop(input, channel) {
     if (channel.name !== adminChannel) {
         return
@@ -544,6 +555,15 @@ function _flush(input, channel) {
     });
 }
 
+function _flushInt(input, channel) {
+    
+    sonos.flush(function (err, flushed) {
+        _log([err, flushed])
+        if (flushed) {
+            _slackMessage("Sonos queue is clear.", channel.id);
+        }
+    });
+}
 
 function _say(input, channel) {
     if (channel.name !== adminChannel) {
@@ -666,14 +686,13 @@ function _add(input, channel, userName) {
             _log(err);
         } else {
             if (state === 'stopped') {
-		_flush(input, channel);
-
+		_flushInt(input, channel);
                 _addToSpotify(userName, spid, albumImg, trackName, channel, function () {
                 _log("Adding track:", trackName);
                     // Start playing the queue automatically.
-                    _play('play', channel);
-
+                    _playInt('play', channel);
                 });
+
 
             } else if (state === 'playing') {
                 //Add the track to playlist...
@@ -715,14 +734,15 @@ function _append(input, channel, userName) {
         if (err) {
             _log(err);
         } else {
-            if (state === 'stopped') {
+          if (state === 'stopped') {
                 _addToSpotify(userName, spid, albumImg, trackName, channel, function () {
-                 _log("Adding track:", trackName);
-
                     // Start playing the queue automatically.
-                    _play('play', channel);
+                _playInt('play', channel, function () {
+		_log("Adding track:", trackName, function () {
 
-                });
+              });
+            });
+          });
 
             } else if (state === 'playing') {
                 //Add the track to playlist...
@@ -773,8 +793,10 @@ function _search(input, channel, userName) {
     _slackMessage(message, channel.id)
 }
 
-function _addToSpotify(userName, spid, albumImg, trackName, channel, cb) {
-    sonos.addSpotify(spid, function (err, res) {
+function _addToSpotify(userName, uri, albumImg, trackName, channel, cb) {
+
+    var spotifyUri = 'spotify:track:' + uri;
+    sonos.queue(spotifyUri, function (err, res) {
         var message = '';
         if (!res) {
             message = 'Error! No spotify account?';
@@ -922,3 +944,4 @@ function _getAccessToken(channelid) {
 module.exports = function (number, locale) {
     return number.toLocaleString(locale);
 };
+
