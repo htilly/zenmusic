@@ -48,7 +48,7 @@ var gongMessage = [
     "How much is this worth to you?",
     "I agree. Who added this song anyway?",
     "Thanks! I didn't want to play this song in the first place...",
-    "Look, I only played this song because it's Matt's favourite.",
+    "Look, I only played this song because it's my masters favourite.",
     "Good call!",
     "Would some harp music be better?"
 ];
@@ -156,6 +156,12 @@ slack.on(RTM_EVENTS.MESSAGE, (message) => {
 	case 'append':
 	    _append(input, channel, userName);
 	    break;
+        case 'searchplaylist':
+            _searchplaylist(input, channel);
+	    break;
+         case 'addplaylist':
+             _addplaylist(input, channel);
+             break;
         case 'search':
             _search(input, channel, userName);
             break;
@@ -453,7 +459,9 @@ function _help(input, channel) {
         '`current` : list current track\n' +
         '`status` : show current status of Sonos\n' +
         '`search` _text_ : search for a track, does NOT add it to the queue\n' +
+        '`searchplaylist` _text_ : search for a playlist, does NOT add it to the queue\n' +
         '`add` _text_ : Add song to the queue and start playing if idle. Will start with a fresh queue.\n' +
+        '`addplaylist` _text_ : Add a playlist to the queue and start playing if idle. Will start with a fresh queue.\n' +
         '`append` _text_ : Append a song to the previous playlist and start playing the same list again.\n' +
         '`gong` : The current track is bad! ' + gongLimit + ' gongs will skip the track\n' +
         '`gongcheck` : How many gong votes there are currently, as well as who has gonged.\n' +
@@ -823,6 +831,89 @@ function _addToSpotify(userName, uri, albumImg, trackName, channel, cb) {
     });
 }
 
+
+function _addToSpotifyPlaylist(userName, uri, trackName, channel, cb) {
+
+    var spotifyUri = 'spotify:user:spotify:playlist:' + uri;
+    sonos.queue(spotifyUri, function (err, res) {
+        var message = '';
+        if (!res) {
+            message = 'Error! No spotify account?';
+            _log(err);
+            return;
+        }
+
+        var queueLength = res[0].FirstTrackNumberEnqueued;
+        _log('queueLength', queueLength);
+        message = 'Sure '
+            + userName
+            + ', Added "'
+            + trackName
+            + '" to the queue!\n'
+            + '\nPosition in queue is '
+            + queueLength;
+
+        _slackMessage(message, channel.id)
+
+        if (cb) {
+            cb();
+        }
+    });
+}
+
+
+function _addplaylist(input, channel, userName) {
+    var data = _searchSpotifyPlaylist(input, channel, userName, 1);
+    if (!data) {
+        return;
+    }
+
+  var trackNames = [];
+  for(var i = 1; i <= data.playlists.items.length; i++) {
+            	var spid = data.playlists.items[i-1].id;
+            	var uri = data.playlists.items[i-1].uri;
+            	var external_url = data.playlists.items[i-1].external_urls.spotify;
+		var trackName = data.playlists.items[i-1].name;
+            	trackNames.push(trackName);
+
+       }
+
+    sonos.getCurrentState(function (err, state) {
+        if (err) {
+            _log(err);
+        } else {
+            if (state === 'stopped') {
+                _flushInt(input, channel);
+                _addToSpotifyPlaylist(userName, spid, trackName, channel, function () {
+                _log("Adding playlist:", trackName);
+                    // Start playing the queue automatically.
+                    _playInt('play', channel);
+                });
+
+
+            } else if (state === 'playing') {
+                //Add the track to playlist...
+                _addToSpotifyPlaylist(userName, spid, trackName, channel);
+            } else if (state === 'paused') {
+                _addToSpotifyPlaylist(userName, spid, trackName, channel, function () {
+                    if (channel.name === adminChannel) {
+                        _slackMessage("Sonos is currently PAUSED. Type `resume` to start playing...", channel.id);
+                    }
+                });
+
+            } else if (state === 'transitioning') {
+                _slackMessage("Sonos says it is 'transitioning'. We've got no idea what that means either...", channel.id);
+            } else if (state === 'no_media') {
+                _slackMessage("Sonos reports 'no media'. Any idea what that means?", channel.id);
+            } else {
+                _slackMessage("Sonos reports its state as '" + state + "'. Any idea what that means? I've got nothing.", channel.id);
+            }
+        }
+    });
+}
+
+
+
 function _searchSpotify(input, channel, userName, limit) {
     let accessToken = _getAccessToken(channel.id);
     if (!accessToken) {
@@ -858,6 +949,42 @@ function _searchSpotify(input, channel, userName, limit) {
     return data;
 }
 
+
+function _searchSpotifyPlaylist(input, channel, userName, limit) {
+    let accessToken = _getAccessToken(channel.id);
+    if (!accessToken) {
+        return false;
+    }
+
+    var query = '';
+    for (var i = 1; i < input.length; i++) {
+        query += urlencode(input[i]);
+        if (i < input.length - 1) {
+            query += ' ';
+        }
+    }
+
+    var getapi = urllibsync.request(
+        'https://api.spotify.com/v1/search?q='
+        + query
+        + '&type=playlist&limit='
+        + limit
+        + '&market='
+        + market
+        + '&access_token='
+        + accessToken
+    );
+
+    var data = JSON.parse(getapi.data.toString());
+    _log(data);
+    if (!data.playlists || !data.playlists.items || data.playlists.items.length == 0) {
+        _slackMessage('Sorry ' + userName + ', I could not find that playlist :(', channel.id);
+        return;
+    }
+
+    return data;
+}
+
 function _status(channel) {
     sonos.getCurrentState(function (err, state) {
         if (err) {
@@ -878,6 +1005,51 @@ function _sl(channel, userName) {
         + "+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+";
     _slackMessage("Just for you, " + userName + "\n```\n" + train + "\n```\n", channel.id);
 }
+
+
+function _searchplaylist(input, channel) {
+        let accessToken = _getAccessToken(channel.id);
+        if (!accessToken) {
+                return false;
+        }
+
+    var query = '';
+    for(var i = 1; i < input.length; i++) {
+        query += urlencode(input[i]);
+        if(i < input.length-1) {
+            query += ' ';
+        }
+    }
+
+    var getapi = urllibsync.request('https://api.spotify.com/v1/search?q=' + query + '&type=playlist&limit=3&market=' + market + '&access_token=' + accessToken);
+    var data = JSON.parse(getapi.data.toString());
+    console.log(data);
+    if(data.playlists && data.playlists.items && data.playlists.items.length > 0) {
+        var trackNames = [];
+
+        for(var i = 1; i <= data.playlists.items.length; i++) {
+
+            var spid = data.playlists.items[i-1].id;
+            var uri = data.playlists.items[i-1].uri;
+            var external_url = data.playlists.items[i-1].external_urls.spotify;
+            var trackName = data.playlists.items[i-1].name;
+
+            trackNames.push(trackName);
+
+        }
+
+        var message = 'I found the following playlist(s):\n```\n' + trackNames.join('\n') + '\n```\nIf you want to play it, use the `addplaylist` command..\n';
+        slack.sendMessage(message, channel.id)
+
+    } else {
+        slack.sendMessage('Sorry could not find that playlist :(', channel.id);
+    }
+}
+
+
+
+
+
 
 function _blacklist(input, channel) {
     if (channel.name !== adminChannel) {
