@@ -832,10 +832,12 @@ function _addToSpotify(userName, uri, albumImg, trackName, channel, cb) {
 }
 
 
-function _addToSpotifyPlaylist(userName, uri, trackName, channel, cb) {
+function _addToSpotifyPlaylist(userName, uri, spid, trackName, channel, cb) {
 
-    var spotifyUri = 'spotify:user:spotify:playlist:' + uri;
-    sonos.queue(spotifyUri, function (err, res) {
+//    var spotifyUri = 'spotify:user:spotify:playlist:' + uri;
+    _log("TrackName:", trackName);
+    _log("spid:", spid);
+    sonos.queue(spid, function (err, res) {
         var message = '';
         if (!res) {
             message = 'Error! No spotify account?';
@@ -884,7 +886,7 @@ function _addplaylist(input, channel, userName) {
         } else {
             if (state === 'stopped') {
                 _flushInt(input, channel);
-                _addToSpotifyPlaylist(userName, spid, trackName, channel, function () {
+                _addToSpotifyPlaylist(userName, spid, uri, trackName, channel, function () {
                 _log("Adding playlist:", trackName);
                     // Start playing the queue automatically.
                     _playInt('play', channel);
@@ -893,9 +895,9 @@ function _addplaylist(input, channel, userName) {
 
             } else if (state === 'playing') {
                 //Add the track to playlist...
-                _addToSpotifyPlaylist(userName, spid, trackName, channel);
+                _addToSpotifyPlaylist(userName, spid, uri, trackName, channel);
             } else if (state === 'paused') {
-                _addToSpotifyPlaylist(userName, spid, trackName, channel, function () {
+                _addToSpotifyPlaylist(userName, spid, uri, trackName, channel, function () {
                     if (channel.name === adminChannel) {
                         _slackMessage("Sonos is currently PAUSED. Type `resume` to start playing...", channel.id);
                     }
