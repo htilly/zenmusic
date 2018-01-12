@@ -506,10 +506,8 @@ function _play(input, channel) {
 
 
 function _playInt(input, channel) {
-    sonos.selectQueue(function (err, result) {
         sonos.play(function (err, playing) {
             _log([err, playing])
-        });
     });
 }
     
