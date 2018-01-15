@@ -30,12 +30,12 @@
   "license": "ISC",
   "dependencies": {
     "@slack/client": "^3.5.1",
+    "html-entities": "^1.2.0",
     "htmlencode": "0.0.4",
     "nconf": "^0.8.4",
-    "sonos": "git+https://github.com/bencevans/node-sonos.git#master",
+    "sonos": "^0.22.1",
     "urlencode": "^1.1.0",
-    "urllib-sync": "^1.1.2",
-    "html-entities": "^1.2.0"
+    "urllib-sync": "^1.1.2"
   },
   "engines": {
     "node": ">=6.0.0"
