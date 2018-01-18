@@ -969,11 +969,9 @@ function _bestof(input, channel, userName) {
         } else {
             if (state === 'stopped') {
                 _flushInt(input, channel);
-                _addToSpotifyArtist(userName, trackName, spid, channel, function () {
+                _addToSpotifyArtist(userName, trackName, spid, channel);
                 _log("Adding artist:", trackName);
-                    // Start playing the queue automatically.
-                    _playInt('play', channel);
-                });
+                _playInt('play', channel);
 
 
             } else if (state === 'playing') {
