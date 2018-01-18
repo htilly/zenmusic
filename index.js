@@ -865,11 +865,11 @@ function _addToSpotifyPlaylist(userName, uri, trackName, channel, cb) {
     });
 }
 
-function _addToSpotifyArtist(userName, uri, spid, trackName, channel, cb) {
+function _addToSpotifyArtist(userName, spid, trackName, channel, cb) {
 
     _log("spid:", spid);
     _log("TrackName:", trackName);
-    _log("URI:", uri);
+//    _log("URI:", uri);
     var spotifyArtist = "spotify:artistTopTracks:"+trackName
     _log("spotifyArtist:", spotifyArtist);
     sonos.queue(spotifyArtist, function (err, res) {
@@ -969,7 +969,7 @@ function _bestof(input, channel, userName) {
         } else {
             if (state === 'stopped') {
                 _flushInt(input, channel);
-                _addToSpotifyArtist(userName, uri, trackName, spid, channel, function () {
+                _addToSpotifyArtist(userName, trackName, spid, channel, function () {
                 _log("Adding artist:", trackName);
                     // Start playing the queue automatically.
                     _playInt('play', channel);
@@ -978,9 +978,9 @@ function _bestof(input, channel, userName) {
 
             } else if (state === 'playing') {
                 //Add the track to playlist...
-                _addToSpotifyArtist(userName, uri, trackName, spid, channel);
+                _addToSpotifyArtist(userName, trackName, spid, channel);
             } else if (state === 'paused') {
-                _addToSpotifyArtist(userName, uri, trackName, spid, channel, function () {
+                _addToSpotifyArtist(userName, trackName, spid, channel, function () {
                     if (channel.name === adminChannel) {
                         _slackMessage("Sonos is currently PAUSED. Type `resume` to start playing...", channel.id);
                     }
