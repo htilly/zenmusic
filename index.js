@@ -236,6 +236,9 @@ slack.on(RTM_EVENTS.MESSAGE, (message) => {
             case 'previous':
                 _previous(input, channel);
                 break;
+            case 'shuffle':
+                _shuffle(input,channel);
+                break;
             case 'setvolume':
                 _setVolume(input, channel, userName);
                 break;
@@ -483,6 +486,7 @@ function _help(input, channel) {
             '`resume` : resume after pause\n' +
             '`next` : play next track\n' +
             '`previous` : play previous track\n' +
+            '`shuffle` : shuffle playlist\n' +
             '`blacklist` : show users on blacklist\n' +
             '`blacklist add @username` : add `@username` to the blacklist\n' +
             '`blacklist del @username` : remove `@username` from the blacklist\n'; 
@@ -514,7 +518,6 @@ function _playInt(input, channel) {
             _log([err, playing])
     });
 }
-    
 
 
 function _stop(input, channel) {
@@ -571,6 +574,19 @@ function _flushInt(input, channel) {
         _log([err, flushed])
         if (flushed) {
             _slackMessage("Sonos queue is clear.", channel.id);
+        }
+    });
+}
+
+function _shuffle(input, channel, byPassChannelValidation) {
+    if (channel.name !== adminChannel && !byPassChannelValidation) {
+        return
+    }
+    sonos.setPlayMode('shuffle', function (err, nexted) {
+        if (err) {
+            _log(err);
+        } else {
+            _slackMessage('Shuffling the playlist.', channel.id);
         }
     });
 }

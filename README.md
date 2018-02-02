@@ -73,6 +73,7 @@ List of commands (just type help in the channel)
 * `stop` : stop life
 * `next` : play next track
 * `previous` : play previous track
+* `shuffle` : shuffles playlist
     
 **Info**
 
