@@ -99,7 +99,6 @@ https://github.com/htilly/zenmusic/wiki
 * Code cleaning! =)
 * Simple "view" window of what is happening in the channel. I.e. - Put on big-screen of what is happening in #music
 * Admin: Delete single track from queue.
-* Add spotify playlist
 * Vote: When voting for a song, put it in top of the queue. Queue is sorted based upon the number of votes.
 * A vote shall not automatically skip to the next track. It should just put it higher up the queue.
 * Backend DB
@@ -115,6 +114,8 @@ https://github.com/htilly/zenmusic/wiki
 
 **DONE**
 
+* Add spotify playlist
+* Added "bestof" - Add the topp 10 tracks by selected artist.
 * Added gongcheck - Thanks to "Warren Harding"
 * Added blacklist function. Enter usernames in "blacklist.txt".
 * Updated 'node-sonos' with getQueue and addSpotify. See: https://github.com/bencevans/node-sonos/commit/bfb995610c8aa20bda09e370b0f5d31ba0caa6a0
