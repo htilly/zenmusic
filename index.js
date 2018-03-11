@@ -153,6 +153,9 @@ slack.on(RTM_EVENTS.MESSAGE, (message) => {
         case 'add':
             _add(input, channel, userName);
             break;
+        case 'addalbum':
+            _addalbum(input, channel, userName);
+            break;
         case 'bestof':
             _bestof(input, channel, userName);
             break;
@@ -162,6 +165,9 @@ slack.on(RTM_EVENTS.MESSAGE, (message) => {
         case 'searchplaylist':
             _searchplaylist(input, channel);
 	    break;
+        case 'searchalbum':
+            _searchalbum(input, channel);
+            break;
          case 'addplaylist':
              _addplaylist(input, channel);
              break;
@@ -463,10 +469,12 @@ function _help(input, channel) {
     var message = 'Current commands!\n' +
         '=====================\n' +
         '`add` _text_ : Add song to the queue and start playing if idle. Will start with a fresh queue.\n' +
+        '`addalbum` _text_ : Add an album to the queue and start playing if idle. Will start with a fresh queue.\n' +
         '`bestof` : _text_ : Add topp 10 tracks by the artist\n' +
         '`status` : show current status of Sonos\n' +
         '`current` : list current track\n' +
         '`search` _text_ : search for a track, does NOT add it to the queue\n' +
+        '`searchalbum` _text_ : search for an album, does NOT add it to the queue\n' +
         '`searchplaylist` _text_ : search for a playlist, does NOT add it to the queue\n' +
         '`addplaylist` _text_ : Add a playlist to the queue and start playing if idle. Will start with a fresh queue.\n' +
         '`append` _text_ : Append a song to the previous playlist and start playing the same list again.\n' +
@@ -744,6 +752,53 @@ function _add(input, channel, userName) {
 }
 
 
+function _addalbum(input, channel, userName) {
+    var data = _searchSpotifyAlbum(input, channel, userName, 1);
+    if (!data) {
+        return;
+    }
+
+            var spid = data.albums.items[0].id;
+            var uri = data.albums.items[0].uri;
+            var external_url = data.albums.items[0].external_urls.spotify;
+            var trackName = data.albums.items[0].artists[0].name + ' - ' + data.albums.items[0].name;
+    	    var albumImg = data.albums.items[0].images[2].url;
+
+    _log("Adding album:", trackName, "with UID:", uri);
+
+    sonos.getCurrentState(function (err, state) {
+        if (err) {
+            _log(err);
+        } else {
+            if (state === 'stopped') {
+                _flushInt(input, channel);
+                _addToSpotify(userName, uri, albumImg, trackName, channel, function () {
+                _log("Adding album:", trackName);
+                    // Start playing the queue automatically.
+                    _playInt('play', channel);
+                });
+
+
+            } else if (state === 'playing') {
+                //Add the track to playlist...
+                _addToSpotify(userName, uri, albumImg, trackName, channel);
+            } else if (state === 'paused') {
+                _addToSpotify(userName, uri, albumImg, trackName, channel, function () {
+                    if (channel.name === adminChannel) {
+                        _slackMessage("Sonos is currently PAUSED. Type `resume` to start playing...", channel.id);
+                    }
+                });
+
+            } else if (state === 'transitioning') {
+                _slackMessage("Sonos says it is 'transitioning'. We've got no idea what that means either...", channel.id);
+            } else if (state === 'no_media') {
+                _slackMessage("Sonos reports 'no media'. Any idea what that means?", channel.id);
+            } else {
+                _slackMessage("Sonos reports its state as '" + state + "'. Any idea what that means? I've got nothing.", channel.id);
+            }
+        }
+    });
+}
 
 function _append(input, channel, userName) {
     var data = _searchSpotify(input, channel, userName, 1);
@@ -1082,6 +1137,42 @@ function _searchSpotifyPlaylist(input, channel, userName, limit) {
     return data;
 }
 
+function _searchSpotifyAlbum(input, channel, userName, limit) {
+    let accessToken = _getAccessToken(channel.id);
+    if (!accessToken) {
+        return false;
+    }
+
+    var query = '';
+    for (var i = 1; i < input.length; i++) {
+        query += urlencode(input[i]);
+        if (i < input.length - 1) {
+            query += ' ';
+        }
+    }
+
+    var getapi = urllibsync.request(
+        'https://api.spotify.com/v1/search?q='
+        + query
+        + '&type=album&limit='
+        + limit
+        + '&market='
+        + market
+        + '&access_token='
+        + accessToken
+    );
+
+    var data = JSON.parse(getapi.data.toString());
+    _log(data);
+    if (!data.albums || !data.albums.items || data.albums.items.length == 0) {
+        _slackMessage('Sorry ' + userName + ', I could not find that album :(', channel.id);
+        return;
+    }
+
+    return data;
+}
+
+
 function _searchSpotifyArtist(input, channel, userName, limit) {
     let accessToken = _getAccessToken(channel.id);
     if (!accessToken) {
@@ -1180,7 +1271,45 @@ function _searchplaylist(input, channel) {
 
 
 
+function _searchalbum(input, channel) {
+        let accessToken = _getAccessToken(channel.id);
+        if (!accessToken) {
+                return false;
+        }
 
+    var query = '';
+    for(var i = 1; i < input.length; i++) {
+        query += urlencode(input[i]);
+        if(i < input.length-1) {
+            query += ' ';
+        }
+    }
+
+    var getapi = urllibsync.request('https://api.spotify.com/v1/search?q=' + query + '&type=album&limit=3&market=' + market + '&access_token=' + accessToken);
+    var data = JSON.parse(getapi.data.toString());
+    console.log(data);
+    if(data.albums && data.albums.items && data.albums.items.length > 0) {
+        var trackNames = [];
+
+        for(var i = 1; i <= data.albums.items.length; i++) {
+
+            var spid = data.albums.items[i-1].id;
+            var uri = data.albums.items[i-1].uri;
+            var external_url = data.albums.items[i-1].external_urls.spotify;
+ //           var trackName = data.albums.items[i-1].name;
+	    var trackName = data.albums.items[i - 1].artists[0].name + ' - ' + data.albums.items[i - 1].name;
+
+            trackNames.push(trackName);
+
+        }
+
+        var message = 'I found the following album(s):\n```\n' + trackNames.join('\n') + '\n```\nIf you want to play it, use the `addalbum` command..\n';
+        slack.sendMessage(message, channel.id)
+
+    } else {
+        slack.sendMessage('Sorry could not find that album :(', channel.id);
+    }
+}
 
 
 function _blacklist(input, channel) {
