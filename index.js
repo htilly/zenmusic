@@ -338,7 +338,7 @@ function _showQueue(channel, cb) {
                 return (err, null);
             }
             _log(err)
-            _slackMessage("Couldn't fetch the queue", channel.id);
+            _slackMessage("Seems like the queue is empty... Have you tried adding a song?!", channel.id);
 
         } else {
             if (cb) {
