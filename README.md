@@ -8,10 +8,22 @@
 ![ScreenShot](http://raw.github.com/htilly/zenmusic/master/doc/images/Screenshot.png)
 
 
+(&#x1F534;) **Help wanted!** (&#x1F534;)
+
+Migrate to version 4.0 for node-slack-sdk and primarily DataStore migration.
+
+https://github.com/slackapi/node-slack-sdk/wiki/DataStore-v3.x-Migration-Guide
+
+
+Make it work with latest async version of node-sonos:
+
+https://github.com/bencevans/node-sonos/issues/218
+
+
 
 **What is it?**
 
-Quick hack created during one of Schibsted Swedens hackdays by staff from Centralen.
+Quick hack created during one of Schibsted Swedens hackdays by staff from E-Tech.
 It´s a #slack-bot that control Sonos (and spotify). Highly democratic bot :)
 Uses https://github.com/bencevans/node-sonos to controll Sonos.
 
