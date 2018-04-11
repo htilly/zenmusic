@@ -730,7 +730,7 @@ function _add(input, channel, userName) {
                 _addToSpotify(userName, uri, albumImg, trackName, channel, function () {
                 _log("Adding track:", trackName);
                     // Start playing the queue automatically.
-                    _playInt('play', channel);
+	        setTimeout(() => _playInt('play', channel), 3000);	
                 });
 
 
@@ -779,7 +779,7 @@ function _addalbum(input, channel, userName) {
                 _addToSpotify(userName, uri, albumImg, trackName, channel, function () {
                 _log("Adding album:", trackName);
                     // Start playing the queue automatically.
-                    _playInt('play', channel);
+		    setTimeout(() => _playInt('play', channel), 3000);
                 });
 
 
@@ -821,16 +821,13 @@ function _append(input, channel, userName) {
         if (err) {
             _log(err);
         } else {
-          if (state === 'stopped') {
+           if (state === 'stopped') {
                 _addToSpotify(userName, uri, albumImg, trackName, channel, function () {
-                    // Start playing the queue automatically.
-                _playInt('play', channel, function () {
-		_log("Adding track:", trackName, function () {
-
-              });
-            });
-          });
-
+                _log("Adding album:", trackName);
+                // Start playing the queue automatically.
+                setTimeout(() => _playInt('play', channel), 3000);
+             });
+                   
             } else if (state === 'playing') {
                 //Add the track to playlist...
                 _addToSpotify(userName, uri, albumImg, trackName, channel);
@@ -998,7 +995,7 @@ function _addplaylist(input, channel, userName) {
                 _addToSpotifyPlaylist(userName, uri, trackName, channel, function () {
                 _log("Adding playlist:", trackName);
                     // Start playing the queue automatically.
-                 _playInt('play', channel);
+	         setTimeout(() => _playInt('play', channel), 3000);	
                 });
 
             } else if (state === 'playing') {
@@ -1046,7 +1043,7 @@ function _bestof(input, channel, userName) {
                 _flushInt(input, channel);
                 _addToSpotifyArtist(userName, trackName, spid, channel);
                 _log("Adding artist:", trackName);
-                _playInt('play', channel);
+		setTimeout(() => _playInt('play', channel), 3000);
 
 
             } else if (state === 'playing') {
