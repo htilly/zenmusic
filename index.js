@@ -198,6 +198,10 @@ slack.on(RTM_EVENTS.MESSAGE, (message) => {
 	case 'train':
             _sl(channel, userName);
             break;
+        case 'elvis':
+        case 'theking':
+            _theking(channel, userName);
+            break;
         case 'volume':
             _getVolume(channel);
             break;
@@ -1229,6 +1233,47 @@ function _sl(channel, userName) {
     _slackMessage("Just for you, " + userName + "\n```\n" + train + "\n```\n", channel.id);
 }
 
+
+function _theking(channel, userName) {
+        var theking = "                           \n"
+
++ "                        _ `.`'.\n"
++ "           ,.---._      \\`\\|   \\\n"
++ "          ,'       `-.__.'     ;\n"
++ "          |                   .'\n"
++ "        ,.-\\.__________,,.--'`\n"
++ "       /    `.             \\                   _\n"
++ "       |     |,.----. _ ,---.                .' )\n"
++ "       ,-..__'.'´´´´.\\=|.'´´´\\\\            .' .'\n"
++ "      | ._\\._||      |=||    ||         .' .'\n"
++ "      \\  -'; ||     // .-.   ||._    _'  /_`)\n"
++ "    .' '._.| |\\\\__.'/     \\_//   '..'\\\\ __D)`)\n"
++ "   /_      | '\\`'-'` (    |-''.\\ /'   \\\\ \\;-')\n"
++ "   '-.`-.  |   `> _/  `'-',    |' _,_  \\\\-'-'\n"
++ "      `'.`.\\   /   `-.___.-'  /   >,\\   \\\\\n"
++ "         `.\\`-'.           _.'_        _.-;\n"
++ "       ,-'' `.  `'-.__,__)' /,\\\\   _.-:'.|||\n"
++ "      /       `-._  ,;,.: \\/  _.-'; || ||||\n"
++ "     /_,_ |     _,`'-.';;'/  `'.  |||;.||||\n"
++ "    / >,\\ \\     >,\\   '. ;   _,_\\ ||'.||';\n"
++ "   ;       `._       _,_`.   >,\\ | |'|'\n"
++ "   |     .'.' `\\     >,\\ |    _.-' `\n"
++ "   ;\\  .'.'  |`-'._____ .-.-'`   |\n"
++ "   |||</'\\\\\\ `.       (( o ))_.-'\n"
++ "   ;|'; \\ `-'._)`''----`'-'`    /\n"
++ "   '|||  `.                   .'\n"
++ "    |||    `'. _,_'-.____.-''`\n"
++ "     |'     /  >,\\   /    |mx\n"
++ "           /        ; _,_ ;\n"
++ "          .'        | >,\\  \\\n"
++ "          /  .  -  - \\  _  -\\__\n"
++ "         ; -_..--'''--'._.-'`   `'-.\n"
++ "         |.'             `._________)\n"
++ "          ''''''''''''''''` ´´ ";
+
+
+_slackMessage("King of Rock and Roll, just for you " + userName + "\n```\n" + theking + "\n```\n", channel.id);
+}
 
 function _searchplaylist(input, channel) {
         let accessToken = _getAccessToken(channel.id);
