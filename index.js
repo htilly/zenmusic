@@ -3,6 +3,10 @@ var urlencode = require('urlencode')
 var fs = require('fs')
 var config = require('nconf')
 var Entities = require('html-entities').AllHtmlEntities
+var timestamp = require('console-timestamp');
+
+var now = new Date();
+var number = 478921;
 
 config.argv()
   .env()
@@ -258,10 +262,8 @@ function _slackMessage (message, id) {
 }
 
 function _log (...args) {
-  // for (let val of args) {
-  //     console.log(val);
-  // }
-  console.log(...args)
+ // console.log(...args)
+  console.log('MM-DD hh:mm:ss:iii  '.timestamp,...args);
 }
 
 function _getVolume (channel) {
