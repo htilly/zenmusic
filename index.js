@@ -3,10 +3,10 @@ var urlencode = require('urlencode')
 var fs = require('fs')
 var config = require('nconf')
 var Entities = require('html-entities').AllHtmlEntities
-var timestamp = require('console-timestamp');
+var timestamp = require('console-timestamp')
 
-var now = new Date();
-var number = 478921;
+var now = new Date()
+var number = 478921
 
 config.argv()
   .env()
@@ -109,19 +109,27 @@ slack.on('open', function () {
 })
 
 slack.on(RTM_EVENTS.MESSAGE, (message) => {
-  let channel, channelError, channelName, errors, text, textError, ts, type, typeError, userName
+  let channel, channelError, channelName, errors, response, text, textError, ts, type, typeError, user, userName
 
   channel = slack.dataStore.getChannelGroupOrDMById(message.channel)
-  var response = ''
+
+  response = ''
   type = message.type, ts = message.ts, text = message.text
   channelName = (channel != null ? channel.is_channel : void 0) ? '#' : ''
   channelName = channelName + (channel ? channel.name : 'UNKNOWN_CHANNEL')
   userName = '<@' + message.user + '>'
   _log('Received: ' + type + ' ' + channelName + ' ' + userName + ' ' + ts + ' "' + text + '"')
-  if (type !== 'message' || (text === null) || (channel === null)) {
+
+  user = slack.dataStore.getUserById(message.user)
+  let displayName = (user != null ? user.display_name : void 0) != null ? '@' + user.name : 'UNKNOWN_USER'
+  if (user && user.is_bot) {
+    _slackMessage('Sorry ' + userName + ', no bots allowed!', channel.id)
+  }
+
+  if (type !== 'message' || (text == null) || (channel == null)) {
     typeError = type !== 'message' ? 'unexpected type ' + type + '.' : null
-    textError = text === null ? 'text was undefined.' : null
-    channelError = channel === null ? 'channel was undefined.' : null
+    textError = text == null ? 'text was undefined.' : null
+    channelError = channel == null ? 'channel was undefined.' : null
     errors = [typeError, textError, channelError].filter(function (element) {
       return element !== null
     }).join(' ')
@@ -214,8 +222,8 @@ slack.on(RTM_EVENTS.MESSAGE, (message) => {
       case 'next':
         _nextTrack(channel)
         break
-      case 'gongPlay':
-        _gongPlay(input, channel)
+      case 'gongplay':
+        _gongplay(input, channel)
         break
       case 'stop':
         _stop(input, channel)
@@ -245,6 +253,9 @@ slack.on(RTM_EVENTS.MESSAGE, (message) => {
       case 'blacklist':
         _blacklist(input, channel)
         break
+      case 'test':
+        _addToSpotifyPlaylist(input, channel)
+        break
       default:
         break
     }
@@ -262,15 +273,14 @@ function _slackMessage (message, id) {
 }
 
 function _log (...args) {
- // console.log(...args)
-  console.log('MM-DD hh:mm:ss:iii  '.timestamp,...args);
+  console.log('MM-DD hh:mm:ss:iii  '.timestamp, ...args)
 }
 
 function _getVolume (channel) {
-  sonos.getVolume(function (err, vol) {
-    _log(err, vol)
+  sonos.getVolume().then(vol => {
+    console.log('The volume is %d', vol)
     _slackMessage('Volume is ' + vol + ' deadly dB _(ddB)_', channel.id)
-  })
+  }).catch(err => { console.log('Error occurred %j', err) })
 }
 
 function _setVolume (input, channel, userName) {
@@ -288,12 +298,10 @@ function _setVolume (input, channel, userName) {
     if (vol > maxVolume) {
       _slackMessage("That's a bit extreme, " + userName + '... lower please.', channel.id)
     } else {
-      sonos.setVolume(vol, function (err, data) {
-        if (err) {
-          _log(err)
-        }
-        _getVolume(channel)
-      })
+      sonos.setVolume(vol).then(vol => {
+        console.log('The volume is: ', vol)
+      }).catch(err => { console.log('Error occurred %j', err) })
+      _getVolume(channel)
     }
   }
 }
@@ -326,90 +334,78 @@ function _countQueue (channel, cb) {
   })
 }
 
-function _showQueue (channel, cb) {
-  sonos.getQueue(function (err, result) {
-    if (err) {
-      if (cb) {
-        return (err, null)
+function _showQueue (channel) {
+  sonos.getQueue().then(result => {
+    console.log('Current queue: ', JSON.stringify(result, null, 2))
+    _currentTrack(channel, function (err, track) {
+      if (!result) {
+        _log(result)
+        _slackMessage('Seems like the queue is empty... Have you tried adding a song?!', channel.id)
       }
-      _log(err)
-      _slackMessage('Seems like the queue is empty... Have you tried adding a song?!', channel.id)
-    } else {
-      if (cb) {
-        return cb(null, result.items)
+      if (err) {
+        _log(err)
       }
-      _currentTrack(channel, function (err, track) {
-        if (err) {
-          _log(err)
-        }
-        var message = 'Total tracks in queue: ' + result.total + '\n' +
-                    '===================='
-        result.items.map(
-          function (item, i) {
-            message += '\n'
-            if (item['title'] === track.title) {
-              message += ':notes: ' + '_#' + i + '_ *Title:* ' + item['title']
-              message += ' *Artist:* ' + item['artist']
-            } else {
-              message += '>_#' + i + '_ *Title:* ' + item['title']
-              message += ' *Artist:* ' + item['artist']
-            }
+      var message = 'Total tracks in queue: ' + result.total + '\n' +
+      '===================='
+      result.items.map(
+        function (item, i) {
+          message += '\n'
+          if (item['title'] === track.title) {
+            message += ':notes: ' + '_#' + i + '_ *Title:* ' + item['title']
+            message += ' *Artist:* ' + item['artist']
+          } else {
+            message += '>_#' + i + '_ *Title:* ' + item['title']
+            message += ' *Artist:* ' + item['artist']
           }
-        )
-        _slackMessage(message, channel.id)
-      })
-    }
+        }
+      )
+      _slackMessage(message, channel.id)
+    })
+  }).catch(err => {
+    console.log('Error fetch queue:', err)
   })
 }
 
-// Need to track what song has had a GONG called
-// If the GONG was called on the previous song, reset
-
-function _gong (channel, userName) {
+function _gong (channel, userName, track) {
   _log('_gong...')
+  _currentTrackTitle(channel, track)
+  _log('_gong > track: ' + track)
 
-  _currentTrackTitle(channel, function (err, track) {
-    if (err) {
-      _log(err)
+  // NOTE: The gongTrack is checked in _currentTrackTitle() so we
+  // need to let that go through before checking if gong is banned.
+  if (gongBanned) {
+    _slackMessage('Sorry ' + userName + ', the people have voted and this track cannot be gonged...', channel.id)
+    return
+  }
+
+  // Get message
+  _log('gongMessage.length: ' + gongMessage.length)
+  var ran = Math.floor(Math.random() * gongMessage.length)
+  var randomMessage = gongMessage[ran]
+  _log('gongMessage: ' + randomMessage)
+
+  // Need a delay before calling the rest
+  if (!(userName in gongScore)) {
+    gongScore[userName] = 0
+  }
+
+  if (gongScore[userName] >= gongLimitPerUser) {
+    _slackMessage('Are you trying to cheat, ' + userName + '? DENIED!', channel.id)
+  } else {
+    if (userName in voteScore) {
+      _slackMessage('Having regrets, ' + userName + "? We're glad you came to your senses...", channel.id)
     }
-    _log('_gong > track: ' + track)
 
-    // NOTE: The gongTrack is checked in _currentTrackTitle() so we
-    // need to let that go through before checking if gong is banned.
-    if (gongBanned) {
-      _slackMessage('Sorry ' + userName + ', the people have voted and this track cannot be gonged...', channel.id)
-      return
+    gongScore[userName] = gongScore[userName] + 1
+    gongCounter++
+    _slackMessage(randomMessage + ' This is GONG ' + gongCounter + '/' + gongLimit + ' for ' + track, channel.id)
+    if (gongCounter >= gongLimit) {
+      _slackMessage('The music got GONGED!!', channel.id)
+      _nextTrack(channel, true)
+      gongCounter = 0
+      gongScore = {}
     }
-
-    // Get message
-    _log('gongMessage.length: ' + gongMessage.length)
-    var ran = Math.floor(Math.random() * gongMessage.length)
-    var randomMessage = gongMessage[ran]
-    _log('gongMessage: ' + randomMessage)
-
-    // Need a delay before calling the rest
-    if (!(userName in gongScore)) {
-      gongScore[userName] = 0
-    }
-
-    if (gongScore[userName] >= gongLimitPerUser) {
-      _slackMessage('Are you trying to cheat, ' + userName + '? DENIED!', channel.id)
-    } else {
-      if (userName in voteScore) {
-        _slackMessage('Having regrets, ' + userName + "? We're glad you came to your senses...", channel.id)
-      }
-
-      gongScore[userName] = gongScore[userName] + 1
-      gongCounter++
-      _slackMessage(randomMessage + ' This is GONG ' + gongCounter + '/' + gongLimit + ' for ' + track, channel.id)
-      if (gongCounter >= gongLimit) {
-        _slackMessage('The music got GONGED!!', channel.id)
-        _nextTrack(channel, true)
-        gongCounter = 0
-        gongScore = {}
-      }
-    }
-  })
+  }
 }
 
 function _vote (channel, userName) {
@@ -444,21 +440,15 @@ function _vote (channel, userName) {
   })
 }
 
-function _gongcheck (channel, userName) {
+function _gongcheck (channel, userName, track) {
   _log('_gongcheck...')
-
-  _currentTrackTitle(channel, function (err, track) {
-    if (err) {
-      _log(err)
-    }
-    _log('_gongcheck > track: ' + track)
-
-    _slackMessage('GONG is currently ' + gongCounter + '/' + gongLimit + ' for ' + track, channel.id)
-    var gongers = gongScore.keys()
-    if (gongers.length > 0) {
-      _slackMessage('Gonged by ' + gongers.join(','), channel.id)
-    }
-  })
+  _currentTrackTitle(channel, track)
+  _log('_gongcheck > track: ' + track)
+  _slackMessage('GONG is currently ' + gongCounter + '/' + gongLimit + ' for ' + track, channel.id)
+  var gongers = gongScore.keys()
+  if (gongers.length > 0) {
+    _slackMessage('Gonged by ' + gongers.join(','), channel.id)
+  }
 }
 
 function _previous (input, channel) {
@@ -508,90 +498,69 @@ function _help (input, channel) {
   _slackMessage(message, channel.id)
 }
 
-function _play (input, channel) {
+function _play (input, channel, state) {
   if (channel.name !== adminChannel) {
     return
   }
-  sonos.selectQueue(function (err, result) {
-    if (err) {
-      _log(err, result)
-    }
-    sonos.play(function (err, playing) {
-      if (err) {
-        _log(err, playing)
-      }
-      if (playing) {
-        _slackMessage('Sonos is already PLAYING.', channel.id)
-      } else {
-        _slackMessage('Sonos is now PLAYING.', channel.id)
-      }
-    })
-  })
+  sonos.play().then(result => {
+    setTimeout(() => _status(channel, state), 500)
+    console.log('Started playing - ', result)
+  }).catch(err => { console.log('Error occurred: ', err) })
 }
 
 function _playInt (input, channel) {
-  sonos.play(function (err, playing) {
-    _log([err, playing])
-  })
+  sonos.play().then(result => {
+    console.log('playInt, started playing', result)
+  }).catch(err => { console.log('Error occurred: ', err) })
 }
 
-function _stop (input, channel) {
+function _stop (input, channel, state) {
   if (channel.name !== adminChannel) {
     return
   }
-  sonos.stop(function (err, stopped) {
-    _log([err, stopped])
-    if (stopped) {
-      _slackMessage('Sonos is now STOPPED.', channel.id)
-    }
-  })
+  sonos.stop().then(result => {
+    _status(channel, state)
+    console.log('Stoped playing - ', result)
+  }).catch(err => { console.log('Error occurred: ', err) })
 }
 
-function _pause (input, channel) {
+function _pause (input, channel, state) {
   if (channel.name !== adminChannel) {
     return
   }
-  sonos.selectQueue(function (err, result) {
-    if (err) {
-      _log(err)
-    }
-    sonos.pause(function (err, paused) {
-      _log([err, paused])
-      _slackMessage('Sonos is now PAUSED.', channel.id)
-    })
-  })
+  sonos.pause().then(result => {
+    _status(channel, state)
+    console.log('Pause playing - ', result)
+  }).catch(err => { console.log('Error occurred: ', err) })
 }
 
-function _resume (input, channel) {
+function _resume (input, channel, state) {
   if (channel.name !== adminChannel) {
     return
   }
-  sonos.play(function (err, playing) {
-    _log([err, playing])
-    if (playing) {
-      _slackMessage('Resuming...', channel.id)
-    }
-  })
+  sonos.play().then(result => {
+    setTimeout(() => _status(channel, state), 500)
+    console.log('Resume playing - ', result)
+  }).catch(err => { console.log('Error occurred: ', err) })
 }
 
 function _flush (input, channel) {
   if (channel.name !== adminChannel) {
     return
   }
-  sonos.flush(function (err, flushed) {
-    _log([err, flushed])
-    if (flushed) {
-      _slackMessage('Sonos queue is clear.', channel.id)
-    }
+  sonos.flush().then(result => {
+    console.log('Flushed queue: ', JSON.stringify(result, null, 2))
+    _slackMessage('Sonos queue is clear.', channel.id)
+  }).catch(err => {
+    console.log('Error flushing queue: ', err)
   })
 }
 
 function _flushInt (input, channel) {
-  sonos.flush(function (err, flushed) {
-    _log([err, flushed])
-    if (flushed) {
-      _slackMessage('Sonos queue is clear.', channel.id)
-    }
+  sonos.flush().then(result => {
+    console.log('Flushed queue: ', JSON.stringify(result, null, 2))
+  }).catch(err => {
+    console.log('Error flushing queue: ', err)
   })
 }
 
@@ -608,12 +577,10 @@ function _shuffle (input, channel, byPassChannelValidation) {
   })
 }
 
-function _gongPlay (channel) {
-  if (channel.name !== adminChannel) {
-    return
-  }
-  sonos.play('http://raw.githubusercontent.com/htilly/zenmusic/master/doc/sound/gong.mp3', function (err, playing) {
+function _gongplay (channel) {
+  sonos.play('spotify:track:6Yy5Pr0KvTnAaxDBBISSDe', function (err, playing) {
     _log([err, playing])
+    _log('GongPlay!')
   })
 }
 
@@ -630,8 +597,9 @@ function _nextTrack (channel, byPassChannelValidation) {
   })
 }
 
-function _currentTrack (channel, cb) {
-  sonos.currentTrack(function (err, track) {
+function _currentTrack (channel, cb, err) {
+  sonos.currentTrack().then(track => {
+    console.log('Got current track: ', track)
     if (err) {
       _log(err, track)
       if (cb) {
@@ -641,6 +609,7 @@ function _currentTrack (channel, cb) {
       if (cb) {
         return cb(null, track)
       }
+
       _log(track)
       var fmin = '' + Math.floor(track.duration / 60)
       fmin = fmin.length === 2 ? fmin : '0' + fmin
@@ -655,39 +624,42 @@ function _currentTrack (channel, cb) {
       var message = `We're rocking out to *${track.artist}* - *${track.title}* (${pmin}:${psec}/${fmin}:${fsec})`
       _slackMessage(message, channel.id)
     }
-  })
+  }).catch(err => { console.log('Error occurred %j', err) })
 }
 
 function _currentTrackTitle (channel, cb) {
-  sonos.currentTrack(function (err, track) {
+  sonos.currentTrack().then(track => {
+    console.log('Got current track: ', track)
     var _track = ''
-    if (err) {
-      _log(err, track)
-    } else {
-      _track = track.title
-      _log('_currentTrackTitle > title: ' + _track)
-      _log('_currentTrackTitle > gongTrack: ' + gongTrack)
+    _track = track.title
+    _log('_currentTrackTitle > title: ' + _track)
+    _log('_currentTrackTitle > gongTrack: ' + gongTrack)
 
-      if (gongTrack !== '') {
-        if (gongTrack !== _track) {
-          _log('_currentTrackTitle > different track, reset!')
-          gongCounter = 0
-          gongScore = {}
-          gongBanned = false
-          voteCounter = 0
-          voteScore = {}
-        } else {
-          _log('_currentTrackTitle > gongTrack is equal to _track')
-        }
+    if (gongTrack !== '') {
+      if (gongTrack !== _track) {
+        _log('_currentTrackTitle > different track, reset!')
+        gongCounter = 0
+        gongScore = {}
+        gongBanned = false
+        voteCounter = 0
+        voteScore = {}
       } else {
-        _log('_currentTrackTitle > gongTrack is empty')
+        _log('_currentTrackTitle > gongTrack is equal to _track')
       }
-
-      gongTrack = _track
+    } else {
+      _log('_currentTrackTitle > gongTrack is empty')
     }
+    gongTrack = _track
+    cb(_track)
+    _log('DEBUG And we´re done here. Got _track: ' + _track)
+  }).catch(err => { console.log('Error occurred %j', err) })
+}
 
-    cb(err, _track)
-  })
+function _test (input, channel, state) {
+  var wtf = _status()
+  _log('Test got state: ' + state)
+  _log('Test got wtf: ' + wtf)
+  _slackMessage('Current state is: ' + state + ' ', channel.id)
 }
 
 function _add (input, channel, userName) {
@@ -696,44 +668,42 @@ function _add (input, channel, userName) {
     return
   }
 
-  // var spid = data.tracks.items[0].id
   var uri = data.tracks.items[0].uri
-  //  var external_url = data.tracks.items[0].external_urls.spotify
-
   var albumImg = data.tracks.items[0].album.images[2].url
   var trackName = data.tracks.items[0].artists[0].name + ' - ' + data.tracks.items[0].name
 
   _log('Adding track:', trackName, 'with UID:', uri)
 
-  sonos.getCurrentState(function (err, state) {
-    if (err) {
-      _log(err, state)
+  sonos.getCurrentState().then(state => {
+    console.log('Got current state: ', state)
+
+    if (state === 'stopped') {
+      _log('State:', state, ' - flushing')
+      _flushInt(input, channel)
+      _addToSpotify(userName, uri, albumImg, trackName, channel)
+      _log('Adding track:', trackName)
+      setTimeout(() => _playInt('play', channel), 1000)
+    } else if (state === 'playing') {
+      _log('State:', state, ' - playing...')
+      // Add the track to playlist...
+      _addToSpotify(userName, uri, albumImg, trackName, channel)
+    } else if (state === 'paused') {
+      _log('State:', state, ' - telling them no...')
+      _addToSpotify(userName, uri, albumImg, trackName, channel, function () {
+        if (channel.name === adminChannel) {
+          _slackMessage('Sonos is currently PAUSED. Type `resume` to start playing...', channel.id)
+        }
+      })
+    } else if (state === 'transitioning') {
+      _log('State:', state, ' - no idea what to do')
+
+      _slackMessage("Sonos says it is 'transitioning'. We've got no idea what that means either...", channel.id)
+    } else if (state === 'no_media') {
+      _slackMessage("Sonos reports 'no media'. Any idea what that means?", channel.id)
     } else {
-      if (state === 'stopped') {
-        _flushInt(input, channel)
-        _addToSpotify(userName, uri, albumImg, trackName, channel, function () {
-          _log('Adding track:', trackName)
-          // Start playing the queue automatically.
-          setTimeout(() => _playInt('play', channel), 3000)
-        })
-      } else if (state === 'playing') {
-        // Add the track to playlist...
-        _addToSpotify(userName, uri, albumImg, trackName, channel)
-      } else if (state === 'paused') {
-        _addToSpotify(userName, uri, albumImg, trackName, channel, function () {
-          if (channel.name === adminChannel) {
-            _slackMessage('Sonos is currently PAUSED. Type `resume` to start playing...', channel.id)
-          }
-        })
-      } else if (state === 'transitioning') {
-        _slackMessage("Sonos says it is 'transitioning'. We've got no idea what that means either...", channel.id)
-      } else if (state === 'no_media') {
-        _slackMessage("Sonos reports 'no media'. Any idea what that means?", channel.id)
-      } else {
-        _slackMessage("Sonos reports its state as '" + state + "'. Any idea what that means? I've got nothing.", channel.id)
-      }
+      _slackMessage("Sonos reports its state as '" + state + "'. Any idea what that means? I've got nothing.", channel.id)
     }
-  })
+  }).catch(err => { console.log('Error occurred %j', err) })
 }
 
 function _addalbum (input, channel, userName) {
@@ -742,43 +712,38 @@ function _addalbum (input, channel, userName) {
     return
   }
 
-  //  var spid = data.albums.items[0].id
   var uri = data.albums.items[0].uri
-  //  var external_url = data.albums.items[0].external_urls.spotify
   var trackName = data.albums.items[0].artists[0].name + ' - ' + data.albums.items[0].name
   var albumImg = data.albums.items[0].images[2].url
 
   _log('Adding album:', trackName, 'with UID:', uri)
 
-  sonos.getCurrentState(function (err, state) {
-    if (err) {
-      _log(err, state)
+  sonos.getCurrentState().then(state => {
+    console.log('Got current state: ', state)
+
+    if (state === 'stopped') {
+      _flushInt(input, channel)
+      _addToSpotify(userName, uri, albumImg, trackName, channel)
+      _log('Adding album:', trackName)
+      // Start playing the queue automatically.
+      setTimeout(() => _playInt('play', channel), 1000)
+    } else if (state === 'playing') {
+      // Add the track to playlist...
+      _addToSpotify(userName, uri, albumImg, trackName, channel)
+    } else if (state === 'paused') {
+      _addToSpotify(userName, uri, albumImg, trackName, channel, function () {
+        if (channel.name === adminChannel) {
+          _slackMessage('Sonos is currently PAUSED. Type `resume` to start playing...', channel.id)
+        }
+      })
+    } else if (state === 'transitioning') {
+      _slackMessage("Sonos says it is 'transitioning'. We've got no idea what that means either...", channel.id)
+    } else if (state === 'no_media') {
+      _slackMessage("Sonos reports 'no media'. Any idea what that means?", channel.id)
     } else {
-      if (state === 'stopped') {
-        _flushInt(input, channel)
-        _addToSpotify(userName, uri, albumImg, trackName, channel, function () {
-          _log('Adding album:', trackName)
-          // Start playing the queue automatically.
-          setTimeout(() => _playInt('play', channel), 3000)
-        })
-      } else if (state === 'playing') {
-        // Add the track to playlist...
-        _addToSpotify(userName, uri, albumImg, trackName, channel)
-      } else if (state === 'paused') {
-        _addToSpotify(userName, uri, albumImg, trackName, channel, function () {
-          if (channel.name === adminChannel) {
-            _slackMessage('Sonos is currently PAUSED. Type `resume` to start playing...', channel.id)
-          }
-        })
-      } else if (state === 'transitioning') {
-        _slackMessage("Sonos says it is 'transitioning'. We've got no idea what that means either...", channel.id)
-      } else if (state === 'no_media') {
-        _slackMessage("Sonos reports 'no media'. Any idea what that means?", channel.id)
-      } else {
-        _slackMessage("Sonos reports its state as '" + state + "'. Any idea what that means? I've got nothing.", channel.id)
-      }
+      _slackMessage("Sonos reports its state as '" + state + "'. Any idea what that means? I've got nothing.", channel.id)
     }
-  })
+  }).catch(err => { console.log('Error occurred %j', err) })
 }
 
 function _append (input, channel, userName) {
@@ -791,34 +756,37 @@ function _append (input, channel, userName) {
   var albumImg = data.tracks.items[0].album.images[2].url
   var trackName = data.tracks.items[0].artists[0].name + ' - ' + data.tracks.items[0].name
 
-  sonos.getCurrentState(function (err, state) {
-    if (err) {
-      _log(err, state)
+  _log('Adding track:', trackName, 'with UID:', uri)
+
+  sonos.getCurrentState().then(state => {
+    console.log('Got current state: ', state)
+
+    if (state === 'stopped') {
+      _log('State:', state, ' - apending')
+      _addToSpotify(userName, uri, albumImg, trackName, channel)
+      _log('Adding track:', trackName)
+      setTimeout(() => _playInt('play', channel), 1000)
+    } else if (state === 'playing') {
+      _log('State:', state, ' - adding...')
+      // Add the track to playlist...
+      _addToSpotify(userName, uri, albumImg, trackName, channel)
+    } else if (state === 'paused') {
+      _log('State:', state, ' - telling them no...')
+      _addToSpotify(userName, uri, albumImg, trackName, channel, function () {
+        if (channel.name === adminChannel) {
+          _slackMessage('Sonos is currently PAUSED. Type `resume` to start playing...', channel.id)
+        }
+      })
+    } else if (state === 'transitioning') {
+      _log('State:', state, ' - no idea what to do')
+
+      _slackMessage("Sonos says it is 'transitioning'. We've got no idea what that means either...", channel.id)
+    } else if (state === 'no_media') {
+      _slackMessage("Sonos reports 'no media'. Any idea what that means?", channel.id)
     } else {
-      if (state === 'stopped') {
-        _addToSpotify(userName, uri, albumImg, trackName, channel, function () {
-          _log('Adding album:', trackName)
-          // Start playing the queue automatically.
-          setTimeout(() => _playInt('play', channel), 3000)
-        })
-      } else if (state === 'playing') {
-        // Add the track to playlist...
-        _addToSpotify(userName, uri, albumImg, trackName, channel)
-      } else if (state === 'paused') {
-        _addToSpotify(userName, uri, albumImg, trackName, channel, function () {
-          if (channel.name === adminChannel) {
-            _slackMessage('Sonos is currently PAUSED. Type `resume` to start playing...', channel.id)
-          }
-        })
-      } else if (state === 'transitioning') {
-        _slackMessage("Sonos says it is 'transitioning'. We've got no idea what that means either...", channel.id)
-      } else if (state === 'no_media') {
-        _slackMessage("Sonos reports 'no media'. Any idea what that means?", channel.id)
-      } else {
-        _slackMessage("Sonos reports its state as '" + state + "'. Any idea what that means? I've got nothing.", channel.id)
-      }
+      _slackMessage("Sonos reports its state as '" + state + "'. Any idea what that means? I've got nothing.", channel.id)
     }
-  })
+  }).catch(err => { console.log('Error occurred %j', err) })
 }
 
 function _search (input, channel, userName) {
@@ -845,46 +813,37 @@ function _search (input, channel, userName) {
 
 function _addToSpotify (userName, uri, albumImg, trackName, channel, cb) {
   _log('DEBUG addToSpotify', uri)
-  sonos.queue(uri, function (err, res) {
-    var message = ''
-    if (!res) {
-      message = 'Error! No spotify account?'
-      _log(err, res)
-      return
-    }
+  sonos.queue(uri).then(result => {
+    console.log('Queued the following: ', result)
 
-    var queueLength = res[0].FirstTrackNumberEnqueued
+    var message = ''
+    _log('DEBUG queue:')
+    var queueLength = result.FirstTrackNumberEnqueued
     _log('queueLength', queueLength)
     message = 'Sure ' +
             userName +
-            ', Added "' +
-            trackName +
-            '" to the queue!\n' +
+            ', Added ' +
+             trackName +
+            ' to the queue!\n' +
             albumImg +
             '\nPosition in queue is ' +
             queueLength
 
     _slackMessage(message, channel.id)
-
-    if (cb) {
-      cb()
-    }
+  }).catch(err => {
+    _slackMessage('Error! No spotify account?', channel.id)
+    console.log('Error occurred: ', err)
   })
 }
 
 function _addToSpotifyPlaylist (userName, uri, trackName, channel, cb) {
   _log('TrackName:', trackName)
   _log('URI:', uri)
-  sonos.queue(uri, function (err, res) {
-    var message = ''
-    if (!res) {
-      message = 'Error! No spotify account?'
-      _log(err, res)
-      return
-    }
+  sonos.queue(uri).then(result => {
+    console.log('Queued the following: ', result)
 
-    var queueLength = res[0].FirstTrackNumberEnqueued
-    _log('queueLength', queueLength)
+    var message = ''
+    var queueLength = result.FirstTrackNumberEnqueued
     message = 'Sure ' +
             userName +
             ', Added "' +
@@ -894,42 +853,35 @@ function _addToSpotifyPlaylist (userName, uri, trackName, channel, cb) {
             queueLength
 
     _slackMessage(message, channel.id)
-
-    if (cb) {
-      cb()
-    }
+  }).catch(err => {
+    _slackMessage('Error! No spotify account?', channel.id)
+    console.log('Error occurred: ', err)
   })
 }
 
-function _addToSpotifyArtist (userName, spid, trackName, channel, cb) {
-  _log('spid:', spid)
-  _log('TrackName:', trackName)
-  //    _log("URI:", uri);
-  var spotifyArtist = 'spotify:artistTopTracks:' + trackName
-  _log('spotifyArtist:', spotifyArtist)
-  sonos.queue(spotifyArtist, function (err, res) {
-    var message = ''
-    if (!res) {
-      message = 'Error! No spotify account?'
-      _log(err, res)
-      return
-    }
+function _addToSpotifyArtist (userName, trackName, spid, channel) {
+  _log('DEBUG _addToSpotifyArtist spid:' + spid)
+  _log('DEBUG _addToSpotifyArtist trackName:' + trackName)
 
-    var queueLength = res[0].FirstTrackNumberEnqueued
+  var uri = 'spotify:artistTopTracks:' + spid
+  sonos.queue(uri).then(result => {
+    console.log('Queued the following: ', result)
+
+    var message = ''
+    var queueLength = result.FirstTrackNumberEnqueued
     _log('queueLength', queueLength)
     message = 'Sure ' +
             userName +
             ' Added 10 most popular tracks by "' +
-            spid +
+            trackName +
             '" to the queue!\n' +
             '\nPosition in queue is ' +
             queueLength
 
     _slackMessage(message, channel.id)
-
-    if (cb) {
-      cb()
-    }
+  }).catch(err => {
+    _slackMessage('Error! No spotify account?', channel.id)
+    console.log('Error occurred: ', err)
   })
 }
 
@@ -946,35 +898,32 @@ function _addplaylist (input, channel, userName) {
     trackNames.push(trackName)
   }
 
-  sonos.getCurrentState(function (err, state) {
-    if (err) {
-      _log(err, state)
+  sonos.getCurrentState().then(state => {
+    console.log('Got current state: ', state)
+
+    if (state === 'stopped') {
+      _flushInt(input, channel)
+      _addToSpotifyPlaylist(userName, uri, trackName, channel)
+      _log('Adding playlist:', trackName)
+      // Start playing the queue automatically.
+      _playInt('play', channel)
+    } else if (state === 'playing') {
+      // Add the track to playlist...
+      _addToSpotifyPlaylist(userName, uri, trackName, channel)
+    } else if (state === 'paused') {
+      _addToSpotifyPlaylist(userName, uri, trackName, channel, function () {
+        if (channel.name === adminChannel) {
+          _slackMessage('Sonos is currently PAUSED. Type `resume` to start playing...', channel.id)
+        }
+      })
+    } else if (state === 'transitioning') {
+      _slackMessage("Sonos says it is 'transitioning'. We've got no idea what that means either...", channel.id)
+    } else if (state === 'no_media') {
+      _slackMessage("Sonos reports 'no media'. Any idea what that means?", channel.id)
     } else {
-      if (state === 'stopped') {
-        _flushInt(input, channel)
-        _addToSpotifyPlaylist(userName, uri, trackName, channel, function () {
-          _log('Adding playlist:', trackName)
-          // Start playing the queue automatically.
-          setTimeout(() => _playInt('play', channel), 3000)
-        })
-      } else if (state === 'playing') {
-        // Add the track to playlist...
-        _addToSpotifyPlaylist(userName, uri, trackName, channel)
-      } else if (state === 'paused') {
-        _addToSpotifyPlaylist(userName, uri, trackName, channel, function () {
-          if (channel.name === adminChannel) {
-            _slackMessage('Sonos is currently PAUSED. Type `resume` to start playing...', channel.id)
-          }
-        })
-      } else if (state === 'transitioning') {
-        _slackMessage("Sonos says it is 'transitioning'. We've got no idea what that means either...", channel.id)
-      } else if (state === 'no_media') {
-        _slackMessage("Sonos reports 'no media'. Any idea what that means?", channel.id)
-      } else {
-        _slackMessage("Sonos reports its state as '" + state + "'. Any idea what that means? I've got nothing.", channel.id)
-      }
+      _slackMessage("Sonos reports its state as '" + state + "'. Any idea what that means? I've got nothing.", channel.id)
     }
-  })
+  }).catch(err => { console.log('Error occurred %j', err) })
 }
 
 function _bestof (input, channel, userName) {
@@ -982,41 +931,41 @@ function _bestof (input, channel, userName) {
   if (!data) {
     return
   }
-
+  console.log('DEBUG Result in _bestof: ', JSON.stringify(data, null, 2))
   var trackNames = []
   for (var i = 1; i <= data.artists.items.length; i++) {
-    var spid = data.artists.items[i - 1].id
+    var spid = data.artists.items[0].id
     var trackName = data.artists.items[i - 1].name
     trackNames.push(trackName)
   }
+  _log('DEBUG _bestof spid:' + spid)
+  _log('DEBUG _bestof trackName:' + trackName)
 
-  sonos.getCurrentState(function (err, state) {
-    if (err) {
-      _log(err, state)
+  sonos.getCurrentState().then(state => {
+    console.log('Got current state: ', state)
+
+    if (state === 'stopped') {
+      _flushInt(input, channel)
+      _addToSpotifyArtist(userName, trackName, spid, channel)
+      _log('Adding artist:', trackName)
+      setTimeout(() => _playInt('play', channel), 3000)
+    } else if (state === 'playing') {
+      // Add the track to playlist...
+      _addToSpotifyArtist(userName, trackName, spid, channel)
+    } else if (state === 'paused') {
+      _addToSpotifyArtist(userName, trackName, spid, channel, function () {
+        if (channel.name === adminChannel) {
+          _slackMessage('Sonos is currently PAUSED. Type `resume` to start playing...', channel.id)
+        }
+      })
+    } else if (state === 'transitioning') {
+      _slackMessage("Sonos says it is 'transitioning'. We've got no idea what that means either...", channel.id)
+    } else if (state === 'no_media') {
+      _slackMessage("Sonos reports 'no media'. Any idea what that means?", channel.id)
     } else {
-      if (state === 'stopped') {
-        _flushInt(input, channel)
-        _addToSpotifyArtist(userName, trackName, spid, channel)
-        _log('Adding artist:', trackName)
-        setTimeout(() => _playInt('play', channel), 3000)
-      } else if (state === 'playing') {
-        // Add the track to playlist...
-        _addToSpotifyArtist(userName, trackName, spid, channel)
-      } else if (state === 'paused') {
-        _addToSpotifyArtist(userName, trackName, spid, channel, function () {
-          if (channel.name === adminChannel) {
-            _slackMessage('Sonos is currently PAUSED. Type `resume` to start playing...', channel.id)
-          }
-        })
-      } else if (state === 'transitioning') {
-        _slackMessage("Sonos says it is 'transitioning'. We've got no idea what that means either...", channel.id)
-      } else if (state === 'no_media') {
-        _slackMessage("Sonos reports 'no media'. Any idea what that means?", channel.id)
-      } else {
-        _slackMessage("Sonos reports its state as '" + state + "'. Any idea what that means? I've got nothing.", channel.id)
-      }
+      _slackMessage("Sonos reports its state as '" + state + "'. Any idea what that means? I've got nothing.", channel.id)
     }
-  })
+  }).catch(err => { console.log('Error occurred %j', err) })
 }
 
 function _searchSpotify (input, channel, userName, limit) {
@@ -1159,15 +1108,11 @@ function _searchSpotifyArtist (input, channel, userName, limit) {
   return data
 }
 
-function _status (channel) {
-  sonos.getCurrentState(function (err, state) {
-    if (err) {
-      _log(err, state)
-      return
-    }
-
+function _status (channel, state) {
+  sonos.getCurrentState().then(state => {
+    console.log('Got current state: ', state)
     _slackMessage("Sonos state is '" + state + "'", channel.id)
-  })
+  }).catch(err => { console.log('Error occurred %j', err) })
 }
 
 function _sl (channel, userName) {
