@@ -366,89 +366,67 @@ function _showQueue (channel) {
   })
 }
 
-function _gong (channel, userName, track) {
+function _gong (channel, userName) {
   _log('_gong...')
-  _currentTrackTitle(channel, track)
-  _log('_gong > track: ' + track)
-
-  // NOTE: The gongTrack is checked in _currentTrackTitle() so we
-  // need to let that go through before checking if gong is banned.
-  if (gongBanned) {
-    _slackMessage('Sorry ' + userName + ', the people have voted and this track cannot be gonged...', channel.id)
-    return
-  }
-
-  // Get message
-  _log('gongMessage.length: ' + gongMessage.length)
-  var ran = Math.floor(Math.random() * gongMessage.length)
-  var randomMessage = gongMessage[ran]
-  _log('gongMessage: ' + randomMessage)
-
-  // Need a delay before calling the rest
-  if (!(userName in gongScore)) {
-    gongScore[userName] = 0
-  }
-
-  if (gongScore[userName] >= gongLimitPerUser) {
-    _slackMessage('Are you trying to cheat, ' + userName + '? DENIED!', channel.id)
-  } else {
-    if (userName in voteScore) {
-      _slackMessage('Having regrets, ' + userName + "? We're glad you came to your senses...", channel.id)
-    }
-
-    gongScore[userName] = gongScore[userName] + 1
-    gongCounter++
-    _slackMessage(randomMessage + ' This is GONG ' + gongCounter + '/' + gongLimit + ' for ' + track, channel.id)
-    if (gongCounter >= gongLimit) {
-      _slackMessage('The music got GONGED!!', channel.id)
-      _nextTrack(channel, true)
-      gongCounter = 0
-      gongScore = {}
-    }
-  }
-}
-
-function _vote (channel, userName) {
-  _log('_vote...')
   _currentTrackTitle(channel, function (err, track) {
     if (err) {
       _log(err)
     }
-    _log('_vote > track: ' + track)
+    _log('_gong > track: ' + track)
 
-    if (!(userName in voteScore)) {
-      voteScore[userName] = 0
+    // NOTE: The gongTrack is checked in _currentTrackTitle() so we
+    // need to let that go through before checking if gong is banned.
+    if (gongBanned) {
+      _slackMessage('Sorry ' + userName + ', the people have voted and this track cannot be gonged...', channel.id)
+      return
     }
 
-    if (voteScore[userName] >= voteLimitPerUser) {
+    // Get message
+    _log('gongMessage.length: ' + gongMessage.length)
+    var ran = Math.floor(Math.random() * gongMessage.length)
+    var randomMessage = gongMessage[ran]
+    _log('gongMessage: ' + randomMessage)
+
+    // Need a delay before calling the rest
+    if (!(userName in gongScore)) {
+      gongScore[userName] = 0
+    }
+
+    if (gongScore[userName] >= gongLimitPerUser) {
       _slackMessage('Are you trying to cheat, ' + userName + '? DENIED!', channel.id)
     } else {
-      if (userName in gongScore) {
-        _slackMessage('Changed your mind, ' + userName + '? Well, ok then...', channel.id)
+      if (userName in voteScore) {
+        _slackMessage('Having regrets, ' + userName + "? We're glad you came to your senses...", channel.id)
       }
 
-      voteScore[userName] = voteScore[userName] + 1
-      voteCounter++
-      _slackMessage('This is VOTE ' + voteCounter + '/' + voteLimit + ' for ' + track, channel.id)
-      if (voteCounter >= voteLimit) {
-        _slackMessage('This track is now immune to GONG! (just this once)', channel.id)
-        voteCounter = 0
-        voteScore = {}
-        gongBanned = true
+      gongScore[userName] = gongScore[userName] + 1
+      gongCounter++
+      _slackMessage(randomMessage + ' This is GONG ' + gongCounter + '/' + gongLimit + ' for ' + track, channel.id)
+      if (gongCounter >= gongLimit) {
+        _slackMessage('The music got GONGED!!', channel.id)
+        _nextTrack(channel, true)
+        gongCounter = 0
+        gongScore = {}
       }
     }
   })
 }
 
-function _gongcheck (channel, userName, track) {
+function _gongcheck (channel, userName) {
   _log('_gongcheck...')
-  _currentTrackTitle(channel, track)
-  _log('_gongcheck > track: ' + track)
-  _slackMessage('GONG is currently ' + gongCounter + '/' + gongLimit + ' for ' + track, channel.id)
-  var gongers = gongScore.keys()
-  if (gongers.length > 0) {
-    _slackMessage('Gonged by ' + gongers.join(','), channel.id)
-  }
+
+  _currentTrackTitle(channel, function (err, track) {
+    if (err) {
+      _log(err)
+    }
+    _log('_gongcheck > track: ' + track)
+
+    _slackMessage('GONG is currently ' + gongCounter + '/' + gongLimit + ' for ' + track, channel.id)
+    var gongers = gongScore.keys()
+    if (gongers.length > 0) {
+      _slackMessage('Gonged by ' + gongers.join(','), channel.id)
+    }
+  })
 }
 
 function _previous (input, channel) {
@@ -629,8 +607,10 @@ function _currentTrack (channel, cb, err) {
 
 function _currentTrackTitle (channel, cb) {
   sonos.currentTrack().then(track => {
-    console.log('Got current track: ', track)
+    console.log('Got current track %j', track)
+
     var _track = ''
+
     _track = track.title
     _log('_currentTrackTitle > title: ' + _track)
     _log('_currentTrackTitle > gongTrack: ' + gongTrack)
@@ -650,9 +630,41 @@ function _currentTrackTitle (channel, cb) {
       _log('_currentTrackTitle > gongTrack is empty')
     }
     gongTrack = _track
+    _log('_currentTrackTitle > last step, got _track as: ' + _track)
+
     cb(_track)
-    _log('DEBUG And we´re done here. Got _track: ' + _track)
   }).catch(err => { console.log('Error occurred %j', err) })
+}
+
+/*  sonos.currentTrack(function (err, track) {
+    var _track = ''
+    if (err) {
+      _log(err, track)
+    } else {
+      _track = track.title
+      _log('_currentTrackTitle > title: ' + _track)
+      _log('_currentTrackTitle > gongTrack: ' + gongTrack)
+
+      if (gongTrack !== '') {
+        if (gongTrack !== _track) {
+          _log('_currentTrackTitle > different track, reset!')
+          gongCounter = 0
+          gongScore = {}
+          gongBanned = false
+          voteCounter = 0
+          voteScore = {}
+        } else {
+          _log('_currentTrackTitle > gongTrack is equal to _track')
+        }
+      } else {
+        _log('_currentTrackTitle > gongTrack is empty')
+      }
+
+      gongTrack = _track
+    }
+
+    cb(err, _track)
+  })
 }
 
 function _test (input, channel, state) {
@@ -661,6 +673,7 @@ function _test (input, channel, state) {
   _log('Test got wtf: ' + wtf)
   _slackMessage('Current state is: ' + state + ' ', channel.id)
 }
+*/
 
 function _add (input, channel, userName) {
   var data = _searchSpotify(input, channel, userName, 1)
