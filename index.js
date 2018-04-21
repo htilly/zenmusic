@@ -412,6 +412,38 @@ function _gong (channel, userName) {
   })
 }
 
+function _vote (channel, userName) {
+  _log('_vote...')
+  _currentTrackTitle(channel, function (err, track) {
+    if (err) {
+      _log(err)
+    }
+    _log('_vote > track: ' + track)
+
+    if (!(userName in voteScore)) {
+      voteScore[userName] = 0
+    }
+
+    if (voteScore[userName] >= voteLimitPerUser) {
+      _slackMessage('Are you trying to cheat, ' + userName + '? DENIED!', channel.id)
+    } else {
+      if (userName in gongScore) {
+        _slackMessage('Changed your mind, ' + userName + '? Well, ok then...', channel.id)
+      }
+
+      voteScore[userName] = voteScore[userName] + 1
+      voteCounter++
+      _slackMessage('This is VOTE ' + voteCounter + '/' + voteLimit + ' for ' + track, channel.id)
+      if (voteCounter >= voteLimit) {
+        _slackMessage('This track is now immune to GONG! (just this once)', channel.id)
+        voteCounter = 0
+        voteScore = {}
+        gongBanned = true
+      }
+    }
+  })
+}
+
 function _gongcheck (channel, userName) {
   _log('_gongcheck...')
 
