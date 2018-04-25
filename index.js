@@ -105,7 +105,7 @@ slack.on('open', function () {
     }
     return _results
   })()
-  _log('Starting...')
+  _log('Online!')
 })
 
 slack.on(RTM_EVENTS.MESSAGE, (message) => {
@@ -337,6 +337,9 @@ function _countQueue (channel, cb) {
 function _showQueue (channel) {
   sonos.getQueue().then(result => {
     console.log('Current queue: ', JSON.stringify(result, null, 2))
+    _status(channel, function (state) {
+      _log('DEBUG: _showQueue, got state = ' + state)
+    })
     _currentTrack(channel, function (err, track) {
       if (!result) {
         _log(result)
@@ -407,6 +410,38 @@ function _gong (channel, userName) {
         _nextTrack(channel, true)
         gongCounter = 0
         gongScore = {}
+      }
+    }
+  })
+}
+
+function _vote (channel, userName) {
+  _log('_vote...')
+  _currentTrackTitle(channel, function (err, track) {
+    if (err) {
+      _log(err)
+    }
+    _log('_vote > track: ' + track)
+
+    if (!(userName in voteScore)) {
+      voteScore[userName] = 0
+    }
+
+    if (voteScore[userName] >= voteLimitPerUser) {
+      _slackMessage('Are you trying to cheat, ' + userName + '? DENIED!', channel.id)
+    } else {
+      if (userName in gongScore) {
+        _slackMessage('Changed your mind, ' + userName + '? Well, ok then...', channel.id)
+      }
+
+      voteScore[userName] = voteScore[userName] + 1
+      voteCounter++
+      _slackMessage('This is VOTE ' + voteCounter + '/' + voteLimit + ' for ' + track, channel.id)
+      if (voteCounter >= voteLimit) {
+        _slackMessage('This track is now immune to GONG! (just this once)', channel.id)
+        voteCounter = 0
+        voteScore = {}
+        gongBanned = true
       }
     }
   })
@@ -632,48 +667,9 @@ function _currentTrackTitle (channel, cb) {
     gongTrack = _track
     _log('_currentTrackTitle > last step, got _track as: ' + _track)
 
-    cb(_track)
-  }).catch(err => { console.log('Error occurred %j', err) })
+    cb(null, _track)
+  }).catch(err => { console.log('Error occurred: ', err) })
 }
-
-/*  sonos.currentTrack(function (err, track) {
-    var _track = ''
-    if (err) {
-      _log(err, track)
-    } else {
-      _track = track.title
-      _log('_currentTrackTitle > title: ' + _track)
-      _log('_currentTrackTitle > gongTrack: ' + gongTrack)
-
-      if (gongTrack !== '') {
-        if (gongTrack !== _track) {
-          _log('_currentTrackTitle > different track, reset!')
-          gongCounter = 0
-          gongScore = {}
-          gongBanned = false
-          voteCounter = 0
-          voteScore = {}
-        } else {
-          _log('_currentTrackTitle > gongTrack is equal to _track')
-        }
-      } else {
-        _log('_currentTrackTitle > gongTrack is empty')
-      }
-
-      gongTrack = _track
-    }
-
-    cb(err, _track)
-  })
-}
-
-function _test (input, channel, state) {
-  var wtf = _status()
-  _log('Test got state: ' + state)
-  _log('Test got wtf: ' + wtf)
-  _slackMessage('Current state is: ' + state + ' ', channel.id)
-}
-*/
 
 function _add (input, channel, userName) {
   var data = _searchSpotify(input, channel, userName, 1)
@@ -961,7 +957,7 @@ function _bestof (input, channel, userName) {
       _flushInt(input, channel)
       _addToSpotifyArtist(userName, trackName, spid, channel)
       _log('Adding artist:', trackName)
-      setTimeout(() => _playInt('play', channel), 3000)
+      setTimeout(() => _playInt('play', channel), 1000)
     } else if (state === 'playing') {
       // Add the track to playlist...
       _addToSpotifyArtist(userName, trackName, spid, channel)
