@@ -1,6 +1,8 @@
 {
     "adminChannel" : "music-admin",
     "standardChannel" : "music",
+    "gongLimit": 3,
+    "voteLimit": 6,
     "sonos" : "IP_TO_SONOS",
     "token" : "SLACK:TOKEN",
     "market" : "US",

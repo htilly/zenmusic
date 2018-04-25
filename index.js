@@ -14,6 +14,8 @@ config.argv()
   .defaults({
     'adminChannel': 'music-admin',
     'standardChannel': 'music',
+    'gongLimit': 3,
+    'voteLimit': 3,
     'maxVolume': '75',
     'market': 'US',
     'blacklist': [],
@@ -22,6 +24,8 @@ config.argv()
 
 var adminChannel = config.get('adminChannel')
 var standardChannel = config.get('standardChannel')
+var gongLimit = config.get('gongLimit')
+var voteLimit = config.get('voteLimit')
 var token = config.get('token')
 var maxVolume = config.get('maxVolume')
 var market = config.get('market')
@@ -43,7 +47,6 @@ if (market !== 'US') {
 }
 
 var gongCounter = 0
-var gongLimit = 1
 var gongLimitPerUser = 1
 var gongScore = {}
 var gongMessage = [
@@ -58,7 +61,6 @@ var gongMessage = [
 ]
 
 var voteCounter = 0
-var voteLimit = 3
 var voteLimitPerUser = 1
 var voteScore = {}
 var gongBanned = false
