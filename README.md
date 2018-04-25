@@ -15,12 +15,6 @@ Migrate to version 4.0 for node-slack-sdk and primarily DataStore migration.
 https://github.com/slackapi/node-slack-sdk/wiki/DataStore-v3.x-Migration-Guide
 
 
-Make it work with latest async version of node-sonos:
-
-https://github.com/bencevans/node-sonos/issues/218
-
-
-
 **What is it?**
 
 Quick hack created during one of Schibsted Swedens hackdays by staff from E-Tech.
@@ -126,6 +120,7 @@ https://github.com/htilly/zenmusic/wiki
 
 **DONE**
 
+* Now works with latest async version of node-sonos.
 * Add spotify playlist
 * Added "bestof" - Add the topp 10 tracks by selected artist.
 * Added gongcheck - Thanks to "Warren Harding"
