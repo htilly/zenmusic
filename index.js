@@ -30,7 +30,8 @@ var token = config.get('token')
 var maxVolume = config.get('maxVolume')
 var market = config.get('market')
 var blacklist = config.get('blacklist')
-var apiKey = config.get('apiKey')
+var client_id = config.get('client_id')
+var client_secret = config.get('client_secret')
 var searchLimit = config.get('searchLimit')
 if (!Array.isArray(blacklist)) {
   blacklist = blacklist.replace(/\s*(,|^|$)\s*/g, '$1').split(/\s*,\s*/)
@@ -1305,15 +1306,10 @@ function _blacklist (input, channel) {
 }
 
 function _getAccessToken (channelid) {
-  if (apiKey === '') {
-    _slackMessage('You did not set up an API key. Naughty.', channelid)
-    return false
-  }
-
   let getToken = urllibsync.request('https://accounts.spotify.com/api/token', {
     method: 'POST',
     data: { 'grant_type': 'client_credentials' },
-    headers: { 'Authorization': 'Basic ' + apiKey }
+    headers: {'Authorization': 'Basic ' + (new Buffer(client_id + ':' + client_secret).toString('base64'))}
   })
   let tokendata = JSON.parse(getToken.data.toString())
   return tokendata.access_token
