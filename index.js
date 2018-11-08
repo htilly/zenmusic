@@ -79,6 +79,9 @@ let slack = new RtmClient(token, {
   autoMark: true
 })
 
+var accessToken
+var accessTokenExpires
+
 slack.on('open', function () {
   var channel, group, id
   var channels = [standardChannel]
@@ -1306,13 +1309,19 @@ function _blacklist (input, channel) {
 }
 
 function _getAccessToken (channelid) {
+  if (accessToken && accessTokenExpires > new Date().getTime()) {
+    return accessToken
+  }
+
   let getToken = urllibsync.request('https://accounts.spotify.com/api/token', {
     method: 'POST',
     data: { 'grant_type': 'client_credentials' },
     headers: {'Authorization': 'Basic ' + (new Buffer(client_id + ':' + client_secret).toString('base64'))}
   })
   let tokendata = JSON.parse(getToken.data.toString())
-  return tokendata.access_token
+  accessTokenExpires = new Date().getTime() + (tokendata.expires_in -10) * 1000
+  accessToken = tokendata.access_token
+  return accessToken
 }
 
 // Playing with Travis.
