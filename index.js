@@ -723,7 +723,10 @@ function _add (input, channel, userName) {
 }
 
 function _addalbum (input, channel, userName) {
-  var data = _searchSpotifyAlbum(input, channel, userName, 1)
+  var data, message = spotify.searchSpotifyAlbum(input, channel, userName, 1)
+  if (message) {
+    _slackMessage(message, channel.id)
+  }
   if (!data) {
     return
   }
@@ -833,7 +836,63 @@ function _search (input, channel, userName) {
   _slackMessage(message, channel.id)
 }
 
-// misnamed s/ add to sonos, appears funcionally identical to _addToSpotifyPlaylist
+function _searchplaylist (input, channel) {
+    var data, message = spotify.searchSpotifyPlaylist(input, channel, userName, searchLimit)
+    if (message) {
+        _slackMessage(message, channel.id)
+    }
+    if (!data) {
+        return
+    }
+    utils.log(data)
+    if (data.playlists && data.playlists.items && data.playlists.items.length > 0) {
+        var trackNames = []
+
+        for (var i = 1; i <= data.playlists.items.length; i++) {
+            //  var spid = data.playlists.items[i - 1].id
+            //  var uri = data.playlists.items[i - 1].uri
+            //  var external_url = data.playlists.items[i - 1].external_urls.spotify
+            var trackName = data.playlists.items[i - 1].name
+
+            trackNames.push(trackName)
+        }
+
+        var message = 'I found the following playlist(s):\n```\n' + trackNames.join('\n') + '\n```\nIf you want to play it, use the `addplaylist` command..\n'
+        slack.sendMessage(message, channel.id)
+    } else {
+        slack.sendMessage('Sorry could not find that playlist :(', channel.id)
+    }
+}
+
+function _searchalbum (input, channel) {
+    var data, message = spotify.searchSpotifyAlbum(input, channel, userName, searchLimit)
+    if (message) {
+        _slackMessage(message, channel.id)
+    }
+    if (!data) {
+        return
+    }
+    var data = JSON.parse(getapi.data.toString())
+    utils.log(data)
+    if (data.albums && data.albums.items && data.albums.items.length > 0) {
+        var trackNames = []
+
+        for (var i = 1; i <= data.albums.items.length; i++) {
+            //  var spid = data.albums.items[i - 1].id
+            //  var uri = data.albums.items[i - 1].uri
+            //  var external_url = data.albums.items[i - 1].external_urls.spotify
+            //           var trackName = data.albums.items[i-1].name;
+            var trackName = data.albums.items[i - 1].artists[0].name + ' - ' + data.albums.items[i - 1].name
+
+            trackNames.push(trackName)
+        }
+
+        var message = 'I found the following album(s):\n```\n' + trackNames.join('\n') + '\n```\nIf you want to play it, use the `addalbum` command..\n'
+        _slackMessage(message, channel.id)
+    }
+}
+
+// FIXME - misnamed s/ add to sonos, appears funcionally identical to _addToSpotifyPlaylist
 function _addToSpotify (userName, uri, albumImg, trackName, channel, cb) {
   utils.log('DEBUG addToSpotify', uri)
   sonos.queue(uri).then(result => {
@@ -909,7 +968,10 @@ function _addToSpotifyArtist (userName, trackName, spid, channel) {
 }
 
 function _addplaylist (input, channel, userName) {
-  var data = _searchSpotifyPlaylist(input, channel, userName, 1)
+  var data, message = spotify.searchSpotifyPlaylist(input, channel, userName, 1)
+  if (message) {
+    _slackMessage(message, channel.id)
+  }
   if (!data) {
     return
   }
@@ -950,7 +1012,10 @@ function _addplaylist (input, channel, userName) {
 }
 
 function _bestof (input, channel, userName) {
-  var data = _searchSpotifyArtist(input, channel, userName, 1)
+  var data, message = spotify.searchSpotifyArtist(input, channel, userName, 1)
+  if (message) {
+    _slackMessage(message, channel.id)
+  }
   if (!data) {
     return
   }

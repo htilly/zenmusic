@@ -33,6 +33,8 @@ module.exports = {
         _market = market
     },
 
+    // TODO - refactor duplicate boilerplate below
+    // TODO - move messaging to index, get rid of channel/username args
     searchSpotify: function  (input, channel, userName, limit) {
         let accessToken = _getAccessToken(channel.id)
         if (!accessToken) {
@@ -69,7 +71,7 @@ module.exports = {
         return data, message
     },
 
-    _searchSpotifyPlaylist: function  (input, channel, userName, limit) {
+    searchSpotifyPlaylist: function  (input, channel, userName, limit) {
         let accessToken = _getAccessToken(channel.id)
         if (!accessToken) {
             return false
@@ -97,14 +99,13 @@ module.exports = {
         var data = JSON.parse(getapi.data.toString())
         utils.log(data)
         if (!data.playlists || !data.playlists.items || data.playlists.items.length === 0) {
-            _slackMessage('Sorry ' + userName + ', I could not find that playlist :(', channel.id)
-            return
+            var message = 'Sorry ' + userName + ', I could not find that playlist :('
         }
 
-        return data
+        return data, message
     },
 
-    _searchSpotifyAlbum: function  (input, channel, userName, limit) {
+    searchSpotifyAlbum: function  (input, channel, userName, limit) {
         let accessToken = _getAccessToken(channel.id)
         if (!accessToken) {
             return false
@@ -132,14 +133,13 @@ module.exports = {
         var data = JSON.parse(getapi.data.toString())
         utils.log(data)
         if (!data.albums || !data.albums.items || data.albums.items.length === 0) {
-            _slackMessage('Sorry ' + userName + ', I could not find that album :(', channel.id)
-            return
+            var message = 'Sorry ' + userName + ', I could not find that album :('
         }
 
-        return data
+        return data, message
     },
 
-    _searchSpotifyArtist: function  (input, channel, userName, limit) {
+    searchSpotifyArtist: function  (input, channel, userName, limit) {
         let accessToken = _getAccessToken(channel.id)
         if (!accessToken) {
             return false
@@ -167,83 +167,10 @@ module.exports = {
         var data = JSON.parse(getapi.data.toString())
         utils.log(data)
         if (!data.artists || !data.artists.items || data.artists.items.length === 0) {
-            _slackMessage('Sorry ' + userName + ', I could not find that artist :(', channel.id)
-            return
+            var message = 'Sorry ' + userName + ', I could not find that artist :('
         }
 
-        return data
-    },
+        return data, message
+    }
 
-    _searchplaylist: function  (input, channel) {
-        let accessToken = _getAccessToken(channel.id)
-        if (!accessToken) {
-            return false
-        }
-
-        var query = ''
-        for (var i = 1; i < input.length; i++) {
-            query += urlencode(input[i])
-            if (i < input.length - 1) {
-                query += ' '
-            }
-        }
-
-        var getapi = urllibsync.request('https://api.spotify.com/v1/search?q=' + query + '&type=playlist&limit=3&market=' + _market + '&access_token=' + accessToken)
-        var data = JSON.parse(getapi.data.toString())
-        utils.log(data)
-        if (data.playlists && data.playlists.items && data.playlists.items.length > 0) {
-            var trackNames = []
-
-            for (var i = 1; i <= data.playlists.items.length; i++) {
-                //  var spid = data.playlists.items[i - 1].id
-                //  var uri = data.playlists.items[i - 1].uri
-                //  var external_url = data.playlists.items[i - 1].external_urls.spotify
-                var trackName = data.playlists.items[i - 1].name
-
-                trackNames.push(trackName)
-            }
-
-            var message = 'I found the following playlist(s):\n```\n' + trackNames.join('\n') + '\n```\nIf you want to play it, use the `addplaylist` command..\n'
-            slack.sendMessage(message, channel.id)
-        } else {
-            slack.sendMessage('Sorry could not find that playlist :(', channel.id)
-        }
-    },
-
-    _searchalbum: function  (input, channel) {
-        let accessToken = _getAccessToken(channel.id)
-        if (!accessToken) {
-            return false
-        }
-
-        var query = ''
-        for (var i = 1; i < input.length; i++) {
-            query += urlencode(input[i])
-            if (i < input.length - 1) {
-                query += ' '
-            }
-        }
-
-        var getapi = urllibsync.request('https://api.spotify.com/v1/search?q=' + query + '&type=album&limit=3&market=' + _market + '&access_token=' + accessToken)
-        var data = JSON.parse(getapi.data.toString())
-        utils.log(data)
-        if (data.albums && data.albums.items && data.albums.items.length > 0) {
-            var trackNames = []
-
-            for (var i = 1; i <= data.albums.items.length; i++) {
-                //  var spid = data.albums.items[i - 1].id
-                //  var uri = data.albums.items[i - 1].uri
-                //  var external_url = data.albums.items[i - 1].external_urls.spotify
-                //           var trackName = data.albums.items[i-1].name;
-                var trackName = data.albums.items[i - 1].artists[0].name + ' - ' + data.albums.items[i - 1].name
-
-                trackNames.push(trackName)
-            }
-
-            var message = 'I found the following album(s):\n```\n' + trackNames.join('\n') + '\n```\nIf you want to play it, use the `addalbum` command..\n'
-            slack.sendMessage(message, channel.id)
-        } else {
-            slack.sendMessage('Sorry could not find that album :(', channel.id)
-        }
-    },
 }
