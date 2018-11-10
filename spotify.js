@@ -1,15 +1,15 @@
 var urllibsync = require('urllib-sync')
 var urlencode = require('urlencode')
-var utils = require('./utils')
 
 var _clientId
 var _clientSecret
 var _market
+var _logger
 
 var accessToken
 var accessTokenExpires
 
-function _getAccessToken (channelid) {
+function _getAccessToken () {
     if (accessToken && accessTokenExpires > new Date().getTime()) {
         return accessToken
     }
@@ -27,16 +27,17 @@ function _getAccessToken (channelid) {
 
 module.exports = {
 
-    init: function(clientId, clientSecret, market) {
+    init: function(clientId, clientSecret, market, logger) {
         _clientId = clientId
         _clientSecret = clientSecret
         _market = market
+        _logger = logger
     },
 
     // TODO - refactor duplicate boilerplate below
     // TODO - move messaging to index, get rid of channel/username args
     searchSpotify: function  (input, channel, userName, limit) {
-        let accessToken = _getAccessToken(channel.id)
+        let accessToken = _getAccessToken()
         if (!accessToken) {
             return false
         }
@@ -63,7 +64,7 @@ module.exports = {
 
         var data = JSON.parse(getapi.data.toString())
 
-        utils.log(data)
+        _logger.debug(data)
         if (!data.tracks || !data.tracks.items || data.tracks.items.length === 0) {
             var message = 'Sorry ' + userName + ', I could not find that track :('
         }
@@ -72,7 +73,7 @@ module.exports = {
     },
 
     searchSpotifyPlaylist: function  (input, channel, userName, limit) {
-        let accessToken = _getAccessToken(channel.id)
+        let accessToken = _getAccessToken()
         if (!accessToken) {
             return false
         }
@@ -97,7 +98,7 @@ module.exports = {
         )
 
         var data = JSON.parse(getapi.data.toString())
-        utils.log(data)
+        logger.debug(data)
         if (!data.playlists || !data.playlists.items || data.playlists.items.length === 0) {
             var message = 'Sorry ' + userName + ', I could not find that playlist :('
         }
@@ -106,7 +107,7 @@ module.exports = {
     },
 
     searchSpotifyAlbum: function  (input, channel, userName, limit) {
-        let accessToken = _getAccessToken(channel.id)
+        let accessToken = _getAccessToken()
         if (!accessToken) {
             return false
         }
@@ -131,7 +132,7 @@ module.exports = {
         )
 
         var data = JSON.parse(getapi.data.toString())
-        utils.log(data)
+        _logger.debug(data)
         if (!data.albums || !data.albums.items || data.albums.items.length === 0) {
             var message = 'Sorry ' + userName + ', I could not find that album :('
         }
@@ -140,7 +141,7 @@ module.exports = {
     },
 
     searchSpotifyArtist: function  (input, channel, userName, limit) {
-        let accessToken = _getAccessToken(channel.id)
+        let accessToken = _getAccessToken()
         if (!accessToken) {
             return false
         }
@@ -165,7 +166,7 @@ module.exports = {
         )
 
         var data = JSON.parse(getapi.data.toString())
-        utils.log(data)
+        _logger.debug(data)
         if (!data.artists || !data.artists.items || data.artists.items.length === 0) {
             var message = 'Sorry ' + userName + ', I could not find that artist :('
         }

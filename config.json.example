@@ -8,6 +8,7 @@
     "market" : "US",
     "maxVolume" : 75,
     "blacklist" : "@justin.bieber, @one.direction",
-    "client_id": "",
-    "client_secret": ""
+    "spotifyClientId": "",
+    "spotifyClientSecret": "",
+    "logLevel": "info"
 }
