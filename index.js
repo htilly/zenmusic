@@ -54,9 +54,9 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 /* Initialize Sonos */
-var SONOS = require('sonos')
-var Sonos = SONOS.Sonos
-var sonos = new Sonos(config.get('sonos'))
+const SONOS = require('sonos')
+const Sonos = SONOS.Sonos
+const sonos = new Sonos(config.get('sonos'))
 
 if (market !== 'US') {
   sonos.setSpotifyRegion(SONOS.SpotifyRegion.EU)
@@ -67,10 +67,10 @@ if (market !== 'US') {
 /* Initialize spotify */
 spotify.init(clientId, clientSecret, market, logger)
 
-var gongCounter = 0
-var gongLimitPerUser = 1
-var gongScore = {}
-var gongMessage = [
+let gongCounter = 0
+const gongLimitPerUser = 1
+let gongScore = {}
+const gongMessage = [
   'Is it really all that bad?',
   'Is it that distracting?',
   'How much is this worth to you?',
@@ -81,12 +81,12 @@ var gongMessage = [
   'Would some harp music be better?'
 ]
 
-var voteCounter = 0
-var voteLimitPerUser = 1
-var voteScore = {}
-var gongBanned = false
+let voteCounter = 0
+const voteLimitPerUser = 1
+let voteScore = {}
+let gongBanned = false
 
-var gongTrack = '' // What track was a GONG called on
+let gongTrack = '' // What track was a GONG called on
 
 const RtmClient = require('@slack/client').RtmClient
 const RTM_EVENTS = require('@slack/client').RTM_EVENTS
@@ -282,7 +282,7 @@ slack.on(RTM_EVENTS.MESSAGE, (message) => {
 })
 
 slack.on('error', function (error) {
-  return console.error('Error: ' + error)
+  logger.error('Error: ' + error)
 })
 
 slack.login()
