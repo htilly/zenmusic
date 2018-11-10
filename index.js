@@ -31,6 +31,7 @@ if (!Array.isArray(blacklist)) {
   blacklist = blacklist.replace(/\s*(,|^|$)\s*/g, '$1').split(/\s*,\s*/)
 }
 
+/* Initialize Sonos */
 var SONOS = require('sonos')
 var Sonos = SONOS.Sonos
 var sonos = new Sonos(config.get('sonos'))
@@ -41,6 +42,7 @@ if (market !== 'US') {
   utils.log(market)
 }
 
+/* Initialize spotify */
 spotify.init(clientId, clientSecret, market)
 
 var gongCounter = 0
@@ -75,7 +77,7 @@ let slack = new RtmClient(token, {
   autoMark: true
 })
 
-
+/* Slack handlers */
 slack.on('open', function () {
   var channel, group, id
   var channels = [standardChannel]
@@ -1102,4 +1104,5 @@ function _blacklist (input, channel) {
   _slackMessage(message, channel.id)
 }
 
-_search('weezer', 'channel', 'rob')
+// testing
+// _search('weezer', 'channel', 'rob')
