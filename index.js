@@ -1,12 +1,6 @@
-var urllibsync = require('urllib-sync')
-var urlencode = require('urlencode')
-var fs = require('fs')
 var config = require('nconf')
-var Entities = require('html-entities').AllHtmlEntities
-var timestamp = require('console-timestamp')
-
-var now = new Date()
-var number = 478921
+var utils = require('./utils')
+var spotify = require('./spotify')
 
 config.argv()
   .env()
@@ -30,8 +24,8 @@ var token = config.get('token')
 var maxVolume = config.get('maxVolume')
 var market = config.get('market')
 var blacklist = config.get('blacklist')
-var client_id = config.get('client_id')
-var client_secret = config.get('client_secret')
+var clientId = config.get('client_id')
+var clientSecret = config.get('client_secret')
 var searchLimit = config.get('searchLimit')
 if (!Array.isArray(blacklist)) {
   blacklist = blacklist.replace(/\s*(,|^|$)\s*/g, '$1').split(/\s*,\s*/)
@@ -43,9 +37,11 @@ var sonos = new Sonos(config.get('sonos'))
 
 if (market !== 'US') {
   sonos.setSpotifyRegion(SONOS.SpotifyRegion.EU)
-  _log('Setting Spotify region to EU...')
-  _log(market)
+  utils.log('Setting Spotify region to EU...')
+  utils.log(market)
 }
+
+spotify.init(clientId, clientSecret, market)
 
 var gongCounter = 0
 var gongLimitPerUser = 1
@@ -79,8 +75,6 @@ let slack = new RtmClient(token, {
   autoMark: true
 })
 
-var accessToken
-var accessTokenExpires
 
 slack.on('open', function () {
   var channel, group, id
@@ -111,7 +105,7 @@ slack.on('open', function () {
     }
     return _results
   })()
-  _log('Online!')
+  utils.log('Online!')
 })
 
 slack.on(RTM_EVENTS.MESSAGE, (message) => {
@@ -124,7 +118,7 @@ slack.on(RTM_EVENTS.MESSAGE, (message) => {
   channelName = (channel != null ? channel.is_channel : void 0) ? '#' : ''
   channelName = channelName + (channel ? channel.name : 'UNKNOWN_CHANNEL')
   userName = '<@' + message.user + '>'
-  _log('Received: ' + type + ' ' + channelName + ' ' + userName + ' ' + ts + ' "' + text + '"')
+  utils.log('Received: ' + type + ' ' + channelName + ' ' + userName + ' ' + ts + ' "' + text + '"')
 
   user = slack.dataStore.getUserById(message.user)
   let displayName = (user != null ? user.display_name : void 0) != null ? '@' + user.name : 'UNKNOWN_USER'
@@ -140,11 +134,11 @@ slack.on(RTM_EVENTS.MESSAGE, (message) => {
       return element !== null
     }).join(' ')
 
-    return _log('Could not respond. ' + errors)
+    return utils.log('Could not respond. ' + errors)
   }
 
   if (blacklist.indexOf(userName) !== -1) {
-    _log('User ' + userName + ' is blacklisted')
+    utils.log('User ' + userName + ' is blacklisted')
     _slackMessage('Nice try ' + userName + ", you're banned :)", channel.id)
     return false
   }
@@ -152,7 +146,7 @@ slack.on(RTM_EVENTS.MESSAGE, (message) => {
   var input = text.split(' ')
   var term = input[0].toLowerCase()
   var matched = true
-  _log('term', term)
+  utils.log('term', term)
   switch (term) {
     case 'add':
       _add(input, channel, userName)
@@ -200,14 +194,6 @@ slack.on(RTM_EVENTS.MESSAGE, (message) => {
     case 'ls':
     case 'playlist':
       _showQueue(channel)
-      break
-    case 'sl':
-    case 'train':
-      _sl(channel, userName)
-      break
-    case 'elvis':
-    case 'theking':
-      _theking(channel, userName)
       break
     case 'volume':
       _getVolume(channel)
@@ -281,15 +267,11 @@ function _slackMessage (message, id) {
   slack.sendMessage(message, id)
 }
 
-function _log (...args) {
-  console.log('MM-DD hh:mm:ss:iii  '.timestamp, ...args)
-}
-
 function _getVolume (channel) {
   sonos.getVolume().then(vol => {
-    _log('The volume is: ', vol)
+    utils.log('The volume is: ', vol)
     _slackMessage('Volume is ' + vol + ' deadly dB _(ddB)_', channel.id)
-  }).catch(err => { _log('Error occurred: ', err) })
+  }).catch(err => { utils.log('Error occurred: ', err) })
 }
 
 function _setVolume (input, channel, userName) {
@@ -303,13 +285,13 @@ function _setVolume (input, channel, userName) {
     _slackMessage('Nope.', channel.id)
   } else {
     vol = Number(vol)
-    _log(vol)
+    utils.log(vol)
     if (vol > maxVolume) {
       _slackMessage("That's a bit extreme, " + userName + '... lower please.', channel.id)
     } else {
       sonos.setVolume(vol).then(vol => {
-        _log('The volume is: ', vol)
-      }).catch(err => { _log('Error occurred %j', err) })
+        utils.log('The volume is: ', vol)
+      }).catch(err => { utils.log('Error occurred %j', err) })
       _getVolume(channel)
     }
   }
@@ -319,7 +301,7 @@ function _getQueue () {
   var res = null
   sonos.getQueue(function (err, result) {
     if (err) {
-      _log(err)
+      utils.log(err)
     }
     res = result
   })
@@ -332,7 +314,7 @@ function _countQueue (channel, cb) {
       if (cb) {
         return (err, null)
       }
-      _log(err)
+      utils.log(err)
       _slackMessage('Error getting queue length', channel.id)
     } else {
       if (cb) {
@@ -345,17 +327,17 @@ function _countQueue (channel, cb) {
 
 function _showQueue (channel) {
   sonos.getQueue().then(result => {
-    _log('Current queue: ', JSON.stringify(result, null, 2))
+    utils.log('Current queue: ', JSON.stringify(result, null, 2))
     _status(channel, function (state) {
-      _log('DEBUG: _showQueue, got state = ' + state)
+      utils.log('DEBUG: _showQueue, got state = ' + state)
     })
     _currentTrack(channel, function (err, track) {
       if (!result) {
-        _log(result)
+        utils.log(result)
         _slackMessage('Seems like the queue is empty... Have you tried adding a song?!', channel.id)
       }
       if (err) {
-        _log(err)
+        utils.log(err)
       }
       var message = 'Total tracks in queue: ' + result.total + '\n' +
       '===================='
@@ -374,17 +356,17 @@ function _showQueue (channel) {
       _slackMessage(message, channel.id)
     })
   }).catch(err => {
-    _log('Error fetch queue:', err)
+    utils.log('Error fetch queue:', err)
   })
 }
 
 function _gong (channel, userName) {
-  _log('_gong...')
+  utils.log('_gong...')
   _currentTrackTitle(channel, function (err, track) {
     if (err) {
-      _log(err)
+      utils.log(err)
     }
-    _log('_gong > track: ' + track)
+    utils.log('_gong > track: ' + track)
 
     // NOTE: The gongTrack is checked in _currentTrackTitle() so we
     // need to let that go through before checking if gong is banned.
@@ -394,10 +376,10 @@ function _gong (channel, userName) {
     }
 
     // Get message
-    _log('gongMessage.length: ' + gongMessage.length)
+    utils.log('gongMessage.length: ' + gongMessage.length)
     var ran = Math.floor(Math.random() * gongMessage.length)
     var randomMessage = gongMessage[ran]
-    _log('gongMessage: ' + randomMessage)
+    utils.log('gongMessage: ' + randomMessage)
 
     // Need a delay before calling the rest
     if (!(userName in gongScore)) {
@@ -426,12 +408,12 @@ function _gong (channel, userName) {
 }
 
 function _vote (channel, userName) {
-  _log('_vote...')
+  utils.log('_vote...')
   _currentTrackTitle(channel, function (err, track) {
     if (err) {
-      _log(err)
+      utils.log(err)
     }
-    _log('_vote > track: ' + track)
+    utils.log('_vote > track: ' + track)
 
     if (!(userName in voteScore)) {
       voteScore[userName] = 0
@@ -458,10 +440,10 @@ function _vote (channel, userName) {
 }
 
 function _votecheck (channel, userName) {
-  _log('_votecheck...')
+  utils.log('_votecheck...')
 
   _currentTrackTitle(channel, function (err, track) {
-    _log('_votecheck > track: ' + track)
+    utils.log('_votecheck > track: ' + track)
 
     _slackMessage('VOTE is currently ' + voteCounter + '/' + voteLimit + ' for ' + track, channel.id)
     var voters = Object.keys(voteScore)
@@ -469,19 +451,19 @@ function _votecheck (channel, userName) {
       _slackMessage('Voted by ' + voters.join(','), channel.id)
     }
     if (err) {
-      _log(err)
+      utils.log(err)
     }
   })
 }
 
 function _gongcheck (channel, userName) {
-  _log('_gongcheck...')
+  utils.log('_gongcheck...')
 
   _currentTrackTitle(channel, function (err, track) {
     if (err) {
-      _log(err)
+      utils.log(err)
     }
-    _log('_gongcheck > track: ' + track)
+    utils.log('_gongcheck > track: ' + track)
 
     _slackMessage('GONG is currently ' + gongCounter + '/' + gongLimit + ' for ' + track, channel.id)
     var gongers = Object.keys(gongScore)
@@ -496,7 +478,7 @@ function _previous (input, channel) {
     return
   }
   sonos.previous(function (err, previous) {
-    _log(err, previous)
+    utils.log(err, previous)
   })
 }
 
@@ -544,14 +526,14 @@ function _play (input, channel, state) {
   }
   sonos.play().then(result => {
     _status(channel, state)
-    _log('Started playing - ', result)
-  }).catch(err => { _log('Error occurred: ', err) })
+    utils.log('Started playing - ', result)
+  }).catch(err => { utils.log('Error occurred: ', err) })
 }
 
 function _playInt (input, channel) {
   sonos.play().then(result => {
-    _log('playInt, started playing', result)
-  }).catch(err => { _log('Error occurred: ', err) })
+    utils.log('playInt, started playing', result)
+  }).catch(err => { utils.log('Error occurred: ', err) })
 }
 
 function _stop (input, channel, state) {
@@ -560,8 +542,8 @@ function _stop (input, channel, state) {
   }
   sonos.stop().then(result => {
     _status(channel, state)
-    _log('Stoped playing - ', result)
-  }).catch(err => { _log('Error occurred: ', err) })
+    utils.log('Stoped playing - ', result)
+  }).catch(err => { utils.log('Error occurred: ', err) })
 }
 
 function _pause (input, channel, state) {
@@ -570,8 +552,8 @@ function _pause (input, channel, state) {
   }
   sonos.pause().then(result => {
     _status(channel, state)
-    _log('Pause playing - ', result)
-  }).catch(err => { _log('Error occurred: ', err) })
+    utils.log('Pause playing - ', result)
+  }).catch(err => { utils.log('Error occurred: ', err) })
 }
 
 function _resume (input, channel, state) {
@@ -580,8 +562,8 @@ function _resume (input, channel, state) {
   }
   sonos.play().then(result => {
     setTimeout(() => _status(channel, state), 500)
-    _log('Resume playing - ', result)
-  }).catch(err => { _log('Error occurred: ', err) })
+    utils.log('Resume playing - ', result)
+  }).catch(err => { utils.log('Error occurred: ', err) })
 }
 
 function _flush (input, channel) {
@@ -589,18 +571,18 @@ function _flush (input, channel) {
     return
   }
   sonos.flush().then(result => {
-    _log('Flushed queue: ', JSON.stringify(result, null, 2))
+    utils.log('Flushed queue: ', JSON.stringify(result, null, 2))
     _slackMessage('Sonos queue is clear.', channel.id)
   }).catch(err => {
-    _log('Error flushing queue: ', err)
+    utils.log('Error flushing queue: ', err)
   })
 }
 
 function _flushInt (input, channel) {
   sonos.flush().then(result => {
-    _log('Flushed queue: ', JSON.stringify(result, null, 2))
+    utils.log('Flushed queue: ', JSON.stringify(result, null, 2))
   }).catch(err => {
-    _log('Error flushing queue: ', err)
+    utils.log('Error flushing queue: ', err)
   })
 }
 
@@ -610,7 +592,7 @@ function _shuffle (input, channel, byPassChannelValidation) {
   }
   sonos.setPlayMode('shuffle', function (err, nexted) {
     if (err) {
-      _log(err, nexted)
+      utils.log(err, nexted)
     } else {
       _slackMessage('Shuffling the playlist.', channel.id)
     }
@@ -619,8 +601,8 @@ function _shuffle (input, channel, byPassChannelValidation) {
 
 function _gongplay (input, channel) {
   sonos.queueNext('spotify:track:6Yy5Pr0KvTnAaxDBBISSDe').then(success => {
-    _log('GongPlay!!')
-  }).catch(err => { _log('Error occurred %j', err) })
+    utils.log('GongPlay!!')
+  }).catch(err => { utils.log('Error occurred %j', err) })
 }
 
 function _nextTrack (channel, byPassChannelValidation) {
@@ -628,15 +610,15 @@ function _nextTrack (channel, byPassChannelValidation) {
     return
   }
   sonos.next().then(success => {
-    _log('_nextTrack > Playing Netx track.. ')
-  }).catch(err => { _log('Error occurred %j', err) })
+    utils.log('_nextTrack > Playing Netx track.. ')
+  }).catch(err => { utils.log('Error occurred %j', err) })
 }
 
 function _currentTrack (channel, cb, err) {
   sonos.currentTrack().then(track => {
-    _log('Got current track: ', track)
+    utils.log('Got current track: ', track)
     if (err) {
-      _log(err, track)
+      utils.log(err, track)
       if (cb) {
         return cb(err, null)
       }
@@ -645,7 +627,7 @@ function _currentTrack (channel, cb, err) {
         return cb(null, track)
       }
 
-      _log(track)
+      utils.log(track)
       var fmin = '' + Math.floor(track.duration / 60)
       fmin = fmin.length === 2 ? fmin : '0' + fmin
       var fsec = '' + track.duration % 60
@@ -659,42 +641,45 @@ function _currentTrack (channel, cb, err) {
       var message = `We're rocking out to *${track.artist}* - *${track.title}* (${pmin}:${psec}/${fmin}:${fsec})`
       _slackMessage(message, channel.id)
     }
-  }).catch(err => { _log('Error occurred %j', err) })
+  }).catch(err => { utils.log('Error occurred %j', err) })
 }
 
 function _currentTrackTitle (channel, cb) {
   sonos.currentTrack().then(track => {
-    _log('Got current track %j', track)
+    utils.log('Got current track %j', track)
 
     var _track = ''
 
     _track = track.title
-    _log('_currentTrackTitle > title: ' + _track)
-    _log('_currentTrackTitle > gongTrack: ' + gongTrack)
+    utils.log('_currentTrackTitle > title: ' + _track)
+    utils.log('_currentTrackTitle > gongTrack: ' + gongTrack)
 
     if (gongTrack !== '') {
       if (gongTrack !== _track) {
-        _log('_currentTrackTitle > different track, reset!')
+        utils.log('_currentTrackTitle > different track, reset!')
         gongCounter = 0
         gongScore = {}
         gongBanned = false
         voteCounter = 0
         voteScore = {}
       } else {
-        _log('_currentTrackTitle > gongTrack is equal to _track')
+        utils.log('_currentTrackTitle > gongTrack is equal to _track')
       }
     } else {
-      _log('_currentTrackTitle > gongTrack is empty')
+      utils.log('_currentTrackTitle > gongTrack is empty')
     }
     gongTrack = _track
-    _log('_currentTrackTitle > last step, got _track as: ' + _track)
+    utils.log('_currentTrackTitle > last step, got _track as: ' + _track)
 
     cb(null, _track)
-  }).catch(err => { _log('Error occurred: ', err) })
+  }).catch(err => { utils.log('Error occurred: ', err) })
 }
 
 function _add (input, channel, userName) {
-  var data = _searchSpotify(input, channel, userName, 1)
+  var data, message = spotify.searchSpotify(input, channel, userName, 1)
+  if (message) {
+    _slackMessage(message, channel.id)
+  }
   if (!data) {
     return
   }
@@ -703,30 +688,30 @@ function _add (input, channel, userName) {
   var albumImg = data.tracks.items[0].album.images[2].url
   var trackName = data.tracks.items[0].artists[0].name + ' - ' + data.tracks.items[0].name
 
-  _log('Adding track:', trackName, 'with UID:', uri)
+  utils.log('Adding track:', trackName, 'with UID:', uri)
 
   sonos.getCurrentState().then(state => {
-    _log('Got current state: ', state)
+    utils.log('Got current state: ', state)
 
     if (state === 'stopped') {
-      _log('State:', state, ' - flushing')
+      utils.log('State:', state, ' - flushing')
       _flushInt(input, channel)
       _addToSpotify(userName, uri, albumImg, trackName, channel)
-      _log('Adding track:', trackName)
+      utils.log('Adding track:', trackName)
       setTimeout(() => _playInt('play', channel), 1000)
     } else if (state === 'playing') {
-      _log('State:', state, ' - playing...')
+      utils.log('State:', state, ' - playing...')
       // Add the track to playlist...
       _addToSpotify(userName, uri, albumImg, trackName, channel)
     } else if (state === 'paused') {
-      _log('State:', state, ' - telling them no...')
+      utils.log('State:', state, ' - telling them no...')
       _addToSpotify(userName, uri, albumImg, trackName, channel, function () {
         if (channel.name === adminChannel) {
           _slackMessage('Sonos is currently PAUSED. Type `resume` to start playing...', channel.id)
         }
       })
     } else if (state === 'transitioning') {
-      _log('State:', state, ' - no idea what to do')
+      utils.log('State:', state, ' - no idea what to do')
 
       _slackMessage("Sonos says it is 'transitioning'. We've got no idea what that means either...", channel.id)
     } else if (state === 'no_media') {
@@ -734,7 +719,7 @@ function _add (input, channel, userName) {
     } else {
       _slackMessage("Sonos reports its state as '" + state + "'. Any idea what that means? I've got nothing.", channel.id)
     }
-  }).catch(err => { _log('Error occurred %j', err) })
+  }).catch(err => { utils.log('Error occurred %j', err) })
 }
 
 function _addalbum (input, channel, userName) {
@@ -747,15 +732,15 @@ function _addalbum (input, channel, userName) {
   var trackName = data.albums.items[0].artists[0].name + ' - ' + data.albums.items[0].name
   var albumImg = data.albums.items[0].images[2].url
 
-  _log('Adding album:', trackName, 'with UID:', uri)
+  utils.log('Adding album:', trackName, 'with UID:', uri)
 
   sonos.getCurrentState().then(state => {
-    _log('Got current state: ', state)
+    utils.log('Got current state: ', state)
 
     if (state === 'stopped') {
       _flushInt(input, channel)
       _addToSpotify(userName, uri, albumImg, trackName, channel)
-      _log('Adding album:', trackName)
+      utils.log('Adding album:', trackName)
       // Start playing the queue automatically.
       setTimeout(() => _playInt('play', channel), 1000)
     } else if (state === 'playing') {
@@ -774,11 +759,14 @@ function _addalbum (input, channel, userName) {
     } else {
       _slackMessage("Sonos reports its state as '" + state + "'. Any idea what that means? I've got nothing.", channel.id)
     }
-  }).catch(err => { _log('Error occurred %j', err) })
+  }).catch(err => { utils.log('Error occurred %j', err) })
 }
 
 function _append (input, channel, userName) {
-  var data = _searchSpotify(input, channel, userName, 1)
+  var data, message = spotify.searchSpotify(input, channel, userName, 1)
+  if (message) {
+    _slackMessage(message, channel.id)
+  }
   if (!data) {
     return
   }
@@ -787,29 +775,29 @@ function _append (input, channel, userName) {
   var albumImg = data.tracks.items[0].album.images[2].url
   var trackName = data.tracks.items[0].artists[0].name + ' - ' + data.tracks.items[0].name
 
-  _log('Adding track:', trackName, 'with UID:', uri)
+  utils.log('Adding track:', trackName, 'with UID:', uri)
 
   sonos.getCurrentState().then(state => {
-    _log('Got current state: ', state)
+    utils.log('Got current state: ', state)
 
     if (state === 'stopped') {
-      _log('State:', state, ' - apending')
+      utils.log('State:', state, ' - apending')
       _addToSpotify(userName, uri, albumImg, trackName, channel)
-      _log('Adding track:', trackName)
+      utils.log('Adding track:', trackName)
       setTimeout(() => _playInt('play', channel), 1000)
     } else if (state === 'playing') {
-      _log('State:', state, ' - adding...')
+      utils.log('State:', state, ' - adding...')
       // Add the track to playlist...
       _addToSpotify(userName, uri, albumImg, trackName, channel)
     } else if (state === 'paused') {
-      _log('State:', state, ' - telling them no...')
+      utils.log('State:', state, ' - telling them no...')
       _addToSpotify(userName, uri, albumImg, trackName, channel, function () {
         if (channel.name === adminChannel) {
           _slackMessage('Sonos is currently PAUSED. Type `resume` to start playing...', channel.id)
         }
       })
     } else if (state === 'transitioning') {
-      _log('State:', state, ' - no idea what to do')
+      utils.log('State:', state, ' - no idea what to do')
 
       _slackMessage("Sonos says it is 'transitioning'. We've got no idea what that means either...", channel.id)
     } else if (state === 'no_media') {
@@ -817,11 +805,14 @@ function _append (input, channel, userName) {
     } else {
       _slackMessage("Sonos reports its state as '" + state + "'. Any idea what that means? I've got nothing.", channel.id)
     }
-  }).catch(err => { _log('Error occurred %j', err) })
+  }).catch(err => { utils.log('Error occurred %j', err) })
 }
 
 function _search (input, channel, userName) {
-  var data = _searchSpotify(input, channel, userName, searchLimit)
+  var data, message = spotify.searchSpotify(input, channel, userName, searchLimit)
+  if (message) {
+    _slackMessage(message, channel.id)
+  }
   if (!data) {
     return
   }
@@ -842,15 +833,16 @@ function _search (input, channel, userName) {
   _slackMessage(message, channel.id)
 }
 
+// misnamed s/ add to sonos, appears funcionally identical to _addToSpotifyPlaylist
 function _addToSpotify (userName, uri, albumImg, trackName, channel, cb) {
-  _log('DEBUG addToSpotify', uri)
+  utils.log('DEBUG addToSpotify', uri)
   sonos.queue(uri).then(result => {
-    _log('Queued the following: ', result)
+    utils.log('Queued the following: ', result)
 
     var message = ''
-    _log('DEBUG queue:')
+    utils.log('DEBUG queue:')
     var queueLength = result.FirstTrackNumberEnqueued
-    _log('queueLength', queueLength)
+    utils.log('queueLength', queueLength)
     message = 'Sure ' +
             userName +
             ', Added ' +
@@ -863,15 +855,15 @@ function _addToSpotify (userName, uri, albumImg, trackName, channel, cb) {
     _slackMessage(message, channel.id)
   }).catch(err => {
     _slackMessage('Error! No spotify account?', channel.id)
-    _log('Error occurred: ', err)
+    utils.log('Error occurred: ', err)
   })
 }
 
 function _addToSpotifyPlaylist (userName, uri, trackName, channel, cb) {
-  _log('TrackName:', trackName)
-  _log('URI:', uri)
+  utils.log('TrackName:', trackName)
+  utils.log('URI:', uri)
   sonos.queue(uri).then(result => {
-    _log('Queued the following: ', result)
+    utils.log('Queued the following: ', result)
 
     var message = ''
     var queueLength = result.FirstTrackNumberEnqueued
@@ -886,21 +878,21 @@ function _addToSpotifyPlaylist (userName, uri, trackName, channel, cb) {
     _slackMessage(message, channel.id)
   }).catch(err => {
     _slackMessage('Error! No spotify account?', channel.id)
-    _log('Error occurred: ', err)
+    utils.log('Error occurred: ', err)
   })
 }
 
 function _addToSpotifyArtist (userName, trackName, spid, channel) {
-  _log('DEBUG _addToSpotifyArtist spid:' + spid)
-  _log('DEBUG _addToSpotifyArtist trackName:' + trackName)
+  utils.log('DEBUG _addToSpotifyArtist spid:' + spid)
+  utils.log('DEBUG _addToSpotifyArtist trackName:' + trackName)
 
   var uri = 'spotify:artistTopTracks:' + spid
   sonos.queue(uri).then(result => {
-    _log('Queued the following: ', result)
+    utils.log('Queued the following: ', result)
 
     var message = ''
     var queueLength = result.FirstTrackNumberEnqueued
-    _log('queueLength', queueLength)
+    utils.log('queueLength', queueLength)
     message = 'Sure ' +
             userName +
             ' Added 10 most popular tracks by "' +
@@ -912,7 +904,7 @@ function _addToSpotifyArtist (userName, trackName, spid, channel) {
     _slackMessage(message, channel.id)
   }).catch(err => {
     _slackMessage('Error! No spotify account?', channel.id)
-    _log('Error occurred: ', err)
+    utils.log('Error occurred: ', err)
   })
 }
 
@@ -930,12 +922,12 @@ function _addplaylist (input, channel, userName) {
   }
 
   sonos.getCurrentState().then(state => {
-    _log('Got current state: ', state)
+    utils.log('Got current state: ', state)
 
     if (state === 'stopped') {
       _flushInt(input, channel)
       _addToSpotifyPlaylist(userName, uri, trackName, channel)
-      _log('Adding playlist:', trackName)
+      utils.log('Adding playlist:', trackName)
       // Start playing the queue automatically.
       _playInt('play', channel)
     } else if (state === 'playing') {
@@ -954,7 +946,7 @@ function _addplaylist (input, channel, userName) {
     } else {
       _slackMessage("Sonos reports its state as '" + state + "'. Any idea what that means? I've got nothing.", channel.id)
     }
-  }).catch(err => { _log('Error occurred %j', err) })
+  }).catch(err => { utils.log('Error occurred %j', err) })
 }
 
 function _bestof (input, channel, userName) {
@@ -962,23 +954,23 @@ function _bestof (input, channel, userName) {
   if (!data) {
     return
   }
-  _log('DEBUG Result in _bestof: ', JSON.stringify(data, null, 2))
+  utils.log('DEBUG Result in _bestof: ', JSON.stringify(data, null, 2))
   var trackNames = []
   for (var i = 1; i <= data.artists.items.length; i++) {
     var spid = data.artists.items[0].id
     var trackName = data.artists.items[i - 1].name
     trackNames.push(trackName)
   }
-  _log('DEBUG _bestof spid:' + spid)
-  _log('DEBUG _bestof trackName:' + trackName)
+  utils.log('DEBUG _bestof spid:' + spid)
+  utils.log('DEBUG _bestof trackName:' + trackName)
 
   sonos.getCurrentState().then(state => {
-    _log('Got current state: ', state)
+    utils.log('Got current state: ', state)
 
     if (state === 'stopped') {
       _flushInt(input, channel)
       _addToSpotifyArtist(userName, trackName, spid, channel)
-      _log('Adding artist:', trackName)
+      utils.log('Adding artist:', trackName)
       setTimeout(() => _playInt('play', channel), 1000)
     } else if (state === 'playing') {
       // Add the track to playlist...
@@ -996,277 +988,14 @@ function _bestof (input, channel, userName) {
     } else {
       _slackMessage("Sonos reports its state as '" + state + "'. Any idea what that means? I've got nothing.", channel.id)
     }
-  }).catch(err => { _log('Error occurred %j', err) })
-}
-
-function _searchSpotify (input, channel, userName, limit) {
-  let accessToken = _getAccessToken(channel.id)
-  if (!accessToken) {
-    return false
-  }
-
-  var query = ''
-  for (var i = 1; i < input.length; i++) {
-    query += urlencode(input[i])
-    if (i < input.length - 1) {
-      query += ' '
-    }
-  }
-
-  var getapi = urllibsync.request(
-    'https://api.spotify.com/v1/search?q=' +
-        query +
-        '&type=track&limit=' +
-        limit +
-        '&market=' +
-        market +
-        '&access_token=' +
-        accessToken
-  )
-
-  var data = JSON.parse(getapi.data.toString())
-  _log(data)
-  if (!data.tracks || !data.tracks.items || data.tracks.items.length === 0) {
-    _slackMessage('Sorry ' + userName + ', I could not find that track :(', channel.id)
-    return
-  }
-
-  return data
-}
-
-function _searchSpotifyPlaylist (input, channel, userName, limit) {
-  let accessToken = _getAccessToken(channel.id)
-  if (!accessToken) {
-    return false
-  }
-
-  var query = ''
-  for (var i = 1; i < input.length; i++) {
-    query += urlencode(input[i])
-    if (i < input.length - 1) {
-      query += ' '
-    }
-  }
-
-  var getapi = urllibsync.request(
-    'https://api.spotify.com/v1/search?q=' +
-        query +
-        '&type=playlist&limit=' +
-        limit +
-        '&market=' +
-        market +
-        '&access_token=' +
-        accessToken
-  )
-
-  var data = JSON.parse(getapi.data.toString())
-  _log(data)
-  if (!data.playlists || !data.playlists.items || data.playlists.items.length === 0) {
-    _slackMessage('Sorry ' + userName + ', I could not find that playlist :(', channel.id)
-    return
-  }
-
-  return data
-}
-
-function _searchSpotifyAlbum (input, channel, userName, limit) {
-  let accessToken = _getAccessToken(channel.id)
-  if (!accessToken) {
-    return false
-  }
-
-  var query = ''
-  for (var i = 1; i < input.length; i++) {
-    query += urlencode(input[i])
-    if (i < input.length - 1) {
-      query += ' '
-    }
-  }
-
-  var getapi = urllibsync.request(
-    'https://api.spotify.com/v1/search?q=' +
-        query +
-        '&type=album&limit=' +
-        limit +
-        '&market=' +
-        market +
-        '&access_token=' +
-        accessToken
-  )
-
-  var data = JSON.parse(getapi.data.toString())
-  _log(data)
-  if (!data.albums || !data.albums.items || data.albums.items.length === 0) {
-    _slackMessage('Sorry ' + userName + ', I could not find that album :(', channel.id)
-    return
-  }
-
-  return data
-}
-
-function _searchSpotifyArtist (input, channel, userName, limit) {
-  let accessToken = _getAccessToken(channel.id)
-  if (!accessToken) {
-    return false
-  }
-
-  var query = ''
-  for (var i = 1; i < input.length; i++) {
-    query += urlencode(input[i])
-    if (i < input.length - 1) {
-      query += ' '
-    }
-  }
-
-  var getapi = urllibsync.request(
-    'https://api.spotify.com/v1/search?q=' +
-        query +
-        '&type=artist&limit=' +
-        limit +
-        '&market=' +
-        market +
-        '&access_token=' +
-        accessToken
-  )
-
-  var data = JSON.parse(getapi.data.toString())
-  _log(data)
-  if (!data.artists || !data.artists.items || data.artists.items.length === 0) {
-    _slackMessage('Sorry ' + userName + ', I could not find that artist :(', channel.id)
-    return
-  }
-
-  return data
+  }).catch(err => { utils.log('Error occurred %j', err) })
 }
 
 function _status (channel, state) {
   sonos.getCurrentState().then(state => {
-    _log('Got current state: ', state)
+    utils.log('Got current state: ', state)
     _slackMessage("Sonos state is '" + state + "'", channel.id)
-  }).catch(err => { _log('Error occurred %j', err) })
-}
-
-function _sl (channel, userName) {
-  var train = '      oooOOOOOOOOOOO"\n' +
-        '     o   ____          :::::::::::::::::: :::::::::::::::::: __|-----|__\n' +
-        '     Y_,_|[]| --++++++ |[][][][][][][][]| |[][][][][][][][]| |  [] []  |\n' +
-        '    {|_|_|__|;|______|;|________________|;|________________|;|_________|;\n' +
-        '     /oo--OO   oo  oo   oo oo      oo oo   oo oo      oo oo   oo     oo\n' +
-        '+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+'
-  _slackMessage('Just for you, ' + userName + '\n```\n' + train + '\n```\n', channel.id)
-}
-
-function _theking (channel, userName) {
-  var theking = '                           \n' +
-
-"                        _ `.`'.\n" +
-'           ,.---._      \\`\\|   \\\n' +
-"          ,'       `-.__.'     ;\n" +
-"          |                   .'\n" +
-"        ,.-\\.__________,,.--'`\n" +
-'       /    `.             \\                   _\n' +
-"       |     |,.----. _ ,---.                .' )\n" +
-"       ,-..__'.'´´´´.\\=|.'´´´\\\\            .' .'\n" +
-"      | ._\\._||      |=||    ||         .' .'\n" +
-"      \\  -'; ||     // .-.   ||._    _'  /_`)\n" +
-"    .' '._.| |\\\\__.'/     \\_//   '..'\\\\ __D)`)\n" +
-"   /_      | '\\`'-'` (    |-''.\\ /'   \\\\ \\;-')\n" +
-"   '-.`-.  |   `> _/  `'-',    |' _,_  \\\\-'-'\n" +
-"      `'.`.\\   /   `-.___.-'  /   >,\\   \\\\\n" +
-"         `.\\`-'.           _.'_        _.-;\n" +
-"       ,-'' `.  `'-.__,__)' /,\\\\   _.-:'.|||\n" +
-"      /       `-._  ,;,.: \\/  _.-'; || ||||\n" +
-"     /_,_ |     _,`'-.';;'/  `'.  |||;.||||\n" +
-"    / >,\\ \\     >,\\   '. ;   _,_\\ ||'.||';\n" +
-"   ;       `._       _,_`.   >,\\ | |'|'\n" +
-"   |     .'.' `\\     >,\\ |    _.-' `\n" +
-"   ;\\  .'.'  |`-'._____ .-.-'`   |\n" +
-"   |||</'\\\\\\ `.       (( o ))_.-'\n" +
-"   ;|'; \\ `-'._)`''----`'-'`    /\n" +
-"   '|||  `.                   .'\n" +
-"    |||    `'. _,_'-.____.-''`\n" +
-"     |'     /  >,\\   /    |mx\n" +
-'           /        ; _,_ ;\n' +
-"          .'        | >,\\  \\\n" +
-'          /  .  -  - \\  _  -\\__\n' +
-"         ; -_..--'''--'._.-'`   `'-.\n" +
-"         |.'             `._________)\n" +
-"          ''''''''''''''''` ´´ "
-
-  _slackMessage('King of Rock and Roll, just for you ' + userName + '\n```\n' + theking + '\n```\n', channel.id)
-}
-
-function _searchplaylist (input, channel) {
-  let accessToken = _getAccessToken(channel.id)
-  if (!accessToken) {
-    return false
-  }
-
-  var query = ''
-  for (var i = 1; i < input.length; i++) {
-    query += urlencode(input[i])
-    if (i < input.length - 1) {
-      query += ' '
-    }
-  }
-
-  var getapi = urllibsync.request('https://api.spotify.com/v1/search?q=' + query + '&type=playlist&limit=3&market=' + market + '&access_token=' + accessToken)
-  var data = JSON.parse(getapi.data.toString())
-  _log(data)
-  if (data.playlists && data.playlists.items && data.playlists.items.length > 0) {
-    var trackNames = []
-
-    for (var i = 1; i <= data.playlists.items.length; i++) {
-    //  var spid = data.playlists.items[i - 1].id
-    //  var uri = data.playlists.items[i - 1].uri
-    //  var external_url = data.playlists.items[i - 1].external_urls.spotify
-      var trackName = data.playlists.items[i - 1].name
-
-      trackNames.push(trackName)
-    }
-
-    var message = 'I found the following playlist(s):\n```\n' + trackNames.join('\n') + '\n```\nIf you want to play it, use the `addplaylist` command..\n'
-    slack.sendMessage(message, channel.id)
-  } else {
-    slack.sendMessage('Sorry could not find that playlist :(', channel.id)
-  }
-}
-
-function _searchalbum (input, channel) {
-  let accessToken = _getAccessToken(channel.id)
-  if (!accessToken) {
-    return false
-  }
-
-  var query = ''
-  for (var i = 1; i < input.length; i++) {
-    query += urlencode(input[i])
-    if (i < input.length - 1) {
-      query += ' '
-    }
-  }
-
-  var getapi = urllibsync.request('https://api.spotify.com/v1/search?q=' + query + '&type=album&limit=3&market=' + market + '&access_token=' + accessToken)
-  var data = JSON.parse(getapi.data.toString())
-  _log(data)
-  if (data.albums && data.albums.items && data.albums.items.length > 0) {
-    var trackNames = []
-
-    for (var i = 1; i <= data.albums.items.length; i++) {
-    //  var spid = data.albums.items[i - 1].id
-    //  var uri = data.albums.items[i - 1].uri
-    //  var external_url = data.albums.items[i - 1].external_urls.spotify
-    //           var trackName = data.albums.items[i-1].name;
-      var trackName = data.albums.items[i - 1].artists[0].name + ' - ' + data.albums.items[i - 1].name
-
-      trackNames.push(trackName)
-    }
-
-    var message = 'I found the following album(s):\n```\n' + trackNames.join('\n') + '\n```\nIf you want to play it, use the `addalbum` command..\n'
-    slack.sendMessage(message, channel.id)
-  } else {
-    slack.sendMessage('Sorry could not find that album :(', channel.id)
-  }
+  }).catch(err => { utils.log('Error occurred %j', err) })
 }
 
 function _blacklist (input, channel) {
@@ -1308,25 +1037,4 @@ function _blacklist (input, channel) {
   _slackMessage(message, channel.id)
 }
 
-function _getAccessToken (channelid) {
-  if (accessToken && accessTokenExpires > new Date().getTime()) {
-    return accessToken
-  }
-
-  let getToken = urllibsync.request('https://accounts.spotify.com/api/token', {
-    method: 'POST',
-    data: { 'grant_type': 'client_credentials' },
-    headers: {'Authorization': 'Basic ' + (new Buffer(client_id + ':' + client_secret).toString('base64'))}
-  })
-  let tokendata = JSON.parse(getToken.data.toString())
-  accessTokenExpires = new Date().getTime() + (tokendata.expires_in -10) * 1000
-  accessToken = tokendata.access_token
-  return accessToken
-}
-
-// Playing with Travis.
-// Just something that will return a value
-
-module.exports = function (number, locale) {
-  return number.toLocaleString(locale)
-}
+_search('weezer', 'channel', 'rob')
