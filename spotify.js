@@ -17,7 +17,7 @@ function _getAccessToken (channelid) {
     let getToken = urllibsync.request('https://accounts.spotify.com/api/token', {
         method: 'POST',
         data: { 'grant_type': 'client_credentials' },
-        headers: {'Authorization': 'Basic ' + (new Buffer(_clientId + ':' + _clientSecret).toString('base64'))}
+        headers: {'Authorization': 'Basic ' + (Buffer.from(_clientId + ':' + _clientSecret).toString('base64'))}
     })
     let tokendata = JSON.parse(getToken.data.toString())
     accessTokenExpires = new Date().getTime() + (tokendata.expires_in -10) * 1000

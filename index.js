@@ -1105,4 +1105,4 @@ function _blacklist (input, channel) {
 }
 
 // testing
-// _search('weezer', 'channel', 'rob')
+ _search('weezer', 'channel', 'rob')
