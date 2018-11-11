@@ -1,177 +1,178 @@
-var urllibsync = require('urllib-sync')
-var urlencode = require('urlencode')
+'use strict'
 
-var _clientId
-var _clientSecret
-var _market
-var _logger
+const urllibsync = require('urllib-sync')
+const urlencode = require('urlencode')
 
-var accessToken
-var accessTokenExpires
+//module.exports.instance
 
-function _getAccessToken () {
-    if (accessToken && accessTokenExpires > new Date().getTime()) {
+module.exports = function (config) {
+    if (module.exports.instance) {
+        return module.exports.instance
+    }
+
+    config = config || {}
+
+    let accessToken
+    let accessTokenExpires
+
+    function _getAccessToken() {
+        if (accessToken && accessTokenExpires > new Date().getTime()) {
+            return accessToken
+        }
+
+        let getToken = urllibsync.request('https://accounts.spotify.com/api/token', {
+            method: 'POST',
+            data: {'grant_type': 'client_credentials'},
+            headers: {'Authorization': 'Basic ' + (Buffer.from(config.clientId + ':' + config.clientSecret).toString('base64'))}
+        })
+        let tokendata = JSON.parse(getToken.data.toString())
+        accessTokenExpires = new Date().getTime() + (tokendata.expires_in - 10) * 1000
+        accessToken = tokendata.access_token
         return accessToken
     }
 
-    let getToken = urllibsync.request('https://accounts.spotify.com/api/token', {
-        method: 'POST',
-        data: { 'grant_type': 'client_credentials' },
-        headers: {'Authorization': 'Basic ' + (Buffer.from(_clientId + ':' + _clientSecret).toString('base64'))}
-    })
-    let tokendata = JSON.parse(getToken.data.toString())
-    accessTokenExpires = new Date().getTime() + (tokendata.expires_in -10) * 1000
-    accessToken = tokendata.access_token
-    return accessToken
-}
+    module.exports.instance = {
 
-module.exports = {
-
-    init: function(clientId, clientSecret, market, logger) {
-        _clientId = clientId
-        _clientSecret = clientSecret
-        _market = market
-        _logger = logger
-    },
-
-    // TODO - refactor duplicate boilerplate below
-    // TODO - move messaging to index, get rid of channel/username args
-    searchSpotify: function  (input, channel, userName, limit) {
-        let accessToken = _getAccessToken()
-        if (!accessToken) {
-            return false
-        }
-
-        var query = ''
-        for (var i = 1; i < input.length; i++) {
-            query += urlencode(input[i])
-            // TODO - join
-            if (i < input.length - 1) {
-                query += ' '
+        // TODO - refactor duplicate boilerplate below
+        // TODO - move messaging to index, get rid of channel/username args
+        searchSpotify: function (input, channel, userName, limit) {
+            let accessToken = _getAccessToken()
+            if (!accessToken) {
+                return false
             }
-        }
 
-        var getapi = urllibsync.request(
-            'https://api.spotify.com/v1/search?q=' +
-            query +
-            '&type=track&limit=' +
-            limit +
-            '&market=' +
-            _market +
-            '&access_token=' +
-            accessToken
-        )
-
-        var data = JSON.parse(getapi.data.toString())
-
-        _logger.debug(data)
-        if (!data.tracks || !data.tracks.items || data.tracks.items.length === 0) {
-            var message = 'Sorry ' + userName + ', I could not find that track :('
-        }
-
-        return data, message
-    },
-
-    searchSpotifyPlaylist: function  (input, channel, userName, limit) {
-        let accessToken = _getAccessToken()
-        if (!accessToken) {
-            return false
-        }
-
-        var query = ''
-        for (var i = 1; i < input.length; i++) {
-            query += urlencode(input[i])
-            if (i < input.length - 1) {
-                query += ' '
+            var query = ''
+            for (var i = 1; i < input.length; i++) {
+                query += urlencode(input[i])
+                // TODO - join
+                if (i < input.length - 1) {
+                    query += ' '
+                }
             }
-        }
 
-        var getapi = urllibsync.request(
-            'https://api.spotify.com/v1/search?q=' +
-            query +
-            '&type=playlist&limit=' +
-            limit +
-            '&market=' +
-            _market +
-            '&access_token=' +
-            accessToken
-        )
+            var getapi = urllibsync.request(
+                'https://api.spotify.com/v1/search?q=' +
+                query +
+                '&type=track&limit=' +
+                limit +
+                '&market=' +
+                config.market +
+                '&access_token=' +
+                accessToken
+            )
 
-        var data = JSON.parse(getapi.data.toString())
-        logger.debug(data)
-        if (!data.playlists || !data.playlists.items || data.playlists.items.length === 0) {
-            var message = 'Sorry ' + userName + ', I could not find that playlist :('
-        }
+            var data = JSON.parse(getapi.data.toString())
 
-        return data, message
-    },
-
-    searchSpotifyAlbum: function  (input, channel, userName, limit) {
-        let accessToken = _getAccessToken()
-        if (!accessToken) {
-            return false
-        }
-
-        var query = ''
-        for (var i = 1; i < input.length; i++) {
-            query += urlencode(input[i])
-            if (i < input.length - 1) {
-                query += ' '
+            config.logger.debug(data)
+            if (!data.tracks || !data.tracks.items || data.tracks.items.length === 0) {
+                var message = 'Sorry ' + userName + ', I could not find that track :('
             }
-        }
 
-        var getapi = urllibsync.request(
-            'https://api.spotify.com/v1/search?q=' +
-            query +
-            '&type=album&limit=' +
-            limit +
-            '&market=' +
-            _market +
-            '&access_token=' +
-            accessToken
-        )
+            return [data, message]
+        },
 
-        var data = JSON.parse(getapi.data.toString())
-        _logger.debug(data)
-        if (!data.albums || !data.albums.items || data.albums.items.length === 0) {
-            var message = 'Sorry ' + userName + ', I could not find that album :('
-        }
-
-        return data, message
-    },
-
-    searchSpotifyArtist: function  (input, channel, userName, limit) {
-        let accessToken = _getAccessToken()
-        if (!accessToken) {
-            return false
-        }
-
-        var query = ''
-        for (var i = 1; i < input.length; i++) {
-            query += urlencode(input[i])
-            if (i < input.length - 1) {
-                query += ' '
+        searchSpotifyPlaylist: function (input, channel, userName, limit) {
+            let accessToken = _getAccessToken()
+            if (!accessToken) {
+                return false
             }
+
+            var query = ''
+            for (var i = 1; i < input.length; i++) {
+                query += urlencode(input[i])
+                if (i < input.length - 1) {
+                    query += ' '
+                }
+            }
+
+            var getapi = urllibsync.request(
+                'https://api.spotify.com/v1/search?q=' +
+                query +
+                '&type=playlist&limit=' +
+                limit +
+                '&market=' +
+                config.market +
+                '&access_token=' +
+                accessToken
+            )
+
+            var data = JSON.parse(getapi.data.toString())
+            logger.debug(data)
+            if (!data.playlists || !data.playlists.items || data.playlists.items.length === 0) {
+                var message = 'Sorry ' + userName + ', I could not find that playlist :('
+            }
+
+            return [data, message]
+        },
+
+        searchSpotifyAlbum: function (input, channel, userName, limit) {
+            let accessToken = _getAccessToken()
+            if (!accessToken) {
+                return false
+            }
+
+            var query = ''
+            for (var i = 1; i < input.length; i++) {
+                query += urlencode(input[i])
+                if (i < input.length - 1) {
+                    query += ' '
+                }
+            }
+
+            var getapi = urllibsync.request(
+                'https://api.spotify.com/v1/search?q=' +
+                query +
+                '&type=album&limit=' +
+                limit +
+                '&market=' +
+                config.market +
+                '&access_token=' +
+                accessToken
+            )
+
+            var data = JSON.parse(getapi.data.toString())
+            config.logger.debug(data)
+            if (!data.albums || !data.albums.items || data.albums.items.length === 0) {
+                var message = 'Sorry ' + userName + ', I could not find that album :('
+            }
+
+            return [data, message]
+        },
+
+        searchSpotifyArtist: function (input, channel, userName, limit) {
+            let accessToken = _getAccessToken()
+            if (!accessToken) {
+                return false
+            }
+
+            var query = ''
+            for (var i = 1; i < input.length; i++) {
+                query += urlencode(input[i])
+                if (i < input.length - 1) {
+                    query += ' '
+                }
+            }
+
+            var getapi = urllibsync.request(
+                'https://api.spotify.com/v1/search?q=' +
+                query +
+                '&type=artist&limit=' +
+                limit +
+                '&market=' +
+                config.market +
+                '&access_token=' +
+                accessToken
+            )
+
+            var data = JSON.parse(getapi.data.toString())
+            config.logger.debug(data)
+            if (!data.artists || !data.artists.items || data.artists.items.length === 0) {
+                var message = 'Sorry ' + userName + ', I could not find that artist :('
+            }
+
+            return [data, message]
         }
-
-        var getapi = urllibsync.request(
-            'https://api.spotify.com/v1/search?q=' +
-            query +
-            '&type=artist&limit=' +
-            limit +
-            '&market=' +
-            _market +
-            '&access_token=' +
-            accessToken
-        )
-
-        var data = JSON.parse(getapi.data.toString())
-        _logger.debug(data)
-        if (!data.artists || !data.artists.items || data.artists.items.length === 0) {
-            var message = 'Sorry ' + userName + ', I could not find that artist :('
-        }
-
-        return data, message
     }
 
+    return module.exports.instance
 }

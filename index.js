@@ -1,6 +1,6 @@
 const config = require('nconf')
 const winston = require('winston')
-const spotify = require('./spotify')
+const Spotify = require('./spotify')
 
 config.argv()
   .env()
@@ -64,8 +64,8 @@ if (market !== 'US') {
   logger.info("Market is: " + market)
 }
 
-/* Initialize spotify */
-spotify.init(clientId, clientSecret, market, logger)
+/* Initialize spotify instance */
+const spotify = Spotify({clientId: clientId, clientSecret: clientSecret, market: market, logger: logger})
 
 let gongCounter = 0
 const gongLimitPerUser = 1
@@ -133,162 +133,174 @@ slack.on('open', function () {
 })
 
 slack.on(RTM_EVENTS.MESSAGE, (message) => {
-  let channel, channelError, channelName, errors, response, text, textError, ts, type, typeError, user, userName
+    let channel, channelError, channelName, errors, response, text, textError, ts, type, typeError, user, userName
 
-  channel = slack.dataStore.getChannelGroupOrDMById(message.channel)
+    channel = slack.dataStore.getChannelGroupOrDMById(message.channel)
 
-  response = ''
-  type = message.type, ts = message.ts, text = message.text
-  channelName = (channel != null ? channel.is_channel : void 0) ? '#' : ''
-  channelName = channelName + (channel ? channel.name : 'UNKNOWN_CHANNEL')
-  userName = '<@' + message.user + '>'
-  logger.info('Received: ' + type + ' ' + channelName + ' ' + userName + ' ' + ts + ' "' + text + '"')
+    type = message.type, ts = message.ts, text = message.text
+    channelName = (channel != null ? channel.is_channel : void 0) ? '#' : ''
+    channelName = channelName + (channel ? channel.name : 'UNKNOWN_CHANNEL')
+    userName = '<@' + message.user + '>'
+    logger.info('Received: ' + type + ' ' + channelName + ' ' + userName + ' ' + ts + ' "' + text + '"')
 
-  user = slack.dataStore.getUserById(message.user)
-  let displayName = (user != null ? user.display_name : void 0) != null ? '@' + user.name : 'UNKNOWN_USER'
-  if (user && user.is_bot) {
-    _slackMessage('Sorry ' + userName + ', no bots allowed!', channel.id)
-  }
+    user = slack.dataStore.getUserById(message.user)
 
-  if (type !== 'message' || (text == null) || (channel == null)) {
-    typeError = type !== 'message' ? 'unexpected type ' + type + '.' : null
-    textError = text == null ? 'text was undefined.' : null
-    channelError = channel == null ? 'channel was undefined.' : null
-    errors = [typeError, textError, channelError].filter(function (element) {
-      return element !== null
-    }).join(' ')
-
-    return logger.error('Could not respond. ' + errors)
-  }
-
-  if (blacklist.indexOf(userName) !== -1) {
-    logger.info('User ' + userName + ' is blacklisted')
-    _slackMessage('Nice try ' + userName + ", you're banned :)", channel.id)
-    return false
-  }
-
-  var input = text.split(' ')
-  var term = input[0].toLowerCase()
-  var matched = true
-  logger.info('term: ' + term)
-  switch (term) {
-    case 'add':
-      _add(input, channel, userName)
-      break
-    case 'addalbum':
-      _addalbum(input, channel, userName)
-      break
-    case 'bestof':
-      _bestof(input, channel, userName)
-      break
-    case 'append':
-      _append(input, channel, userName)
-      break
-    case 'searchplaylist':
-      _searchplaylist(input, channel)
-      break
-    case 'searchalbum':
-      _searchalbum(input, channel)
-      break
-    case 'addplaylist':
-      _addplaylist(input, channel)
-      break
-    case 'search':
-      _search(input, channel, userName)
-      break
-    case 'current':
-    case 'wtf':
-      _currentTrack(channel)
-      break
-    case 'dong':
-    case ':gong:':
-    case 'gong':
-      _gong(channel, userName)
-      break
-    case 'gongcheck':
-      _gongcheck(channel, userName)
-      break
-    case 'vote':
-      _vote(channel, userName)
-      break
-    case 'votecheck':
-      _votecheck(channel, userName)
-      break
-    case 'list':
-    case 'ls':
-    case 'playlist':
-      _showQueue(channel)
-      break
-    case 'volume':
-      _getVolume(channel)
-      break
-    case 'count(list)':
-      _countQueue(channel)
-      break
-    case 'status':
-      _status(channel)
-      break
-    case 'help':
-      _help(input, channel)
-      break
-    default:
-      matched = false
-      break
-  }
-
-  if (!matched && channel.name === adminChannel) {
-    switch (term) {
-      case 'next':
-        _nextTrack(channel)
-        break
-      case 'gongplay':
-        _gongplay(input, channel)
-        break
-      case 'stop':
-        _stop(input, channel)
-        break
-      case 'flush':
-        _flush(input, channel)
-        break
-      case 'play':
-        _play(input, channel)
-        break
-      case 'pause':
-        _pause(input, channel)
-        break
-      case 'playpause':
-      case 'resume':
-        _resume(input, channel)
-        break
-      case 'previous':
-        _previous(input, channel)
-        break
-      case 'shuffle':
-        _shuffle(input, channel)
-        break
-      case 'setvolume':
-        _setVolume(input, channel, userName)
-        break
-      case 'blacklist':
-        _blacklist(input, channel)
-        break
-      case 'test':
-        _addToSpotifyPlaylist(input, channel)
-        break
-      default:
-        break
+    if (user && user.is_bot) {
+        _slackMessage('Sorry ' + userName + ', no bots allowed!', channel.id)
     }
-  }
+
+    if (type !== 'message' || (text == null) || (channel == null)) {
+        typeError = type !== 'message' ? 'unexpected type ' + type + '.' : null
+        textError = text == null ? 'text was undefined.' : null
+        channelError = channel == null ? 'channel was undefined.' : null
+        errors = [typeError, textError, channelError].filter(function (element) {
+            return element !== null
+        }).join(' ')
+
+        return logger.error('Could not respond. ' + errors)
+    }
+
+    if (blacklist.indexOf(userName) !== -1) {
+        logger.info('User ' + userName + ' is blacklisted')
+        _slackMessage('Nice try ' + userName + ", you're banned :)", channel.id)
+        return false
+    }
+
+    processText(text, channel, userName)
 })
 
 slack.on('error', function (error) {
   logger.error('Error: ' + error)
 })
 
-slack.login()
+
+if (process.argv.length > 2) {
+  // Expose cli
+  processInput(process.argv.slice(2).join(' '), {name: adminChannel}, 'nobody')
+} else {
+  slack.login()
+}
+
+function processInput(text, channel, userName) {
+    var input = text.split(' ')
+    var term = input[0].toLowerCase()
+    var matched = true
+    logger.info('term: ' + term)
+    switch (term) {
+        case 'add':
+            _add(input, channel, userName)
+            break
+        case 'addalbum':
+            _addalbum(input, channel, userName)
+            break
+        case 'bestof':
+            _bestof(input, channel, userName)
+            break
+        case 'append':
+            _append(input, channel, userName)
+            break
+        case 'searchplaylist':
+            _searchplaylist(input, channel)
+            break
+        case 'searchalbum':
+            _searchalbum(input, channel)
+            break
+        case 'addplaylist':
+            _addplaylist(input, channel)
+            break
+        case 'search':
+            _search(input, channel, userName)
+            break
+        case 'current':
+        case 'wtf':
+            _currentTrack(channel)
+            break
+        case 'dong':
+        case ':gong:':
+        case 'gong':
+            _gong(channel, userName)
+            break
+        case 'gongcheck':
+            _gongcheck(channel, userName)
+            break
+        case 'vote':
+            _vote(channel, userName)
+            break
+        case 'votecheck':
+            _votecheck(channel, userName)
+            break
+        case 'list':
+        case 'ls':
+        case 'playlist':
+            _showQueue(channel)
+            break
+        case 'volume':
+            _getVolume(channel)
+            break
+        case 'count(list)':
+            _countQueue(channel)
+            break
+        case 'status':
+            _status(channel)
+            break
+        case 'help':
+            _help(input, channel)
+            break
+        default:
+            matched = false
+            break
+    }
+
+    if (!matched && channel.name === adminChannel) {
+        switch (term) {
+            case 'next':
+                _nextTrack(channel)
+                break
+            case 'gongplay':
+                _gongplay(input, channel)
+                break
+            case 'stop':
+                _stop(input, channel)
+                break
+            case 'flush':
+                _flush(input, channel)
+                break
+            case 'play':
+                _play(input, channel)
+                break
+            case 'pause':
+                _pause(input, channel)
+                break
+            case 'playpause':
+            case 'resume':
+                _resume(input, channel)
+                break
+            case 'previous':
+                _previous(input, channel)
+                break
+            case 'shuffle':
+                _shuffle(input, channel)
+                break
+            case 'setvolume':
+                _setVolume(input, channel, userName)
+                break
+            case 'blacklist':
+                _blacklist(input, channel)
+                break
+            case 'test':
+                _addToSpotifyPlaylist(input, channel)
+                break
+            default:
+                break
+        }
+    }
+}
 
 function _slackMessage (message, id) {
-  slack.sendMessage(message, id)
+  console.log(message)
+  if (slack.connected) {
+      slack.sendMessage(message, id)
+  }
 }
 
 function _getVolume (channel) {
@@ -700,7 +712,7 @@ function _currentTrackTitle (channel, cb) {
 }
 
 function _add (input, channel, userName) {
-  var data, message = spotify.searchSpotify(input, channel, userName, 1)
+  var [data, message] = spotify.searchSpotify(input, channel, userName, 1)
   if (message) {
     _slackMessage(message, channel.id)
   }
@@ -747,7 +759,7 @@ function _add (input, channel, userName) {
 }
 
 function _addalbum (input, channel, userName) {
-  var data, message = spotify.searchSpotifyAlbum(input, channel, userName, 1)
+  var [data, message] = spotify.searchSpotifyAlbum(input, channel, userName, 1)
   if (message) {
     _slackMessage(message, channel.id)
   }
@@ -790,7 +802,7 @@ function _addalbum (input, channel, userName) {
 }
 
 function _append (input, channel, userName) {
-  var data, message = spotify.searchSpotify(input, channel, userName, 1)
+  var [data, message] = spotify.searchSpotify(input, channel, userName, 1)
   if (message) {
     _slackMessage(message, channel.id)
   }
@@ -836,7 +848,8 @@ function _append (input, channel, userName) {
 
 function _search (input, channel, userName) {
   logger.info('_search '+ input)
-  var data, message = spotify.searchSpotify(input, channel, userName, searchLimit)
+  var [data, message] = spotify.searchSpotify(input, channel, userName, searchLimit)
+
   if (message) {
     _slackMessage(message, channel.id)
   }
@@ -847,12 +860,11 @@ function _search (input, channel, userName) {
   var trackNames = []
   for (var i = 1; i <= data.tracks.items.length; i++) {
     var trackName = data.tracks.items[i - 1].artists[0].name + ' - ' + data.tracks.items[i - 1].name
-
     trackNames.push(trackName)
   }
 
   // Print the result...
-  var message = userName +
+  message = userName +
         ', I found the following track(s):\n```\n' +
         trackNames.join('\n') +
         '\n```\nIf you want to play it, use the `add` command..\n'
@@ -861,7 +873,7 @@ function _search (input, channel, userName) {
 }
 
 function _searchplaylist (input, channel) {
-    var data, message = spotify.searchSpotifyPlaylist(input, channel, userName, searchLimit)
+    var [data, message] = spotify.searchSpotifyPlaylist(input, channel, userName, searchLimit)
     if (message) {
         _slackMessage(message, channel.id)
     }
@@ -881,15 +893,16 @@ function _searchplaylist (input, channel) {
             trackNames.push(trackName)
         }
 
-        var message = 'I found the following playlist(s):\n```\n' + trackNames.join('\n') + '\n```\nIf you want to play it, use the `addplaylist` command..\n'
+        message = 'I found the following playlist(s):\n```\n' + trackNames.join('\n') + '\n```\nIf you want to play it, use the `addplaylist` command..\n'
         slack.sendMessage(message, channel.id)
     } else {
-        slack.sendMessage('Sorry could not find that playlist :(', channel.id)
+        message = 'Sorry could not find that playlist :('
     }
+    slack.sendMessage(message, channel.id)
 }
 
 function _searchalbum (input, channel) {
-    var data, message = spotify.searchSpotifyAlbum(input, channel, userName, searchLimit)
+    var [data, message] = spotify.searchSpotifyAlbum(input, channel, userName, searchLimit)
     if (message) {
         _slackMessage(message, channel.id)
     }
@@ -911,7 +924,7 @@ function _searchalbum (input, channel) {
             trackNames.push(trackName)
         }
 
-        var message = 'I found the following album(s):\n```\n' + trackNames.join('\n') + '\n```\nIf you want to play it, use the `addalbum` command..\n'
+        message = 'I found the following album(s):\n```\n' + trackNames.join('\n') + '\n```\nIf you want to play it, use the `addalbum` command..\n'
         _slackMessage(message, channel.id)
     }
 }
@@ -922,11 +935,10 @@ function _addToSpotify (userName, uri, albumImg, trackName, channel, cb) {
   sonos.queue(uri).then(result => {
     logger.info('Queued the following: ' + result)
 
-    var message = ''
     logger.info('queue:')
     var queueLength = result.FirstTrackNumberEnqueued
     logger.info('queueLength' + queueLength)
-    message = 'Sure ' +
+    var message = 'Sure ' +
             userName +
             ', Added ' +
              trackName +
@@ -972,10 +984,9 @@ function _addToSpotifyArtist (userName, trackName, spid, channel) {
   sonos.queue(uri).then(result => {
     logger.info('Queued the following: ' + result)
 
-    var message = ''
     var queueLength = result.FirstTrackNumberEnqueued
     logger.info('queueLength' + queueLength)
-    message = 'Sure ' +
+    var message = 'Sure ' +
             userName +
             ' Added 10 most popular tracks by "' +
             trackName +
@@ -991,7 +1002,7 @@ function _addToSpotifyArtist (userName, trackName, spid, channel) {
 }
 
 function _addplaylist (input, channel, userName) {
-  var data, message = spotify.searchSpotifyPlaylist(input, channel, userName, 1)
+  var [data, message] = spotify.searchSpotifyPlaylist(input, channel, userName, 1)
   if (message) {
     _slackMessage(message, channel.id)
   }
@@ -1035,7 +1046,7 @@ function _addplaylist (input, channel, userName) {
 }
 
 function _bestof (input, channel, userName) {
-  var data, message = spotify.searchSpotifyArtist(input, channel, userName, 1)
+  var [data, message] = spotify.searchSpotifyArtist(input, channel, userName, 1)
   if (message) {
     _slackMessage(message, channel.id)
   }
@@ -1125,5 +1136,3 @@ function _blacklist (input, channel) {
   _slackMessage(message, channel.id)
 }
 
-// testing
-_search('weezer', 'channel', 'rob')
