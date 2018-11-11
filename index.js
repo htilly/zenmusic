@@ -64,12 +64,12 @@ if (market !== 'US') {
   logger.info("Market is: " + market)
 }
 
-/* Initialize spotify instance */
+/* Initialize Spotify instance */
 const spotify = Spotify({clientId: clientId, clientSecret: clientSecret, market: market, logger: logger})
 
 let gongCounter = 0
-const gongLimitPerUser = 1
 let gongScore = {}
+const gongLimitPerUser = 1
 const gongMessage = [
   'Is it really all that bad?',
   'Is it that distracting?',
@@ -156,7 +156,8 @@ slack.on(RTM_EVENTS.MESSAGE, (message) => {
             return element !== null
         }).join(' ')
 
-        return logger.error('Could not respond. ' + errors)
+        logger.error('Could not respond. ' + errors)
+        return false
     }
 
     if (blacklist.indexOf(userName) !== -1) {
@@ -176,7 +177,7 @@ slack.on('error', function (error) {
 if (process.argv.length > 2) {
   processInput(process.argv.slice(2).join(' '), {name: adminChannel}, 'cli test')
 } else {
-  slack.login()
+  slack.start()
 }
 
 function processInput(text, channel, userName) {
@@ -184,6 +185,7 @@ function processInput(text, channel, userName) {
     var term = input[0].toLowerCase()
     var matched = true
     logger.info('term: ' + term)
+
     switch (term) {
         case 'add':
             _add(input, channel, userName)
@@ -295,9 +297,10 @@ function processInput(text, channel, userName) {
 }
 
 function _slackMessage (message, id) {
-  console.log(message)
   if (slack.connected) {
       slack.sendMessage(message, id)
+  } else {
+      console.log(message)
   }
 }
 
@@ -432,7 +435,7 @@ function _gong (channel, userName) {
       _slackMessage(randomMessage + ' This is GONG ' + gongCounter + '/' + gongLimit + ' for ' + track, channel.id)
       if (gongCounter >= gongLimit) {
         _slackMessage('The music got GONGED!!', channel.id)
-  //      _gongplay('play', channel)
+        //_gongplay('play', channel)
         _nextTrack(channel, true)
         gongCounter = 0
         gongScore = {}
