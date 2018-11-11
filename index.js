@@ -172,9 +172,9 @@ slack.on('error', function (error) {
   logger.error('Error: ' + error)
 })
 
+/* Expose cli or Connect to Slack */
 if (process.argv.length > 2) {
-  // Expose cli
-  processInput(process.argv.slice(2).join(' '), {name: adminChannel}, 'nobody')
+  processInput(process.argv.slice(2).join(' '), {name: adminChannel}, 'cli test')
 } else {
   slack.login()
 }
