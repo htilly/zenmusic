@@ -3,8 +3,6 @@
 const urllibsync = require('urllib-sync')
 const urlencode = require('urlencode')
 
-//module.exports.instance
-
 module.exports = function (config) {
     if (module.exports.instance) {
         return module.exports.instance
