@@ -85,7 +85,6 @@ let voteCounter = 0
 const voteLimitPerUser = 1
 let voteScore = {}
 let gongBanned = false
-
 let gongTrack = '' // What track was a GONG called on
 
 const RtmClient = require('@slack/client').RtmClient
@@ -172,7 +171,6 @@ slack.on(RTM_EVENTS.MESSAGE, (message) => {
 slack.on('error', function (error) {
   logger.error('Error: ' + error)
 })
-
 
 if (process.argv.length > 2) {
   // Expose cli
