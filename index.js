@@ -166,7 +166,7 @@ slack.on(RTM_EVENTS.MESSAGE, (message) => {
         return false
     }
 
-    processText(text, channel, userName)
+    processInput(text, channel, userName)
 })
 
 slack.on('error', function (error) {
