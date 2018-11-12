@@ -135,18 +135,8 @@ slack.on('open', function () {
 slack.on(RTM_EVENTS.MESSAGE, (message) => {
     let channel, channelError, channelName, errors, response, text, textError, ts, type, typeError, user, userName
 
-<<<<<<< HEAD
     channel = slack.dataStore.getChannelGroupOrDMById(message.channel)
-=======
-  response = ''
-  type = message.type, ts = message.ts, text = decode(message.text)
-  channelName = (channel != null ? channel.is_channel : void 0) ? '#' : ''
-  channelName = channelName + (channel ? channel.name : 'UNKNOWN_CHANNEL')
-  userName = '<@' + message.user + '>'
-  _log('Received: ' + type + ' ' + channelName + ' ' + userName + ' ' + ts + ' "' + text + '"')
->>>>>>> master
-
-    type = message.type, ts = message.ts, text = message.text
+    type = message.type, ts = message.ts, text = decode(message.text)
     channelName = (channel != null ? channel.is_channel : void 0) ? '#' : ''
     channelName = channelName + (channel ? channel.name : 'UNKNOWN_CHANNEL')
     userName = '<@' + message.user + '>'

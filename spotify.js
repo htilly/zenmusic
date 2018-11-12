@@ -64,6 +64,7 @@ module.exports = function (config) {
             config.logger.debug(data)
             if (!data.tracks || !data.tracks.items || data.tracks.items.length === 0) {
                 var message = 'Sorry ' + userName + ', I could not find that track :('
+                data = null
             }
 
             return [data, message]
@@ -98,6 +99,7 @@ module.exports = function (config) {
             logger.debug(data)
             if (!data.playlists || !data.playlists.items || data.playlists.items.length === 0) {
                 var message = 'Sorry ' + userName + ', I could not find that playlist :('
+                data = null
             }
 
             return [data, message]
@@ -132,6 +134,7 @@ module.exports = function (config) {
             config.logger.debug(data)
             if (!data.albums || !data.albums.items || data.albums.items.length === 0) {
                 var message = 'Sorry ' + userName + ', I could not find that album :('
+                data = null
             }
 
             return [data, message]
@@ -166,6 +169,7 @@ module.exports = function (config) {
             config.logger.debug(data)
             if (!data.artists || !data.artists.items || data.artists.items.length === 0) {
                 var message = 'Sorry ' + userName + ', I could not find that artist :('
+                data = null
             }
 
             return [data, message]
