@@ -4,6 +4,7 @@ var fs = require('fs')
 var config = require('nconf')
 var Entities = require('html-entities').AllHtmlEntities
 var timestamp = require('console-timestamp')
+var decode = require('unescape');
 
 var now = new Date()
 var number = 478921
@@ -120,7 +121,7 @@ slack.on(RTM_EVENTS.MESSAGE, (message) => {
   channel = slack.dataStore.getChannelGroupOrDMById(message.channel)
 
   response = ''
-  type = message.type, ts = message.ts, text = message.text
+  type = message.type, ts = message.ts, text = decode(message.text)
   channelName = (channel != null ? channel.is_channel : void 0) ? '#' : ''
   channelName = channelName + (channel ? channel.name : 'UNKNOWN_CHANNEL')
   userName = '<@' + message.user + '>'
