@@ -280,6 +280,8 @@ function processInput(text, channel, userName) {
             case 'test':
                 _addToSpotifyPlaylist(input, channel)
                 break
+            case 'remove':
+                _removeFromQueue(input, channel)
             default:
                 break
         }
@@ -1127,3 +1129,29 @@ function _blacklist (input, channel) {
   _slackMessage(message, channel.id)
 }
 
+function _removeFromQueue(input, channel) {
+    try {
+        var index = parseInt(input[1])
+    } catch (exc) {
+        logger.error('Error occurred: unable to parse index')
+        _slackMessage('Error! Unable to remove track, index could not be parsed', channel.id)
+        return
+    }
+
+    logger.info('_removeFromQueue '+ index)
+
+    // deduced from pytho library
+    // https://github.com/SoCo/SoCo/blob/671937e07d7973b78c0cbee153d4f3ad68ec48c6/soco/core.py#L1466
+    let objectId = 'Q:0/' + (parseInt(index) + 1)
+    sonos.avTransportService().RemoveTrackFromQueue({
+        InstanceID: 0,
+        ObjectID: objectId,
+        UpdateID: '0'
+    }).then(result => {
+        let message = "Removed track from queu with index: " + index
+        _slackMessage(message, channel.id)
+    }).catch(err => {
+        _slackMessage('Error! Unable to remove track', channel.id)
+        logger.error('Error occurred: ' + err)
+    })
+}
