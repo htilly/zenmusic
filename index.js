@@ -282,6 +282,9 @@ function processInput(text, channel, userName) {
                 break
             case 'remove':
                 _removeFromQueue(input, channel)
+            case 'thanos':
+            case 'snap':
+                _purgeHalfQueue(input, channel)
             default:
                 break
         }
@@ -341,13 +344,13 @@ function _countQueue (channel, cb) {
   sonos.getQueue(function (err, result) {
     if (err) {
       if (cb) {
-        return (err, null)
+        return cb(null, err)
       }
       logger.error(err)
       _slackMessage('Error getting queue length', channel.id)
     } else {
       if (cb) {
-        return cb(null)
+        return cb(result.total)
       }
       _slackMessage(result.total, channel.id)
     }
@@ -1129,7 +1132,7 @@ function _blacklist (input, channel) {
   _slackMessage(message, channel.id)
 }
 
-function _removeFromQueue(input, channel) {
+function _removeFromQueue(input, channel, cb) {
     try {
         var index = parseInt(input[1])
     } catch (exc) {
@@ -1148,10 +1151,46 @@ function _removeFromQueue(input, channel) {
         ObjectID: objectId,
         UpdateID: '0'
     }).then(result => {
-        let message = "Removed track from queu with index: " + index
+        if (cb) {
+            return cb(true);
+        }
+        let message = "Removed track from queue with index: " + index
         _slackMessage(message, channel.id)
     }).catch(err => {
+        if (cb) {
+            return cb(false);
+        }
         _slackMessage('Error! Unable to remove track', channel.id)
         logger.error('Error occurred: ' + err)
     })
+}
+
+function _purgeHalfQueue(input, channel) {
+    _countQueue(channel, function(size, err) {
+        if (err) {
+            logger.error('Error occurred purging queu: ' + err)
+            return
+        }
+        let maxQueueIndex = size;
+        let halfQueueSize = Math.floor(size / 2);
+        for (let i = 0; i < halfQueueSize; i++) {
+            let rand = getRandomInt(0, maxQueueIndex);
+            _removeFromQueue(channel, rand, function(success) {
+                if (success) {
+                    maxQueueIndex--;
+                    // We're done here
+                    if (i == halfQueueSize) {
+                        _slackMessage("Thanos has restored balance to the playlist", channel.id)
+                        // slack to regular channel with thanos image
+                    }
+                }
+            });
+        }
+    });
+}
+
+function getRandomInt(min, max) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min + 1)) + min;
 }
