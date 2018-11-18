@@ -1,7 +1,8 @@
 const config = require('nconf')
 const winston = require('winston')
-const Spotify = require('./spotify')
 const decode = require('unescape');
+const Spotify = require('./spotify')
+const utils = require('./utils')
 
 config.argv()
   .env()
@@ -1143,7 +1144,7 @@ function _removeFromQueue(input, channel, cb) {
 
     logger.info('_removeFromQueue '+ index)
 
-    // deduced from pytho library
+    // deduced from python library
     // https://github.com/SoCo/SoCo/blob/671937e07d7973b78c0cbee153d4f3ad68ec48c6/soco/core.py#L1466
     let objectId = 'Q:0/' + (parseInt(index) + 1)
     sonos.avTransportService().RemoveTrackFromQueue({
@@ -1168,29 +1169,24 @@ function _removeFromQueue(input, channel, cb) {
 function _purgeHalfQueue(input, channel) {
     _countQueue(channel, function(size, err) {
         if (err) {
-            logger.error('Error occurred purging queu: ' + err)
+            logger.error('Error occurred purging queue: ' + err)
             return
         }
         let maxQueueIndex = size;
         let halfQueueSize = Math.floor(size / 2);
         for (let i = 0; i < halfQueueSize; i++) {
-            let rand = getRandomInt(0, maxQueueIndex);
+            let rand = utils.getRandomInt(0, maxQueueIndex);
             _removeFromQueue(channel, rand, function(success) {
                 if (success) {
                     maxQueueIndex--;
                     // We're done here
                     if (i == halfQueueSize) {
-                        _slackMessage("Thanos has restored balance to the playlist", channel.id)
+                        let snapUrl = 'https://cdn3.movieweb.com/i/article/61QmlwoK2zbKcbLyrLncM3gPrsjNIb/738:50/Avengers-Infinity-War-Facebook-Ar-Mask-Thanos-Snap.jpg'
+                        _slackMessage(snapUrl + "\nThanos has restored balance to the playlist", standardChannel.id)
                         // slack to regular channel with thanos image
                     }
                 }
             });
         }
     });
-}
-
-function getRandomInt(min, max) {
-    min = Math.ceil(min);
-    max = Math.floor(max);
-    return Math.floor(Math.random() * (max - min + 1)) + min;
 }
