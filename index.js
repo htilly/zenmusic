@@ -342,19 +342,17 @@ function _getQueue () {
 }
 
 function _countQueue (channel, cb) {
-  sonos.getQueue(function (err, result) {
-    if (err) {
-      if (cb) {
-        return cb(null, err)
-      }
-      logger.error(err)
-      _slackMessage('Error getting queue length', channel.id)
-    } else {
-      if (cb) {
-        return cb(result.total)
+  sonos.getQueue().then(result => {
+       if (cb) {
+          return cb(result.total)
       }
       _slackMessage(result.total, channel.id)
-    }
+  }).catch(err => {
+      logger.error(err)
+      if (cb) {
+          return cb(null, err)
+      }
+      _slackMessage('Error getting queue length', channel.id)
   })
 }
 
