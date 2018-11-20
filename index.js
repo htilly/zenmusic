@@ -348,7 +348,7 @@ function _countQueue (channel, cb) {
        if (cb) {
           return cb(result.total)
       }
-      _slackMessage(result.total, channel.id)
+      _slackMessage(`${result.total} songs in the queue`, channel.id)
   }).catch(err => {
       logger.error(err)
       if (cb) {
