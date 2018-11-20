@@ -372,21 +372,28 @@ function _showQueue (channel) {
       if (err) {
         logger.error(err)
       }
-      var message = 'Total tracks in queue: ' + result.total + '\n' +
-      '===================='
+      var message = 'Total tracks in queue: ' + result.total + '\n====================\n'
+      let tracks = []
+
       result.items.map(
         function (item, i) {
-          message += '\n'
           if (item['title'] === track.title) {
-            message += ':notes: ' + '_#' + i + '_ *Title:* ' + item['title']
-            message += ' *Artist:* ' + item['artist']
+            tracks.push(':notes: ' + '_#' + i + '_ ' + item['title'] + ' by ' + item['artist'])
           } else {
-            message += '>_#' + i + '_ *Title:* ' + item['title']
-            message += ' *Artist:* ' + item['artist']
+            tracks.push('>_#' + i + '_ ' + item['title'] + ' by ' + item['artist'])
           }
         }
       )
-      _slackMessage(message, channel.id)
+      for (var i in tracks) {
+          message += tracks[i] + "\n"
+          if (i > 0 && Math.floor(i % 100) == 0) {
+              _slackMessage(message, channel.id)
+              message = ''
+          }
+      }
+      if (message) {
+          _slackMessage(message, channel.id)
+      }
     })
   }).catch(err => {
     logger.error('Error fetch queue: ' + err)
