@@ -228,6 +228,8 @@ function processInput(text, channel, userName) {
         case 'volume':
             _getVolume(channel)
             break
+        case 'size':
+        case 'count':
         case 'count(list)':
             _countQueue(channel)
             break
