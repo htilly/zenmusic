@@ -419,10 +419,10 @@ function _upNext (channel) {
             }
             var message = 'Recent and upcoming tracks\n====================\n'
             let tracks = []
-            let currentIndex = 0
+            let currentIndex = track.queuePosition
             result.items.map(
                 function (item, i) {
-                    if (item['title'] === track.title) {
+                    if (i === currentIndex) {
                         currentIndex = i
                         tracks.push(':notes: ' + '_#' + i + '_ ' + item['title'] + ' by ' + item['artist'])
                     } else {
@@ -430,7 +430,7 @@ function _upNext (channel) {
                     }
                 }
             )
-            tracks = tracks.slice(Math.max(i - 5, 0), Math.min(i + 20, tracks.length))
+            tracks = tracks.slice(Math.max(currentIndex - 5, 0), Math.min(currentIndex + 20, tracks.length))
             for (var i in tracks) {
                 message += tracks[i] + "\n"
             }
