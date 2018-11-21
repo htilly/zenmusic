@@ -21,6 +21,7 @@ config.argv()
 
 const adminChannel = config.get('adminChannel')
 const standardChannel = config.get('standardChannel')
+const standardChannelId = config.get('standardChannelId')
 const gongLimit = config.get('gongLimit')
 const voteLimit = config.get('voteLimit')
 const token = config.get('token')
@@ -89,6 +90,7 @@ let slack = new RtmClient(token, {
   autoReconnect: true,
   autoMark: true
 })
+
 
 /* Slack handlers */
 slack.on('open', function () {
@@ -231,6 +233,7 @@ function processInput(text, channel, userName) {
         case 'size':
         case 'count':
         case 'count(list)':
+            console.log(channel.id)
             _countQueue(channel)
             break
         case 'status':
@@ -284,7 +287,7 @@ function processInput(text, channel, userName) {
                 _addToSpotifyPlaylist(input, channel)
                 break
             case 'remove':
-                _removeFromQueue(input, channel)
+                _removeFromQueue(input[1], channel)
             case 'thanos':
             case 'snap':
                 _purgeHalfQueue(input, channel)
@@ -1140,9 +1143,9 @@ function _blacklist (input, channel) {
   _slackMessage(message, channel.id)
 }
 
-function _removeFromQueue(input, channel, cb) {
+function _removeFromQueue(index, channel, cb) {
     try {
-        var index = parseInt(input[1])
+        var index = parseInt(index)
     } catch (exc) {
         logger.error('Error occurred: unable to parse index')
         _slackMessage('Error! Unable to remove track, index could not be parsed', channel.id)
@@ -1174,26 +1177,21 @@ function _removeFromQueue(input, channel, cb) {
 }
 
 function _purgeHalfQueue(input, channel) {
-    _countQueue(channel, function(size, err) {
-        if (err) {
-            logger.error('Error occurred purging queue: ' + err)
-            return
-        }
-        let maxQueueIndex = size;
-        let halfQueueSize = Math.floor(size / 2);
+    sonos.getQueue().then(result => {
+        let maxQueueIndex = parseInt(result.total)
+        let halfQueueSize = Math.floor(maxQueueIndex / 2);
         for (let i = 0; i < halfQueueSize; i++) {
             let rand = utils.getRandomInt(0, maxQueueIndex);
-            _removeFromQueue(channel, rand, function(success) {
+            _removeFromQueue(rand, channel, function(success) {
                 if (success) {
                     maxQueueIndex--;
-                    // We're done here
-                    if (i == halfQueueSize) {
-                        let snapUrl = 'https://cdn3.movieweb.com/i/article/61QmlwoK2zbKcbLyrLncM3gPrsjNIb/738:50/Avengers-Infinity-War-Facebook-Ar-Mask-Thanos-Snap.jpg'
-                        _slackMessage(snapUrl + "\nThanos has restored balance to the playlist", standardChannel.id)
-                        // slack to regular channel with thanos image
-                    }
                 }
             });
         }
-    });
+        let snapUrl = 'https://cdn3.movieweb.com/i/article/61QmlwoK2zbKcbLyrLncM3gPrsjNIb/738:50/Avengers-Infinity-War-Facebook-Ar-Mask-Thanos-Snap.jpg'
+        _slackMessage(snapUrl + "\nThanos has restored balance to the playlist", standardChannelId)
+    }).catch(err => {
+        logger.error(err)
+    })
 }
+
