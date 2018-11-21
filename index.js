@@ -227,13 +227,15 @@ function processInput(text, channel, userName) {
         case 'playlist':
             _showQueue(channel)
             break
+        case 'upnext':
+            _upNext(channel)
+            break
         case 'volume':
             _getVolume(channel)
             break
         case 'size':
         case 'count':
         case 'count(list)':
-            console.log(channel.id)
             _countQueue(channel)
             break
         case 'status':
@@ -402,6 +404,45 @@ function _showQueue (channel) {
     logger.error('Error fetch queue: ' + err)
   })
 }
+
+function _upNext (channel) {
+    sonos.getQueue().then(result => {
+        logger.debug('Current queue: ' + JSON.stringify(result, null, 2))
+
+        _currentTrack(channel, function (err, track) {
+            if (!result) {
+                logger.debug(result)
+                _slackMessage('Seems like the queue is empty... Have you tried adding a song?!', channel.id)
+            }
+            if (err) {
+                logger.error(err)
+            }
+            var message = 'Recent and upcoming tracks\n====================\n'
+            let tracks = []
+            let currentIndex = 0
+            result.items.map(
+                function (item, i) {
+                    if (item['title'] === track.title) {
+                        currentIndex = i
+                        tracks.push(':notes: ' + '_#' + i + '_ ' + item['title'] + ' by ' + item['artist'])
+                    } else {
+                        tracks.push('>_#' + i + '_ ' + item['title'] + ' by ' + item['artist'])
+                    }
+                }
+            )
+            tracks = tracks.slice(Math.max(i - 5, 0), Math.min(i + 20, tracks.length))
+            for (var i in tracks) {
+                message += tracks[i] + "\n"
+            }
+            if (message) {
+                _slackMessage(message, channel.id)
+            }
+        })
+    }).catch(err => {
+        logger.error('Error fetching queue: ' + err)
+    })
+}
+
 
 function _gong (channel, userName) {
   logger.info('_gong...')
