@@ -21,14 +21,14 @@
   },
   "devDependencies": {
     "chai": "^3.5.0",
-    "coveralls": "^2.11.14",
+    "coveralls": "^3.0.2",
     "eslint-config-standard": "^11.0.0",
     "eslint-plugin-import": "^2.11.0",
     "eslint-plugin-node": "^6.0.1",
     "eslint-plugin-promise": "^3.7.0",
     "eslint-plugin-standard": "^3.0.1",
     "istanbul": "^0.4.5",
-    "mocha": "^2.3.4",
+    "mocha": "^5.2.0",
     "standard": "^11.0.1"
   },
   "author": "",
@@ -36,7 +36,6 @@
   "dependencies": {
     "@segment/to-iso-string": "^1.0.1",
     "@slack/client": "^3.5.1",
-    "console-timestamp": "^0.3.0",
     "eslint": "^4.19.1",
     "html-entities": "^1.2.0",
     "htmlencode": "0.0.4",
@@ -44,10 +43,13 @@
     "nconf": "^0.8.4",
     "request": "^2.83.0",
     "semver": "^5.4.1",
+    "slack-mock": "^1.1.1",
     "sonos": "^1.1.2",
+    "unescape": "^1.0.1",
     "urlencode": "^1.1.0",
     "urllib-sync": "^1.1.2",
     "uuid": "^3.2.1",
+    "winston": "^3.1.0",
     "xml2js": "^0.4.19"
   },
   "engines": {
