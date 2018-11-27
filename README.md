@@ -26,9 +26,8 @@ Uses https://github.com/bencevans/node-sonos to controll Sonos.
 1: A Sonos player (configured with Spotify).  
 2: A slack-bot configured in #Slack  
 3: A server running node.js  
-4: Know the IP of your Sonos. Preferably a static one.  
-5: A Spotify API Key - Base64 representation of client_id:client_secret - [Read more](https://developer.spotify.com/web-api/authorization-guide/#client-credentials-flow) - [Get Keys](https://developer.spotify.com/my-applications/#!/)  
-Base64 encoder online can be found [here](https://www.base64encode.org).
+4: Know the IP of your Sonos. Preferably a static one.
+5: A valid spotify account with Client ID & Client Secret. Head over to: https://developer.spotify.com/dashboard/applications to set it up. Enter the data in the config.json file.
 
 
 **Firewall settings**
