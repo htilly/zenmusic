@@ -15,6 +15,9 @@ Migrate to version 4.0 for node-slack-sdk and primarily DataStore migration.
 https://github.com/slackapi/node-slack-sdk/wiki/DataStore-v3.x-Migration-Guide
 
 
+(&#x1F534;) *** NEW SPOTIFY AUTH. Old version WILL break after upgrade. Please read bellow for more info *** (&#x1F534;)
+*** BIG thanks to @codebynumbers for updated code ***
+
 **What is it?**
 
 Quick hack created during one of Schibsted Swedens hackdays by staff from E-Tech.
@@ -26,8 +29,8 @@ Uses https://github.com/bencevans/node-sonos to controll Sonos.
 1: A Sonos player (configured with Spotify).  
 2: A slack-bot configured in #Slack  
 3: A server running node.js  
-4: Know the IP of your Sonos. Preferably a static one.
-5: A valid spotify account with Client ID & Client Secret. Head over to: https://developer.spotify.com/dashboard/applications to set it up. Enter the data in the config.json file.
+4: Know the IP of your Sonos. Preferably a static one.  
+5: A valid spotify account with Client ID & Client Secret. Head over to:   https://developer.spotify.com/dashboard/applications to set it up. Enter the data in the config.json file.  
 
 
 **Firewall settings**
