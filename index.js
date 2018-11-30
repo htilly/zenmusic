@@ -1236,3 +1236,9 @@ function _purgeHalfQueue(input, channel) {
     })
 }
 
+// Travis.
+// Just making sure that is at least will build...
+
+module.exports = function (number, locale) {
+  return number.toLocaleString(locale)
+}
