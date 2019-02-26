@@ -920,7 +920,7 @@ function _search (input, channel, userName) {
   _slackMessage(message, channel.id)
 }
 
-function _searchplaylist (input, channel) {
+function _searchplaylist (input, channel, userName) {
     var [data, message] = spotify.searchSpotifyPlaylist(input, channel, userName, searchLimit)
     if (message) {
         _slackMessage(message, channel.id)
@@ -933,9 +933,6 @@ function _searchplaylist (input, channel) {
         var trackNames = []
 
         for (var i = 1; i <= data.playlists.items.length; i++) {
-            //  var spid = data.playlists.items[i - 1].id
-            //  var uri = data.playlists.items[i - 1].uri
-            //  var external_url = data.playlists.items[i - 1].external_urls.spotify
             var trackName = data.playlists.items[i - 1].name
 
             trackNames.push(trackName)
@@ -945,8 +942,8 @@ function _searchplaylist (input, channel) {
         slack.sendMessage(message, channel.id)
     } else {
         message = 'Sorry could not find that playlist :('
+	slack.sendMessage(message, channel.id)
     }
-    slack.sendMessage(message, channel.id)
 }
 
 function _searchalbum (input, channel) {

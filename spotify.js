@@ -1,7 +1,18 @@
 'use strict'
 
+const config = require('nconf')
 const urllibsync = require('urllib-sync')
 const urlencode = require('urlencode')
+const winston = require('winston')
+
+config.argv()
+  .env()
+  .file({ file: 'config.json' })
+  .defaults({
+    'logLevel': 'info',
+  })
+
+const logLevel = config.get('logLevel')
 
 module.exports = function (config) {
     if (module.exports.instance) {
@@ -9,9 +20,18 @@ module.exports = function (config) {
     }
 
     config = config || {}
-
     let accessToken
     let accessTokenExpires
+
+/* Initialize Logger */
+const logger = winston.createLogger({
+    level: logLevel,
+    format: winston.format.json(),
+    transports: [
+        new winston.transports.Console({format: winston.format.combine(winston.format.colorize(), winston.format.simple())})
+    ]
+});
+
 
     function _getAccessToken() {
         if (accessToken && accessTokenExpires > new Date().getTime()) {
