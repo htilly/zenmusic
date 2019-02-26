@@ -946,7 +946,7 @@ function _searchplaylist (input, channel, userName) {
     }
 }
 
-function _searchalbum (input, channel) {
+function _searchalbum (input, channel, userName) {
     var [data, message] = spotify.searchSpotifyAlbum(input, channel, userName, searchLimit)
     if (message) {
         _slackMessage(message, channel.id)
@@ -954,7 +954,7 @@ function _searchalbum (input, channel) {
     if (!data) {
         return
     }
-    var data = JSON.parse(getapi.data.toString())
+//    var data = JSON.parse(getapi.data.toString())
     logger.debug(data)
     if (data.albums && data.albums.items && data.albums.items.length > 0) {
         var trackNames = []
