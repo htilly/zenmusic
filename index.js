@@ -778,11 +778,17 @@ function _add (input, channel, userName) {
     logger.info('Got current state: ' + state)
 
     if (state === 'stopped') {
+sonos.flush().then(result => {
+    logger.info('Flushed queue: ' + JSON.stringify(result, null, 2))
+
       logger.info('State: ' + state + ' - flushing')
-      _flushInt(input, channel)
       _addToSpotify(userName, uri, albumImg, trackName, channel)
       logger.info('Adding track:' + trackName)
-      setTimeout(() => _playInt('play', channel), 1000)
+      setTimeout(() => _playInt('play', channel), 500)
+
+  }).catch(err => {
+    logger.error('Error flushing queue: ' + err)
+  })
     } else if (state === 'playing') {
       logger.info('State: ' + state + ' - playing...')
       // Add the track to playlist...
