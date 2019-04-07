@@ -608,6 +608,7 @@ function _play (input, channel, state) {
   if (channel.name !== adminChannel) {
     return
   }
+  sonos.selectQueue();
   sonos.play().then(result => {
     _status(channel, state)
     logger.info('Started playing - ' + result)
@@ -615,6 +616,7 @@ function _play (input, channel, state) {
 }
 
 function _playInt (input, channel) {
+  sonos.selectQueue();
   sonos.play().then(result => {
     logger.info('playInt started playing' + result)
   }).catch(err => { logger.error('Error occurred: ' + err) })
