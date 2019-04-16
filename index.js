@@ -289,7 +289,8 @@ function processInput(text, channel, userName) {
                 _addToSpotifyPlaylist(input, channel)
                 break
             case 'remove':
-                _removeFromQueue(input[1], channel)
+                _removeTrack(input, channel)
+                break
             case 'thanos':
             case 'snap':
                 _purgeHalfQueue(input, channel)
@@ -588,6 +589,7 @@ function _help (input, channel) {
   if (channel.name === adminChannel) {
     message += '------ ADMIN FUNCTIONS ------\n' +
             '`flush` : flush the current queue\n' +
+	    '`remove` _number_ : removes the track in the queue\n' +
             '`setvolume` _number_ : sets volume\n' +
             '`play` : play track\n' +
             '`stop` : stop life\n' +
@@ -687,9 +689,22 @@ function _shuffle (input, channel, byPassChannelValidation) {
 
 function _gongplay (input, channel) {
   sonos.queueNext('spotify:track:6Yy5Pr0KvTnAaxDBBISSDe').then(success => {
+//  sonos.play('spotify:track:6Yy5Pr0KvTnAaxDBBISSDe').then(success => {
     logger.info('GongPlay!!')
   }).catch(err => { logger.error('Error occurred ' + err) })
 }
+
+function _removeTrack (input, channel, byPassChannelValidation) {
+  if (channel.name !== adminChannel && !byPassChannelValidation) {
+    return
+  }
+	var trackNb = parseInt(input[1])+1
+  		sonos.removeTracksFromQueue(trackNb, 1).then(success => {
+        	logger.info('Removed track with index: ', trackNb)
+          		}).catch(err => { logger.error('Error occurred ' + err) })
+     	var message = 'Removed track with index: ' + input[1]
+      _slackMessage(message, channel.id)
+          }
 
 function _nextTrack (channel, byPassChannelValidation) {
   if (channel.name !== adminChannel && !byPassChannelValidation) {
@@ -1189,38 +1204,6 @@ function _blacklist (input, channel) {
   _slackMessage(message, channel.id)
 }
 
-function _removeFromQueue(index, channel, cb) {
-    try {
-        var index = parseInt(index)
-    } catch (exc) {
-        logger.error('Error occurred: unable to parse index')
-        _slackMessage('Error! Unable to remove track, index could not be parsed', channel.id)
-        return
-    }
-
-    logger.info('_removeFromQueue '+ index)
-
-    // deduced from python library
-    // https://github.com/SoCo/SoCo/blob/671937e07d7973b78c0cbee153d4f3ad68ec48c6/soco/core.py#L1466
-    let objectId = 'Q:0/' + (parseInt(index) + 1)
-    sonos.avTransportService().RemoveTrackFromQueue({
-        InstanceID: 0,
-        ObjectID: objectId,
-        UpdateID: '0'
-    }).then(result => {
-        if (cb) {
-            return cb(true);
-        }
-        let message = "Removed track from queue with index: " + index
-        _slackMessage(message, channel.id)
-    }).catch(err => {
-        if (cb) {
-            return cb(false);
-        }
-        _slackMessage('Error! Unable to remove track', channel.id)
-        logger.error('Error occurred: ' + err)
-    })
-}
 
 function _purgeHalfQueue(input, channel) {
     sonos.getQueue().then(result => {
