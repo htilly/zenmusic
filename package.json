@@ -6,7 +6,9 @@
   "scripts": {
     "pretest": "if [ ! -f 'config.json' ]; then cp config.json.example config.json; fi",
     "test": "mocha --reporter spec",
-    "cover": "npm run pretest; node_modules/istanbul/lib/cli.js cover node_modules/mocha/bin/_mocha -- --opts test/mocha.opts test/* -R spec"
+    "cover": "npm run pretest; node_modules/istanbul/lib/cli.js cover node_modules/mocha/bin/_mocha -- --opts test/mocha.opts test/* -R spec",
+    "snyk-protect": "snyk protect",
+    "prepublish": "npm run snyk-protect"
   },
   "keywords": [
     "sonos",
@@ -50,9 +52,11 @@
     "urllib-sync": "^1.1.2",
     "uuid": "^3.2.1",
     "winston": "^3.1.0",
-    "xml2js": "^0.4.19"
+    "xml2js": "^0.4.19",
+    "snyk": "^1.189.0"
   },
   "engines": {
     "node": ">=7.5"
-  }
+  },
+  "snyk": true
 }
