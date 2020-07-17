@@ -36,7 +36,7 @@
   "dependencies": {
     "@segment/to-iso-string": "^1.0.1",
     "@slack/client": "^3.5.1",
-    "eslint": "^4.19.1",
+    "eslint": "^5.0.0",
     "html-entities": "^1.2.0",
     "htmlencode": "0.0.4",
     "minimatch": "^3.0.4",
