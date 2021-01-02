@@ -42,7 +42,7 @@
     "html-entities": "^1.2.0",
     "htmlencode": "0.0.4",
     "minimatch": "^3.0.4",
-    "nconf": "^0.8.4",
+    "nconf": "^0.11.0",
     "request": "^2.83.0",
     "semver": "^5.4.1",
     "slack-mock": "^1.1.1",
