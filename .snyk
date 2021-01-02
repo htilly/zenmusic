@@ -1,8 +1,18 @@
 # Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.
-version: v1.13.3
+version: v1.14.1
 ignore: {}
 # patches apply the minimum changes required to fix a vulnerability
 patch:
-  SNYK-JS-AXIOS-174505:
-    - sonos > axios:
-        patched: '2019-05-07T06:25:46.974Z'
+  SNYK-JS-LODASH-567746:
+    - '@slack/client > lodash':
+        patched: '2020-05-01T06:26:14.644Z'
+    - eslint > lodash:
+        patched: '2020-05-01T06:26:14.644Z'
+    - eslint > inquirer > lodash:
+        patched: '2020-05-01T06:26:14.644Z'
+    - eslint > table > lodash:
+        patched: '2020-05-01T06:26:14.644Z'
+    - slack-mock > nock > lodash:
+        patched: '2020-05-01T06:26:14.644Z'
+    - winston > async > lodash:
+        patched: '2020-05-01T06:26:14.644Z'
