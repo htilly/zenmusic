@@ -44,7 +44,7 @@
     "request": "^2.83.0",
     "semver": "^5.4.1",
     "slack-mock": "^1.1.1",
-    "sonos": "^1.1.2",
+    "sonos": "^1.14.0",
     "unescape": "^1.0.1",
     "urlencode": "^1.1.0",
     "urllib-sync": "^1.1.2",
