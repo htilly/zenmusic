@@ -14,8 +14,7 @@
     "sonos",
     "slack",
     "spotify",
-    "zen",
-    "centralen"
+    "slackonos"
   ],
   "repository": {
     "type:": "git",
@@ -30,14 +29,14 @@
     "eslint-plugin-promise": "^3.7.0",
     "eslint-plugin-standard": "^3.0.1",
     "istanbul": "^0.4.5",
-    "mocha": "^5.2.0",
+    "mocha": "^8.2.1",
     "standard": "^11.0.1"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@segment/to-iso-string": "^1.0.1",
-    "@slack/client": "^3.5.1",
+    "@slack/rtm-api": "^5.0.5",
     "eslint": "^6.0.0",
     "html-entities": "^1.2.0",
     "htmlencode": "0.0.4",
@@ -46,14 +45,14 @@
     "request": "^2.83.0",
     "semver": "^5.4.1",
     "slack-mock": "^1.1.1",
+    "snyk": "^1.316.1",
     "sonos": "^1.14.0",
     "unescape": "^1.0.1",
     "urlencode": "^1.1.0",
     "urllib-sync": "^1.1.2",
     "uuid": "^3.2.1",
     "winston": "^3.1.0",
-    "xml2js": "^0.4.19",
-    "snyk": "^1.316.1"
+    "xml2js": "^0.4.23"
   },
   "engines": {
     "node": ">=7.5"
