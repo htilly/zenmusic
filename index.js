@@ -11,7 +11,7 @@ const http = require('http');
 config.argv()
   .env()
   .file({
-    file: 'config.json'
+    file: 'config/config.json'
   })
   .defaults({
     'adminChannel': 'music-admin',
