@@ -3,6 +3,10 @@ const winston = require('winston')
 const decode = require('unescape');
 const Spotify = require('./spotify')
 const utils = require('./utils')
+const process = require('process');
+const parseString = require('xml2js').parseString;
+const http = require('http');
+
 
 config.argv()
   .env()
@@ -33,6 +37,7 @@ const clientId = config.get('spotifyClientId')
 const clientSecret = config.get('spotifyClientSecret')
 const searchLimit = config.get('searchLimit')
 const logLevel = config.get('logLevel')
+const sonosIp = config.get('sonos')
 
 let blacklist = config.get('blacklist')
 if (!Array.isArray(blacklist)) {
@@ -53,7 +58,7 @@ const logger = winston.createLogger({
 /* Initialize Sonos */
 const SONOS = require('sonos')
 const Sonos = SONOS.Sonos
-const sonos = new Sonos(config.get('sonos'))
+const sonos = new Sonos(sonosIp)
 
 if (market !== 'US') {
   sonos.setSpotifyRegion(SONOS.SpotifyRegion.EU)
@@ -93,6 +98,7 @@ const RtmClient = require('@slack/client').RtmClient
 const RTM_EVENTS = require('@slack/client').RTM_EVENTS
 
 let slack = new RtmClient(token, {
+
   logLevel: 'error',
   dataStore: false,
   autoReconnect: true,
@@ -105,7 +111,7 @@ const {
 const web = new WebClient(token);
 
 
-/* Slack handlers */
+// Slack handlers
 slack.on('open', function() {
   var channel, group, id
   var channels = [standardChannel]
@@ -138,39 +144,47 @@ slack.on('open', function() {
   logger.info('Online!')
 })
 
+
 slack.on(RTM_EVENTS.MESSAGE, (message) => {
-    Promise.all([
-        web.conversations.info(message.channel),
-        web.users.info(message.user)
-    ]).then(([{ channel }, { user } ]) => {
-        let { type, ts } = message;
-        let text = decode(message.text)
-        let channelName1 = (channel != null ? channel.is_channel : void 0) ? '#' : ''
-        let channelName = channelName1 + (channel ? channel.name : 'UNKNOWN_CHANNEL')
-        let userName = '<@' + message.user + '>'
-        logger.info('Received: ' + type + ' ' + channelName + ' ' + userName + ' ' + ts + ' "' + text + '"')
+  Promise.all([
+    web.conversations.info(message.channel),
+    web.users.info(message.user)
+  ]).then(([{
+    channel
+  }, {
+    user
+  }]) => {
+    let {
+      type,
+      ts
+    } = message;
+    let text = decode(message.text)
+    let channelName1 = (channel != null ? channel.is_channel : void 0) ? '#' : ''
+    let channelName = channelName1 + (channel ? channel.name : 'UNKNOWN_CHANNEL')
+    let userName = '<@' + message.user + '>'
+    logger.info('Received: ' + type + ' ' + channelName + ' ' + userName + ' ' + ts + ' "' + text + '"')
 
 
-        if (type !== 'message' || (text == null) || (channel == null)) {
-            typeError = type !== 'message' ? 'unexpected type ' + type + '.' : null
-            textError = text == null ? 'text was undefined.' : null
-            channelError = channel == null ? 'channel was undefined.' : null
-            errors = [typeError, textError, channelError].filter(function (element) {
-                return element !== null
-            }).join(' ')
+    if (type !== 'message' || (text == null) || (channel == null)) {
+      typeError = type !== 'message' ? 'unexpected type ' + type + '.' : null
+      textError = text == null ? 'text was undefined.' : null
+      channelError = channel == null ? 'channel was undefined.' : null
+      errors = [typeError, textError, channelError].filter(function(element) {
+        return element !== null
+      }).join(' ')
 
-            logger.error('Could not respond. ' + errors)
-            return false
-        }
+      logger.error('Could not respond. ' + errors)
+      return false
+    }
 
-        if (blacklist.indexOf(userName) !== -1) {
-            logger.info('User ' + userName + ' is blacklisted')
-            _slackMessage('Nice try ' + userName + ", you're banned :)", channel.id)
-            return false
-        }
+    if (blacklist.includes(userName)) {
+      logger.info('User ' + userName + ' is blacklisted')
+      _slackMessage('Nice try ' + userName + ", you're banned :)", channel.id)
+      return false
+    }
 
-        processInput(text, channel, userName)
-    });
+    processInput(text, channel, userName)
+  });
 });
 
 slack.on('error', function(error) {
@@ -264,6 +278,9 @@ function processInput(text, channel, userName) {
 
   if (!matched && channel.name === adminChannel) {
     switch (term) {
+      case 'debug':
+        _debug(channel)
+        break
       case 'next':
         _nextTrack(channel)
         break
@@ -317,7 +334,7 @@ function _slackMessage(message, id) {
   if (slack.connected) {
     slack.sendMessage(message, id)
   } else {
-    console.log(message)
+    logger.info(message)
   }
 }
 
@@ -605,6 +622,7 @@ function _help(input, channel) {
 
   if (channel.name === adminChannel) {
     message += '------ ADMIN FUNCTIONS ------\n' +
+      '`debug` : show debug info for Spotify, Node and Sonos\n' +
       '`flush` : flush the current queue\n' +
       '`remove` _number_ : removes the track in the queue\n' +
       '`setvolume` _number_ : sets volume\n' +
@@ -1216,6 +1234,63 @@ function _status(channel, state) {
   })
 }
 
+function _debug(channel) {
+  var url = 'http://' + sonosIp + ':1400/xml/device_description.xml'
+
+  xmlToJson(url, function(err, data) {
+    if (err) {
+      logger.error('Error occurred ' + err)
+    }
+
+    logger.info('Platform: ', process.platform)
+    logger.info('Node version: ', process.version)
+    logger.info('Node dependencies: ', process.versions)
+    debug_version = JSON.stringify(process.versions)
+
+//    logger.info(data.root.device)
+    logger.info(data.root.device[0].modelDescription)
+    logger.info(data.root.device[0].softwareVersion)
+    logger.info(data.root.device[0].displayName)
+    logger.info(data.root.device[0].hardwareVersion)
+    logger.info(data.root.device[0].apiVersion)
+    logger.info(data.root.device[0].roomName)
+    logger.info(data.root.device[0].friendlyName)
+    logger.info(data.root.device[0].modelNumber)
+    logger.info(data.root.device[0].serialNum)
+    logger.info(data.root.device[0].MACAddress)
+
+    _slackMessage(
+      "\n------------------------------" +
+      "\nSpotify Info" +
+      "\n" +
+//      "\nSpotify Status: " + slackStatus +
+      "\nMarket:  " + market +
+      "\n------------------------------" +
+      "\nNode Info" +
+      "\n" +
+      "\nPlatform:  " + process.platform +
+      "\nNode version:  " + process.version +
+      "\nNode dependencies:  " + debug_version +
+      "\n------------------------------'" +
+      "\nSonos Info" +
+      "\n" +
+      "\nFriendly Name:  " + (data.root.device[0].friendlyName) +
+      "\nRoom Name:  " + (data.root.device[0].roomName) +
+      "\nDisplay Name:  " + (data.root.device[0].displayName) +
+      "\nModel Description:  " + (data.root.device[0].modelDescription) +
+      "\nModelNumber:  " + (data.root.device[0].modelNumber) +
+      "\nSerial Number:  " + (data.root.device[0].serialNum) +
+      "\nMAC Address:  " + (data.root.device[0].MACAddress) +
+      "\nSW Version:  " + (data.root.device[0].softwareVersion) +
+      "\nHW Version:  " + (data.root.device[0].hardwareVersion) +
+      "\nAPI Version:  " + (data.root.device[0].apiVersion) +
+      "\n------------------------------"
+      , channel.id)
+  })
+}
+
+
+
 
 // This function does not currectly work due to migration away from dataStore
 function _blacklist(input, channel) {
@@ -1275,6 +1350,31 @@ function _purgeHalfQueue(input, channel) {
   }).catch(err => {
     logger.error(err)
   })
+}
+
+// Function to parse XML to JSON
+function xmlToJson(url, callback) {
+  var req = http.get(url, function(res) {
+    var xml = '';
+
+    res.on('data', function(chunk) {
+      xml += chunk;
+    });
+
+    res.on('error', function(e) {
+      callback(e, null);
+    });
+
+    res.on('timeout', function(e) {
+      callback(e, null);
+    });
+
+    res.on('end', function() {
+      parseString(xml, function(err, result) {
+        callback(null, result);
+      });
+    });
+  });
 }
 
 // Travis.
