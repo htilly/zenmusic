@@ -24,7 +24,7 @@
 
 (&#x1F534;) **Help wanted!** (&#x1F534;)
 
-Migrate to version 4.0 for node-slack-sdk and primarily DataStore migration.
+Migrate to version 4.0 for node-slack-sdk ~~and primarily DataStore migration.~~
 
 https://github.com/slackapi/node-slack-sdk/wiki/DataStore-v3.x-Migration-Guide
 
