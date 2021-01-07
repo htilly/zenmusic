@@ -4,7 +4,7 @@
   "description": "Zen sonos project",
   "main": "index.js",
   "scripts": {
-    "pretest": "if [ ! -f 'config.json' ]; then cp config.json.example config.json; fi",
+    "pretest": "if [ ! -f 'config/config.json' ]; then cp config/config.json.example config/config.json; fi",
     "test": "mocha --reporter spec",
     "cover": "npm run pretest; node_modules/istanbul/lib/cli.js cover node_modules/mocha/bin/_mocha -- --opts test/mocha.opts test/* -R spec",
     "snyk-protect": "snyk protect",
