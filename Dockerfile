@@ -1,7 +1,15 @@
-FROM alpine:latest
+FROM node:12 as intermediate
+LABEL stage=intermediate
 
-WORKDIR /opt
-RUN apk add --no-cache git nodejs nodejs-npm
-ADD . /opt
-RUN npm install --production
-CMD ["node", "index.js"]
+RUN apt-get update && \
+    apt-get install -y git && \
+    git clone https://github.com/htilly/zenmusic.git
+
+FROM node:12
+RUN mkdir app
+COPY --from=intermediate /zenmusic/* /app/
+WORKDIR /app
+COPY . .
+RUN npm install
+
+CMD [ "node", "index.js" ]
