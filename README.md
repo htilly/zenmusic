@@ -2,17 +2,6 @@
 [![Known Vulnerabilities](https://snyk.io/test/github/htilly/zenmusic/badge.svg)](https://snyk.io/test/github/htilly/zenmusic) 
 
 
-
-
-###############################################
-```diff
--THIS CODE IS NO LONGER BEING MAINTAINED
-```
-###############################################
-
-
-
-
 # zenmusic
 **Slack / Sonos / Spotify / Node.js - Control Sonos through #Slack**
 
@@ -27,7 +16,6 @@
 
 **What is it?**
 
-Quick hack created during one of Schibsted Swedens hackdays by staff from E-Tech.
 It´s a #slack-bot that control Sonos (and spotify). Highly democratic bot :)
 Uses https://github.com/bencevans/node-sonos to controll Sonos.
 
@@ -38,6 +26,23 @@ Uses https://github.com/bencevans/node-sonos to controll Sonos.
 3: A server running node.js  
 4: Know the IP of your Sonos. Preferably a static one.  
 5: A valid spotify account with Client ID & Client Secret. Head over to:   https://developer.spotify.com/dashboard/applications to set it up. Enter the data in the config.json file.  
+
+**Installation**
+
+DOCKER COMPOSE
+
+(you must point to the config.json, example can be found [here](https://github.com/htilly/zenmusic/blob/master/config/config.json.example))
+
+```
+version: '3.4'
+services:
+slackonos:
+  container_name: slackonos
+  image: htilly/slackonos:latest
+  restart: unless-stopped
+  volumes:
+    - /PATH_TO_CONFIG_FILE/config.json:/app/config/config.json
+```
 
 
 **Firewall settings**
