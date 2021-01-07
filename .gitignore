@@ -5,3 +5,4 @@ blacklist.txt
 package-lock.json
 .vscode/
 *.log
+config/config.json

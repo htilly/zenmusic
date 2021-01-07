@@ -22,15 +22,8 @@
 ![ScreenShot](http://raw.github.com/htilly/zenmusic/master/doc/images/Screenshot.png)
 
 
-(&#x1F534;) **Help wanted!** (&#x1F534;)
 
-Migrate to version 4.0 for node-slack-sdk ~~and primarily DataStore migration.~~
-
-https://github.com/slackapi/node-slack-sdk/wiki/DataStore-v3.x-Migration-Guide
-
-
-(&#x1F534;) *** NEW SPOTIFY AUTH. Old version WILL break after upgrade. Please read bellow for more info *** (&#x1F534;)
-*** BIG thanks to @codebynumbers for updated code ***
+(&#x1F534;) *** config.json MUST be moved to config folder. Also, admin channel in config.json must now be slack channel ID, not the "name" *** (&#x1F534;)
 
 **What is it?**
 
