@@ -1,11 +1,12 @@
-FROM node:latest as intermediate
+FROM node:12-alpine as intermediate
 LABEL stage=intermediate
 
-RUN apt-get update && \
-    apt-get install -y git && \
+RUN apk update && \
+    apk upgrade && \
+    apk add git && \
     git clone https://github.com/htilly/zenmusic.git
 
-FROM node:latest
+FROM node:12-alpine
 RUN mkdir app
 COPY --from=intermediate /zenmusic/* /app/
 WORKDIR /app
