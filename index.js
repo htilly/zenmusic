@@ -1,3 +1,4 @@
+const buildNumber = ('TEST')
 const config = require('nconf')
 const winston = require('winston')
 const Spotify = require('./spotify')
@@ -549,16 +550,16 @@ function _previous (input, channel) {
 function _help (input, channel) {
   var message = 'Current commands!\n' +
     ' ===  ===  ===  ===  ===  ===  === \n' +
-    '`add` _text_ : Add song to the queue and start playing if idle. Will start with a fresh queue.\n' +
-    '`addalbum` _text_ : Add an album to the queue and start playing if idle. Will start with a fresh queue.\n' +
-    '`bestof` : _text_ : Add topp 10 tracks by the artist\n' +
+    '`add` *text* : Add song to the queue and start playing if idle. Will start with a fresh queue.\n' +
+    '`addalbum` *text* : Add an album to the queue and start playing if idle. Will start with a fresh queue.\n' +
+    '`bestof` : *text* : Add topp 10 tracks by the artist\n' +
     '`status` : show current status of Sonos\n' +
     '`current` : list current track\n' +
-    '`search` _text_ : search for a track, does NOT add it to the queue\n' +
-    '`searchalbum` _text_ : search for an album, does NOT add it to the queue\n' +
-    '`searchplaylist` _text_ : search for a playlist, does NOT add it to the queue\n' +
-    '`addplaylist` _text_ : Add a playlist to the queue and start playing if idle. Will start with a fresh queue.\n' +
-    '`append` _text_ : Append a song to the previous playlist and start playing the same list again.\n' +
+    '`search` *text* : search for a track, does NOT add it to the queue\n' +
+    '`searchalbum` *text* : search for an album, does NOT add it to the queue\n' +
+    '`searchplaylist` *text* : search for a playlist, does NOT add it to the queue\n' +
+    '`addplaylist` *text* : Add a playlist to the queue and start playing if idle. Will start with a fresh queue.\n' +
+    '`append` *text* : Append a song to the previous playlist and start playing the same list again.\n' +
     '`gong` : The current track is bad! ' + gongLimit + ' gongs will skip the track\n' +
     '`gongcheck` : How many gong votes there are currently, as well as who has gonged.\n' +
     '`vote` : The current track is great! ' + voteLimit + ' votes will prevent the track from being gonged\n' +
@@ -569,8 +570,8 @@ function _help (input, channel) {
     message += '------ ADMIN FUNCTIONS ------\n' +
       '`debug` : show debug info for Spotify, Node and Sonos\n' +
       '`flush` : flush the current queue\n' +
-      '`remove` _number_ : removes the track in the queue\n' +
-      '`setvolume` _number_ : sets volume\n' +
+      '`remove` *number* : removes the track in the queue\n' +
+      '`setvolume` *number* : sets volume\n' +
       '`play` : play track\n' +
       '`stop` : stop life\n' +
       '`pause` : pause life\n' +
@@ -1204,18 +1205,18 @@ function _debug (channel) {
 
     _slackMessage(
       '\n------------------------------' +
-      '\nSpotify Info' +
+      '\n*Spotify Info*' +
       '\n' +
-      //      '\nSpotify Status: ' + slackStatus +
+      // '\nSpotify Status: ' + slackStatus +
       '\nMarket:  ' + market +
       '\n------------------------------' +
-      '\nNode Info' +
+      '\n*Node Info*' +
       '\n' +
       '\nPlatform:  ' + process.platform +
       '\nNode version:  ' + process.version +
       '\nNode dependencies:  ' + nodeVersion +
       '\n------------------------------' +
-      '\nSonos Info' +
+      '\n*Sonos Info*' +
       '\n' +
       '\nFriendly Name:  ' + (data.root.device[0].friendlyName) +
       '\nRoom Name:  ' + (data.root.device[0].roomName) +
