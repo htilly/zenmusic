@@ -22,7 +22,6 @@
   },
   "devDependencies": {
     "chai": "^3.5.0",
-    "coveralls": "^3.0.2",
     "istanbul": "^0.4.5",
     "mocha": "^8.2.1"
   },
@@ -33,7 +32,6 @@
     "nconf": "^0.11.0",
     "snyk": "^1.316.1",
     "sonos": "^1.14.0",
-    "unescape": "^1.0.1",
     "urlencode": "^1.1.0",
     "urllib-sync": "^1.1.2",
     "winston": "^3.1.0",
