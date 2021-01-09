@@ -1,25 +1,13 @@
-name: Update build number
-on: push
-      branches: [ master ]
-
-
-jobs:
-  run:
-    name: Add a text file
-    runs-on: ubuntu-latest
-
-    steps:
-      # If you need to, you can check out your repo to a different location
-      - name: Checkout repo
-      uses: actions/checkout@v2
-
-
-      # Changing the build number...
-      - run: sed -i 's/\(buildNumber = (\)\(.*\)/\1'\'${{ github.run_number }}'''\'''\'')/' ./index.js
-
-      # ...adding it back to repo...
-      - uses: EndBug/add-and-commit@v6
-        with:
-          message: 'Updated build number'
-          add: 'index.js --force'
-          cwd: './'
+    on: push
+    jobs:
+      build:
+        runs-on: ubuntu-latest
+        steps:
+          - uses: actions/checkout@v2
+          - run: |
+              sed -i 's/\(buildNumber = (\)\(.*\)/\1'\'${{ github.run_number }}'''\'''\'')/' ./index.js
+              git config user.name github-actions
+              git config user.email github-actions@github.com
+              git add .
+              git commit -m "Updated build number"
+              git push
