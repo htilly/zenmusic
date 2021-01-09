@@ -1185,7 +1185,7 @@ function _debug (channel) {
     if (err) {
       logger.error('Error occurred ' + err)
     }
-
+    logger.info('BuildNumber of Slackonos: ', buildNumber)
     logger.info('Platform: ', process.platform)
     logger.info('Node version: ', process.version)
     logger.info('Node dependencies: ', process.versions)
@@ -1204,6 +1204,10 @@ function _debug (channel) {
     logger.info(data.root.device[0].MACAddress)
 
     _slackMessage(
+      '\n------------------------------' +
+      '\n*Slackonos Info*' +
+      '\n' +
+      '\nBuildNumber:  ' + buildNumber +
       '\n------------------------------' +
       '\n*Spotify Info*' +
       '\n' +
