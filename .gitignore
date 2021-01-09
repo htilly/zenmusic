@@ -2,7 +2,6 @@ coverage
 node_modules/
 config.json
 blacklist.txt
-package-lock.json
 .vscode/
 *.log
 config/config.json
