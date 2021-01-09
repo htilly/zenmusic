@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/htilly/zenmusic.svg?branch=master)](https://travis-ci.org/htilly/zenmusic)
+[![Build Status](https://github.com/htilly/zenmusic/workflows/Node.js%20CI/badge.svg)
 [![Known Vulnerabilities](https://snyk.io/test/github/htilly/zenmusic/badge.svg)](https://snyk.io/test/github/htilly/zenmusic) 
 
 
