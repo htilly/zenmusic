@@ -1,7 +1,7 @@
 'use strict'
 
 const config = require('nconf')
-const urllibsync = require('urllib-sync')
+const urllibsync = require('@jsfeb26/urllib-sync')
 const urlencode = require('urlencode')
 const winston = require('winston')
 
