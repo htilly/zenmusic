@@ -1,4 +1,4 @@
-const buildNumber = ('42')
+const buildNumber = ('43')
 const config = require('nconf')
 const winston = require('winston')
 const Spotify = require('./spotify')
