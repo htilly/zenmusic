@@ -33,7 +33,7 @@
     "snyk": "^1.611.0",
     "sonos": "^1.14.0",
     "urlencode": "^1.1.0",
-    "urllib-sync": "^1.1.2",
+    "@jsfeb26/urllib-sync": "^1.1.4",
     "winston": "^3.1.0",
     "xml2js": "^0.4.23"
   },
