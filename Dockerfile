@@ -10,7 +10,6 @@ FROM node:17-alpine
 RUN mkdir app
 COPY --from=intermediate /zenmusic/* /app/
 WORKDIR /app
-COPY . .
 RUN npm install
 
 CMD [ "node", "index.js" ]
