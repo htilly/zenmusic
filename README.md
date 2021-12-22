@@ -2,7 +2,7 @@
 [![Known Vulnerabilities](https://snyk.io/test/github/htilly/zenmusic/badge.svg)](https://snyk.io/test/github/htilly/zenmusic)
 
 
-# zenmusic
+# SlackONOS
 **Slack / Sonos / Spotify / Node.js - Control Sonos through #Slack**
 
 
