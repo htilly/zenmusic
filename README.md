@@ -154,3 +154,4 @@ https://github.com/htilly/zenmusic/wiki
 * Admin commands from i.e."swe-music-admin".
 * Vote - If +1 in slack then move in queue. (sort of)
 * Ask "what is playing".
+* 
