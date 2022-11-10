@@ -23,7 +23,7 @@
   "devDependencies": {
     "chai": "^3.5.0",
     "istanbul": "^0.4.5",
-    "mocha": "^8.2.1"
+    "mocha": "^10.1.0"
   },
   "author": "",
   "license": "ISC",
