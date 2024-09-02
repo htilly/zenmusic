@@ -1,4 +1,4 @@
-const buildNumber = ('71')
+const buildNumber = ('70')
 const config = require('nconf')
 const winston = require('winston')
 const Spotify = require('./spotify')
@@ -777,7 +777,7 @@ function _currentTrackTitle (channel, cb) {
   })
 }
 
-function _add (input, channel, userName) {
+function _add(input, channel, userName) {
   var [data, message] = spotify.searchSpotify(input, channel, userName, 1)
   if (message) {
     _slackMessage(message, channel)
@@ -789,46 +789,49 @@ function _add (input, channel, userName) {
   var uri = data.tracks.items[0].uri
   var albumImg = data.tracks.items[0].album.images[2].url
   var trackName = data.tracks.items[0].artists[0].name + ' - ' + data.tracks.items[0].name
+  var titleName = data.tracks.items[0].name
 
-  logger.info('Adding track:' + trackName + ' with UID: ' + uri)
+  sonos.getQueue().then(result => {
+    logger.info('***********   Searching if the following track is already in the queue:' + titleName);
+    let trackFound = false;
+    for (var i in result.items) {
+      var queueTrack = result.items[i].title;
+      if (titleName === queueTrack) {
 
-  sonos.getCurrentState().then(state => {
-    logger.info('Got current state: ' + state)
-
-    if (state === 'stopped') {
-      sonos.flush().then(result => {
-        logger.info('Flushed queue: ' + JSON.stringify(result, null, 2))
-
-        logger.info('State: ' + state + ' - flushing')
-        _addToSpotify(userName, uri, albumImg, trackName, channel)
-        logger.info('Adding track:' + trackName)
-        setTimeout(() => _playInt('play', channel), 500)
-      }).catch(err => {
-        logger.error('Error flushing queue: ' + err)
-      })
-    } else if (state === 'playing') {
-      logger.info('State: ' + state + ' - playing...')
-      // Add the track to playlist...
-      _addToSpotify(userName, uri, albumImg, trackName, channel)
-    } else if (state === 'paused') {
-      logger.info('State: ' + state + ' - telling them no...')
-      _addToSpotify(userName, uri, albumImg, trackName, channel, function () {
-        if (channel === adminChannel) {
-          _slackMessage('Sonos is currently PAUSED. Type `resume` to start playing...', channel)
-        }
-      })
-    } else if (state === 'transitioning') {
-      logger.info('State: ' + state + ' - no idea what to do')
-
-      _slackMessage("Sonos says it is 'transitioning'. We've got no idea what that means either...", channel)
-    } else if (state === 'no_media') {
-      _slackMessage("Sonos reports 'no media'. Any idea what that means?", channel)
+        trackFound = true;
+        break;
+      }
+    }
+    if (trackFound) {
+      console.log("Track already in the queue, skipping...");
+      _slackMessage("Track already in the queue.. I will let it go for this time" + userName + "....", channel)
     } else {
-      _slackMessage("Sonos reports its state as '" + state + "'. Any idea what that means? I've got nothing.", channel)
+      sonos.getCurrentState().then(state => {
+        logger.info('Got current state: ' + state);
+        if (state === 'stopped') {
+          sonos.flush().then(result => {
+            logger.info('Flushed queue: ' + JSON.stringify(result, null, 2));
+            logger.info('State: ' + state + ' - flushing');
+            _addToSpotify(userName, uri, albumImg, trackName, channel);
+            logger.info('Adding track:' + trackName);
+            setTimeout(() => _playInt('play', channel), 500);
+          }).catch(err => {
+            logger.error('Error flushing queue: ' + err);
+          });
+        } else if (state === 'playing') {
+          logger.info('State: ' + state + ' - playing...');
+          // Add the track to playlist...
+          _addToSpotify(userName, uri, albumImg, trackName, channel);
+        } else if (state === 'paused') {
+          // Handle paused state if needed
+        }
+      }).catch(err => {
+        logger.error('Error getting current state: ' + err);
+      });
     }
   }).catch(err => {
-    logger.error('Error occurred' + err)
-  })
+    logger.error('Error fetching queue: ' + err);
+  });
 }
 
 function _addalbum (input, channel, userName) {
