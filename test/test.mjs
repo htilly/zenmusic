@@ -1,10 +1,10 @@
-'use strict';
-
-var expect = require('chai').expect;
-var numFormatter = require('../index');
+import { expect } from 'chai';
+import numFormatter from '../index.js';  // Ensure the path and extension are correct
 
 describe('#numFormatter', function() {
-    it('should convert single digits', function() {
+
+
+   it('should convert single digits', function() {
         var result = numFormatter(1);
         expect(result).to.equal('1');
     });
@@ -43,4 +43,6 @@ describe('#numFormatter', function() {
         var result = numFormatter(12345678);
         expect(result).to.equal('12,345,678');
     });
+
+    // Other test cases...
 });
