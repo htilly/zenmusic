@@ -4,7 +4,8 @@
   "description": "Zen sonos project",
   "main": "index.js",
   "scripts": {
-    "pretest": "if [ ! -f 'config/config.json' ]; then cp 'config/config.json.example' 'config/config.json'; fi"
+    "pretest": "if [ ! -f 'config/config.json' ]; then cp 'config/config.json.example' 'config/config.json'; fi",
+    "test": "mocha --reporter spec"
   },
   "keywords": [
     "sonos",
@@ -15,6 +16,9 @@
   "repository": {
     "type:": "git",
     "url": "git@github.com:htilly/zenmusic.git"
+  },
+  "devDependencies": {
+    "mocha": "^10.7.3"
   },
   "author": "",
   "license": "ISC",
