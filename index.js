@@ -286,13 +286,14 @@ function _slackMessage(message, id) {
 function _getVolume(channel) {
   sonos.getVolume().then(vol => {
     logger.info('The volume is: ' + vol)
-    _slackMessage('Volume is ' + vol + ' deadly dB _(ddB)_', channel)
+    _slackMessage('Current blasting at ' + vol + ' dB _(ddB)_', channel)
   }).catch(err => {
     logger.error('Error occurred: ' + err)
-  })
+  });
 }
 
 function _setVolume(input, channel, userName) {
+  const adminChannel = config.get('adminChannel'); // Add this line
   if (channel !== adminChannel) {
     return
   }
@@ -307,12 +308,14 @@ function _setVolume(input, channel, userName) {
     if (vol > maxVolume) {
       _slackMessage("That's a bit extreme, " + userName + '... lower please.', channel)
     } else {
-      sonos.setVolume(vol).then(vol => {
-        logger.info('The volume is: ' + vol)
-      }).catch(err => {
-        logger.error('Error occurred: ' + err)
-      })
-      _getVolume(channel)
+      setTimeout(() => {
+        sonos.setVolume(vol).then(vol => {
+          logger.info('The volume is: ' + vol)
+          _getVolume(channel) // Add this line
+        }).catch(err => {
+          logger.error('Error occurred: ' + err)
+        })
+      }, 1000); // Add this line
     }
   }
 }
