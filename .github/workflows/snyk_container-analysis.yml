@@ -9,7 +9,7 @@
 name: Snyk Container
 on: push
 jobs:
-  snyk:
+  security:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
