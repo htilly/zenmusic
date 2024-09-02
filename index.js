@@ -254,6 +254,9 @@ function processInput(text, channel, userName) {
       case 'shuffle':
         _shuffle(input, channel)
         break
+      case 'normal':
+          _normal(input, channel)
+        break
       case 'setvolume':
         _setVolume(input, channel, userName)
         break
@@ -581,7 +584,8 @@ function _help(input, channel) {
       '`resume` : resume after pause\n' +
       '`next` : play next track\n' +
       '`previous` : play previous track\n' +
-      '`shuffle` : shuffle playlist\n' +
+      '`shuffle` : set playmode to shuffle\n' +
+      '`normal` : set playmode to normal\n' +
       '`blacklist` : show users on blacklist\n' +
       '`blacklist add @username` : add `@username` to the blacklist\n' +
       '`blacklist del @username` : remove `@username` from the blacklist\n'
@@ -672,14 +676,25 @@ function _shuffle(input, channel, byPassChannelValidation) {
   if (channel !== adminChannel && !byPassChannelValidation) {
     return
   }
-  sonos.setPlayMode('shuffle', function (err, nexted) {
-    if (err) {
-      logger.error(err + ' ' + nexted)
-    } else {
-      _slackMessage('Shuffling the playlist.', channel)
-    }
+  sonos.setPlayMode('SHUFFLE').then(success => {
+    console.log('Changed playmode to shuffle')
+    _slackMessage('Changed the playmode to shuffle....', channel)
+  }).catch(err => { console.log('Error occurred %s', err) 
   })
 }
+
+function _normal(input, channel, byPassChannelValidation) {
+  if (channel !== adminChannel && !byPassChannelValidation) {
+    return
+  }
+  sonos.setPlayMode('NORMAL').then(success => {
+    console.log('Changed playmode to normal')
+    _slackMessage('Changed the playmode to normal....', channel)
+  }).catch(err => { console.log('Error occurred %s', err) 
+  })
+}
+
+
 
 function _gongplay(input, channel) {
   sonos.queueNext('spotify:track:6Yy5Pr0KvTnAaxDBBISSDe').then(success => {
