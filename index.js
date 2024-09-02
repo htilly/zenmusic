@@ -145,7 +145,7 @@ rtm.on('error', function (error) {
   logger.error('Error: ' + error)
 })
 
-function processInput (text, channel, userName) {
+function processInput(text, channel, userName) {
   var input = text.split(' ')
   var term = input[0].toLowerCase()
   var matched = true
@@ -275,7 +275,7 @@ function processInput (text, channel, userName) {
   }
 }
 
-function _slackMessage (message, id) {
+function _slackMessage(message, id) {
   if (rtm.connected) {
     rtm.sendMessage(message, id)
   } else {
@@ -283,7 +283,7 @@ function _slackMessage (message, id) {
   }
 }
 
-function _getVolume (channel) {
+function _getVolume(channel) {
   sonos.getVolume().then(vol => {
     logger.info('The volume is: ' + vol)
     _slackMessage('Volume is ' + vol + ' deadly dB _(ddB)_', channel)
@@ -292,7 +292,7 @@ function _getVolume (channel) {
   })
 }
 
-function _setVolume (input, channel, userName) {
+function _setVolume(input, channel, userName) {
   if (channel !== adminChannel) {
     return
   }
@@ -330,7 +330,7 @@ function _getQueue () {
 }
 */
 
-function _countQueue (channel, cb) {
+function _countQueue(channel, cb) {
   sonos.getQueue().then(result => {
     if (cb) {
       return cb(result.total)
@@ -345,7 +345,7 @@ function _countQueue (channel, cb) {
   })
 }
 
-function _showQueue (channel) {
+function _showQueue(channel) {
   sonos.getQueue().then(result => {
     logger.info('Current queue: ' + JSON.stringify(result, null, 2))
     _status(channel, function (state) {
@@ -387,7 +387,7 @@ function _showQueue (channel) {
   })
 }
 
-function _upNext (channel) {
+function _upNext(channel) {
   sonos.getQueue().then(result => {
     logger.debug('Current queue: ' + JSON.stringify(result, null, 2))
 
@@ -425,7 +425,7 @@ function _upNext (channel) {
   })
 }
 
-function _gong (channel, userName) {
+function _gong(channel, userName) {
   logger.info('_gong...')
   _currentTrackTitle(channel, function (err, track) {
     if (err) {
@@ -472,7 +472,7 @@ function _gong (channel, userName) {
   })
 }
 
-function _vote (channel, userName) {
+function _vote(channel, userName) {
   logger.info('_vote...')
   _currentTrackTitle(channel, function (err, track) {
     if (err) {
@@ -504,7 +504,7 @@ function _vote (channel, userName) {
   })
 }
 
-function _votecheck (channel, userName) {
+function _votecheck(channel, userName) {
   logger.info('_votecheck...')
 
   _currentTrackTitle(channel, function (err, track) {
@@ -521,7 +521,7 @@ function _votecheck (channel, userName) {
   })
 }
 
-function _gongcheck (channel, userName) {
+function _gongcheck(channel, userName) {
   logger.info('_gongcheck...')
 
   _currentTrackTitle(channel, function (err, track) {
@@ -538,7 +538,7 @@ function _gongcheck (channel, userName) {
   })
 }
 
-function _previous (input, channel) {
+function _previous(input, channel) {
   if (channel !== adminChannel) {
     return
   }
@@ -547,7 +547,7 @@ function _previous (input, channel) {
   })
 }
 
-function _help (input, channel) {
+function _help(input, channel) {
   var message = 'Current commands!\n' +
     ' ===  ===  ===  ===  ===  ===  === \n' +
     '`add` *text* : Add song to the queue and start playing if idle. Will start with a fresh queue.\n' +
@@ -587,7 +587,7 @@ function _help (input, channel) {
   _slackMessage(message, channel)
 }
 
-function _play (input, channel, state) {
+function _play(input, channel, state) {
   if (channel !== adminChannel) {
     return
   }
@@ -600,7 +600,7 @@ function _play (input, channel, state) {
   })
 }
 
-function _playInt (input, channel) {
+function _playInt(input, channel) {
   sonos.selectQueue()
   sonos.play().then(result => {
     logger.info('playInt started playing' + result)
@@ -609,7 +609,7 @@ function _playInt (input, channel) {
   })
 }
 
-function _stop (input, channel, state) {
+function _stop(input, channel, state) {
   if (channel !== adminChannel) {
     return
   }
@@ -621,7 +621,7 @@ function _stop (input, channel, state) {
   })
 }
 
-function _pause (input, channel, state) {
+function _pause(input, channel, state) {
   if (channel !== adminChannel) {
     return
   }
@@ -633,7 +633,7 @@ function _pause (input, channel, state) {
   })
 }
 
-function _resume (input, channel, state) {
+function _resume(input, channel, state) {
   if (channel !== adminChannel) {
     return
   }
@@ -645,7 +645,7 @@ function _resume (input, channel, state) {
   })
 }
 
-function _flush (input, channel) {
+function _flush(input, channel) {
   if (channel !== adminChannel) {
     return
   }
@@ -657,7 +657,7 @@ function _flush (input, channel) {
   })
 }
 
-function _flushInt (input, channel) {
+function _flushInt(input, channel) {
   sonos.flush().then(result => {
     logger.info('Flushed queue: ' + JSON.stringify(result, null, 2))
   }).catch(err => {
@@ -665,7 +665,7 @@ function _flushInt (input, channel) {
   })
 }
 
-function _shuffle (input, channel, byPassChannelValidation) {
+function _shuffle(input, channel, byPassChannelValidation) {
   if (channel !== adminChannel && !byPassChannelValidation) {
     return
   }
@@ -678,7 +678,7 @@ function _shuffle (input, channel, byPassChannelValidation) {
   })
 }
 
-function _gongplay (input, channel) {
+function _gongplay(input, channel) {
   sonos.queueNext('spotify:track:6Yy5Pr0KvTnAaxDBBISSDe').then(success => {
     //  sonos.play('spotify:track:6Yy5Pr0KvTnAaxDBBISSDe').then(success => {
     logger.info('GongPlay!!')
@@ -687,7 +687,7 @@ function _gongplay (input, channel) {
   })
 }
 
-function _removeTrack (input, channel, byPassChannelValidation) {
+function _removeTrack(input, channel, byPassChannelValidation) {
   if (channel !== adminChannel && !byPassChannelValidation) {
     return
   }
@@ -701,7 +701,7 @@ function _removeTrack (input, channel, byPassChannelValidation) {
   _slackMessage(message, channel)
 }
 
-function _nextTrack (channel, byPassChannelValidation) {
+function _nextTrack(channel, byPassChannelValidation) {
   if (channel !== adminChannel && !byPassChannelValidation) {
     return
   }
@@ -712,7 +712,7 @@ function _nextTrack (channel, byPassChannelValidation) {
   })
 }
 
-function _currentTrack (channel, cb, err) {
+function _currentTrack(channel, cb, err) {
   sonos.currentTrack().then(track => {
     logger.info('Got current track: ' + track)
     if (err) {
@@ -744,7 +744,7 @@ function _currentTrack (channel, cb, err) {
   })
 }
 
-function _currentTrackTitle (channel, cb) {
+function _currentTrackTitle(channel, cb) {
   sonos.currentTrack().then(track => {
     logger.info('Got current track ' + track)
 
@@ -834,7 +834,7 @@ function _add(input, channel, userName) {
   });
 }
 
-function _addalbum (input, channel, userName) {
+function _addalbum(input, channel, userName) {
   var [data, message] = spotify.searchSpotifyAlbum(input, channel, userName, 1)
   if (message) {
     _slackMessage(message, channel)
@@ -879,7 +879,7 @@ function _addalbum (input, channel, userName) {
   })
 }
 
-function _append (input, channel, userName) {
+function _append(input, channel, userName) {
   var [data, message] = spotify.searchSpotify(input, channel, userName, 1)
   if (message) {
     _slackMessage(message, channel)
@@ -926,7 +926,7 @@ function _append (input, channel, userName) {
   })
 }
 
-function _search (input, channel, userName) {
+function _search(input, channel, userName) {
   logger.info('_search ' + input)
   var [data, message] = spotify.searchSpotify(input, channel, userName, searchLimit)
 
@@ -952,7 +952,7 @@ function _search (input, channel, userName) {
   _slackMessage(message, channel)
 }
 
-function _searchplaylist (input, channel, userName) {
+function _searchplaylist(input, channel, userName) {
   var [data, message] = spotify.searchSpotifyPlaylist(input, channel, userName, searchLimit)
   if (message) {
     _slackMessage(message, channel)
@@ -978,7 +978,7 @@ function _searchplaylist (input, channel, userName) {
   }
 }
 
-function _searchalbum (input, channel, userName) {
+function _searchalbum(input, channel, userName) {
   var [data, message] = spotify.searchSpotifyAlbum(input, channel, userName, searchLimit)
   if (message) {
     _slackMessage(message, channel)
@@ -1008,7 +1008,7 @@ function _searchalbum (input, channel, userName) {
 
 // FIXME - misnamed s/ add to sonos, appears funcionally identical to _addToSpotifyPlaylist
 // function _addToSpotify (userName, uri, albumImg, trackName, channel, cb) {
-function _addToSpotify (userName, uri, albumImg, trackName, channel, cb) {
+function _addToSpotify(userName, uri, albumImg, trackName, channel, cb) {
   logger.info('_addToSpotify ' + uri)
   sonos.queue(uri).then(result => {
     logger.info('Queued the following: ' + result)
@@ -1032,7 +1032,7 @@ function _addToSpotify (userName, uri, albumImg, trackName, channel, cb) {
   })
 }
 
-function _addToSpotifyPlaylist (userName, uri, trackName, channel, cb) {
+function _addToSpotifyPlaylist(userName, uri, trackName, channel, cb) {
   logger.info('TrackName:' + trackName)
   logger.info('URI:' + uri)
   sonos.queue(uri).then(result => {
@@ -1054,7 +1054,7 @@ function _addToSpotifyPlaylist (userName, uri, trackName, channel, cb) {
   })
 }
 
-function _addToSpotifyArtist (userName, trackName, spid, channel) {
+function _addToSpotifyArtist(userName, trackName, spid, channel) {
   logger.info('_addToSpotifyArtist spid:' + spid)
   logger.info('_addToSpotifyArtist trackName:' + trackName)
 
@@ -1079,7 +1079,7 @@ function _addToSpotifyArtist (userName, trackName, spid, channel) {
   })
 }
 
-function _addplaylist (input, channel, userName) {
+function _addplaylist(input, channel, userName) {
   var [data, message] = spotify.searchSpotifyPlaylist(input, channel, userName, 1)
   if (message) {
     _slackMessage(message, channel)
@@ -1125,7 +1125,7 @@ function _addplaylist (input, channel, userName) {
   })
 }
 
-function _bestof (input, channel, userName) {
+function _bestof(input, channel, userName) {
   var [data, message] = spotify.searchSpotifyArtist(input, channel, userName, 1)
   if (message) {
     _slackMessage(message, channel)
@@ -1172,7 +1172,7 @@ function _bestof (input, channel, userName) {
   })
 }
 
-function _status (channel, state) {
+function _status(channel, state) {
   sonos.getCurrentState().then(state => {
     logger.info('Got current state: ' + state)
     _slackMessage("Sonos state is '" + state + "'", channel)
@@ -1181,7 +1181,7 @@ function _status (channel, state) {
   })
 }
 
-function _debug (channel) {
+function _debug(channel) {
   var url = 'http://' + sonosIp + ':1400/xml/device_description.xml'
 
   xmlToJson(url, function (err, data) {
@@ -1240,7 +1240,7 @@ function _debug (channel) {
 }
 
 // This function does not currectly work due to migration away from dataStore
-function _blacklist (input, channel) {
+function _blacklist(input, channel) {
   if (channel !== adminChannel) {
     return
   }
@@ -1279,7 +1279,7 @@ function _blacklist (input, channel) {
   _slackMessage(message, channel)
 }
 
-function _purgeHalfQueue (input, channel) {
+function _purgeHalfQueue(input, channel) {
   sonos.getQueue().then(result => {
     let maxQueueIndex = parseInt(result.total)
     const halfQueueSize = Math.floor(maxQueueIndex / 2)
@@ -1300,7 +1300,7 @@ function _purgeHalfQueue (input, channel) {
 
 // Function to parse XML to JSON
 
-function xmlToJson (url, callback) {
+function xmlToJson(url, callback) {
   var req = http.get(url, function (res) {
     logger.info(req)
     var xml = ''
