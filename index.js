@@ -286,7 +286,7 @@ function _slackMessage(message, id) {
 function _getVolume(channel) {
   sonos.getVolume().then(vol => {
     logger.info('The volume is: ' + vol)
-    _slackMessage('Current blasting at ' + vol + ' dB _(ddB)_', channel)
+    _slackMessage('Currently blasting at ' + vol + ' dB _(ddB)_', channel)
   }).catch(err => {
     logger.error('Error occurred: ' + err)
   });
