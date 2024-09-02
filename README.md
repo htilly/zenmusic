@@ -127,13 +127,13 @@ https://github.com/htilly/zenmusic/wiki
 * When asking for "Stat" show most played songs and most active users.
 * When local playlist is empty -> fallback and start playing "$playlist", i.e. Spotify topp 100.
 * Limit consecutive song additions by non-admin
-* Restrict songs already in the queue
 * Delete range of songs from queue
 * Vote to flush entire queue
 * Implement some code-testing
 
 **DONE**
 
+* Restrict songs already in the queue
 * Now works with latest async version of node-sonos.
 * Add spotify playlist
 * Added "bestof" - Add the topp 10 tracks by selected artist.
