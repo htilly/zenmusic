@@ -91,59 +91,59 @@ let voteScore = {}
 let gongBanned = false
 let gongTrack = '' // What track was a GONG called on
 
-const {
-  RTMClient
-} = require('@slack/rtm-api')
 
+const { RTMClient } = require('@slack/rtm-api');
+const { WebClient } = require('@slack/web-api'); // Correct import
 const rtm = new RTMClient(token, {
   logLevel: 'error',
   dataStore: false,
   autoReconnect: true,
   autoMark: true
-})
-
-rtm.on('message', (event) => {
-  console.log(event)
-
-  const {
-    type,
-    ts
-  } = event
-
-  const text = event.text
-  logger.info(event.text)
-  const channelName = event.channel
-  const channel = event.channel
-
-  logger.info(event.channel)
-
-  const userName = '<@' + event.user + '>'
-  logger.info(event.user)
-
-  logger.info('Received: ' + type + ' ' + channelName + ' ' + userName + ' ' + ts + ' "' + text + '"')
-
-  if (type !== 'message' || (text == null) || (channel == null)) {
-    const typeError = type !== 'message' ? 'unexpected type ' + type + '.' : null
-    const textError = text == null ? 'text was undefined.' : null
-    const channelError = channel == null ? 'channel was undefined.' : null
-    const errors = [typeError, textError, channelError].filter(function (element) {
-      return element !== null
-    }).join(' ')
-
-    logger.error('Could not respond. ' + errors)
-    return false
-  }
-
-  processInput(text, channel, userName)
 });
+const web = new WebClient(token);
+
+let botUserId;
 
 (async () => {
-  await rtm.start()
-})()
+  // Fetch the bot's user ID
+  const authResponse = await web.auth.test();
+  botUserId = authResponse.user_id;
 
-rtm.on('error', function (error) {
-  logger.error('Error: ' + error)
-})
+  await rtm.start();
+})();
+
+rtm.on('message', (event) => {
+  // Ignore messages from the bot itself
+  if (event.user === botUserId) {
+    return;
+  }
+
+  const { type, ts, text, channel, user } = event;
+
+  logger.info(event.text);
+  logger.info(event.channel);
+  logger.info(event.user);
+
+  logger.info(`Received: ${type} ${channel} <@${user}> ${ts} "${text}"`);
+
+  if (type !== 'message' || !text || !channel) {
+    const errors = [
+      type !== 'message' ? `unexpected type ${type}.` : null,
+      !text ? 'text was undefined.' : null,
+      !channel ? 'channel was undefined.' : null
+    ].filter(Boolean).join(' ');
+
+    logger.error(`Could not respond. ${errors}`);
+    return false;
+  }
+
+  processInput(text, channel, `<@${user}>`);
+});
+
+rtm.on('error', (error) => {
+  logger.error(`Error: ${error}`);
+});
+
 
 function processInput(text, channel, userName) {
   var input = text.split(' ')
@@ -229,9 +229,6 @@ function processInput(text, channel, userName) {
       case 'next':
         _nextTrack(channel)
         break
-      case 'gongplay':
-        _gongplay(input, channel)
-        break
       case 'stop':
         _stop(input, channel)
         break
@@ -255,7 +252,7 @@ function processInput(text, channel, userName) {
         _shuffle(input, channel)
         break
       case 'normal':
-          _normal(input, channel)
+        _normal(input, channel)
         break
       case 'setvolume':
         _setVolume(input, channel, userName)
@@ -277,6 +274,9 @@ function processInput(text, channel, userName) {
     }
   }
 }
+
+
+
 
 function _slackMessage(message, id) {
   if (rtm.connected) {
@@ -323,18 +323,6 @@ function _setVolume(input, channel, userName) {
   }
 }
 
-/*
-function _getQueue () {
-  var res = null
-  sonos.getQueue(function (err, result) {
-    if (err) {
-      logger.error(err)
-    }
-    res = result
-  })
-  return (res)
-}
-*/
 
 function _countQueue(channel, cb) {
   sonos.getQueue().then(result => {
@@ -353,7 +341,7 @@ function _countQueue(channel, cb) {
 
 function _showQueue(channel) {
   sonos.getQueue().then(result => {
-    logger.info('Current queue: ' + JSON.stringify(result, null, 2))
+ //   logger.info('Current queue: ' + JSON.stringify(result, null, 2))
     _status(channel, function (state) {
       logger.info('_showQueue, got state = ' + state)
     })
@@ -366,6 +354,7 @@ function _showQueue(channel) {
         logger.error(err)
       }
       var message = 'Total tracks in queue: ' + result.total + '\n====================\n'
+      logger.info('Total tracks in queue: ' + result.total)
       const tracks = []
 
       result.items.map(
@@ -469,8 +458,7 @@ function _gong(channel, userName) {
       _slackMessage(randomMessage + ' This is GONG ' + gongCounter + '/' + gongLimit + ' for ' + track, channel)
       if (gongCounter >= gongLimit) {
         _slackMessage('The music got GONGED!!', channel)
-        // _gongplay('play', channel)
-        _nextTrack(channel, true)
+        _gongplay('play', channel)
         gongCounter = 0
         gongScore = {}
       }
@@ -679,7 +667,8 @@ function _shuffle(input, channel, byPassChannelValidation) {
   sonos.setPlayMode('SHUFFLE').then(success => {
     console.log('Changed playmode to shuffle')
     _slackMessage('Changed the playmode to shuffle....', channel)
-  }).catch(err => { console.log('Error occurred %s', err) 
+  }).catch(err => {
+    console.log('Error occurred %s', err)
   })
 }
 
@@ -690,19 +679,89 @@ function _normal(input, channel, byPassChannelValidation) {
   sonos.setPlayMode('NORMAL').then(success => {
     console.log('Changed playmode to normal')
     _slackMessage('Changed the playmode to normal....', channel)
-  }).catch(err => { console.log('Error occurred %s', err) 
+  }).catch(err => {
+    console.log('Error occurred %s', err)
   })
 }
 
 
-
 function _gongplay(input, channel) {
-  sonos.queueNext('spotify:track:6Yy5Pr0KvTnAaxDBBISSDe').then(success => {
-    //  sonos.play('spotify:track:6Yy5Pr0KvTnAaxDBBISSDe').then(success => {
-    logger.info('GongPlay!!')
+  const mediaInfo = sonos.avTransportService().GetMediaInfo();
+  const positionInfo = sonos.avTransportService().GetPositionInfo();
+  logger.info('Current Position: ' + JSON.stringify(positionInfo.Track));
+
+  sonos.play('https://github.com/htilly/zenmusic/raw/master/sound/gong.mp3').then(success => {
+    logger.info('--------------- GongPlay!! ------------------')
+
+    nextToPlay = positionInfo.Track + 1
+    logger.info('Next to play: ' + nextToPlay)
+    sonos.selectTrack(nextToPlay).catch(_debug => {
+      logger.info('Jumping to next track!.')
+    })
+    sonos.play()
+
   }).catch(err => {
     logger.error('Error occurred ' + err)
   })
+}
+
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function _gongplay() {
+  try {
+    const mediaInfo = await sonos.avTransportService().GetMediaInfo();
+ //   logger.info('Current mediaInfo: ' + JSON.stringify(mediaInfo));
+
+    const positionInfo = await sonos.avTransportService().GetPositionInfo();
+ //   logger.info('Current positionInfo: ' + JSON.stringify(positionInfo));
+    logger.info('Current Position: ' + JSON.stringify(positionInfo.Track));
+
+    //    await delay(2000); // Ensure delay is awaited
+
+    await sonos.play('https://github.com/htilly/zenmusic/raw/master/sound/gong.mp3')
+      .then(() => {
+        logger.info('Playing notification...');
+      })
+      .catch(error => {
+        console.error('Error occurred: ' + error);
+      });
+
+    const nextToPlay = positionInfo.Track + 1;
+    logger.info('Next to play: ' + nextToPlay);
+
+    await delay(4000); // Ensure delay is awaited
+
+    try {
+      await sonos.selectTrack(nextToPlay);
+      logger.info('Track selected successfully.');
+    } catch (error) {
+      logger.info('Jumping to next track failed: ' + error);
+    }
+
+    // Add a one-second delay before playing
+    //   await delay(1000);
+
+    await sonos.play();
+  } catch (error) {
+    logger.error('Error in _gongplay: ' + error);
+  } finally {
+
+
+
+    await sonos.getQueue().then(result => {
+      logger.info('Total tracks in queue: ' + result.total)
+      let removeGong = result.total
+
+      sonos.removeTracksFromQueue([removeGong], 1).then(success => {
+        logger.info('Removed track with index: ', removeGong)
+      }).catch(err => {
+        logger.error('Error occurred ' + err)
+      })
+    })
+  }
+
 }
 
 function _removeTrack(input, channel, byPassChannelValidation) {
