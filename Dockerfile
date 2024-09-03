@@ -1,18 +1,29 @@
-FROM node:22-alpine AS intermediate
-LABEL stage=intermediate
+# Use the official Node.js image based on Alpine Linux
+FROM node:22-alpine
 
+# Update and install git (if needed for your application)
 RUN apk update && \
     apk upgrade && \
     apk add git && \
     git clone https://github.com/htilly/zenmusic.git
 
-FROM node:22-alpine
-RUN mkdir app
-COPY --from=intermediate /zenmusic/* /app/
+# Clear npm cache to reduce image size and avoid potential issues
+RUN npm cache clean --force
+
+# Set the working directory for your application
 WORKDIR /app
+
+# Copy package.json and package-lock.json first to leverage Docker cache
+COPY package*.json ./
+
+# Install application dependencies
 RUN npm install --verbose
 
-# Ensure proper permissions
+# Copy the rest of your application files
+COPY . .
+
+# Ensure proper permissions (if needed, adjust as necessary)
 RUN chmod -R 755 /app
 
-CMD [ "node", "index.js" ]
+# Command to run the application
+CMD ["node", "index.js"]
