@@ -180,6 +180,7 @@ function processInput(text, channel, userName) {
       break
     case 'dong':
     case ':gong:':
+    case ':gun:':
     case 'gong':
       _gong(channel, userName)
       break
@@ -190,6 +191,7 @@ function processInput(text, channel, userName) {
       _voteImmune(channel, userName)
       break
     case 'vote':
+    case ':star:':
       _vote(input, channel, userName)
       break
     case 'voteimmunecheck':
@@ -364,7 +366,7 @@ function _showQueue(channel) {
       result.items.map(
         function (item, i) {
           if (item.title === track.title) {
-            tracks.push(':notes: ' + '_#' + i + '_ ' + item.title + ' by ' + item.artist)
+            tracks.push(':notes: ' + '_#' + i + '_ ' + "*"+item.title+"*" + ' by ' + item.artist)
           } else {
             tracks.push('>_#' + i + '_ ' + item.title + ' by ' + item.artist)
           }
@@ -508,17 +510,18 @@ let trackVoteCount = {};
 
 function _vote(input, channel, userName) {
   var voteNb = input[1];
+  voteNb = Number(voteNb) + 1; // Add 1 to match the queue index
   voteNb = String(voteNb);
-  //  logger.info('voteNb: ' + voteNb);
+  logger.info('voteNb: ' + voteNb);
 
   sonos.getQueue().then(result => {
-    // logger.info('Current queue: ' + JSON.stringify(result, null, 2))
+    logger.info('Current queue: ' + JSON.stringify(result, null, 2))
     logger.info('Finding track:' + voteNb);
     let trackFound = false;
     for (var i in result.items) {
       var queueTrack = result.items[i].id;
       queueTrack = queueTrack.split('/')[1];
-      //  logger.info('queueTrack: ' + queueTrack)
+      logger.info('queueTrack: ' + queueTrack)
       if (voteNb === queueTrack) {
         var voteTrackName = result.items[i].title;
         logger.info('voteTrackName: ' + voteTrackName);
@@ -554,7 +557,7 @@ function _vote(input, channel, userName) {
         _slackMessage('This is VOTE ' + trackVoteCount[voteNb] + '/' + voteLimit + ' for ' + voteTrackName, channel);
         if (trackVoteCount[voteNb] >= voteLimit) {
           logger.info('Track ' + voteTrackName + ' has reached the vote limit.');
-          _slackMessage('Yea!! This tune totally rocks :star: Lets peg it fot the next one in the queue..  moving on up... :rocket: ', channel);
+          _slackMessage('Yea!! This tune totally rocks :star: Lets peg it for the next one in the queue..  moving on up... :rocket: ', channel);
 
           // Reset the vote count for the track
           voteImmuneCounter = 0;
