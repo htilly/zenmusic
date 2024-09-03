@@ -88,9 +88,12 @@ let voteCounter = 0
 const voteLimitPerUser = 4
 let voteScore = {}
 
+if (!token) {
+  throw new Error('SLACK_API_TOKEN is not set');
+}
 
-const { RTMClient } = require('@slack/rtm-api');
-const { WebClient } = require('@slack/web-api'); // Correct import
+const { RTMClient } = require('@slack/rtm-api'); 
+const { WebClient } = require('@slack/web-api'); 
 const rtm = new RTMClient(token, {
   logLevel: 'error',
   dataStore: false,
@@ -120,6 +123,8 @@ rtm.on('message', (event) => {
   logger.info(event.text);
   logger.info(event.channel);
   logger.info(event.user);
+
+
 
   logger.info(`Received: ${type} ${channel} <@${user}> ${ts} "${text}"`);
 
