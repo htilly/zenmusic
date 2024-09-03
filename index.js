@@ -16,7 +16,7 @@ config.argv()
     adminChannel: 'music-admin',
     standardChannel: 'music',
     gongLimit: 3,
-    voteLimit: 3,
+    voteImmuneLimit: 3,
     maxVolume: '75',
     market: 'US',
     blacklist: [],
@@ -26,7 +26,7 @@ config.argv()
 
 const adminChannel = config.get('adminChannel')
 const gongLimit = config.get('gongLimit')
-const voteLimit = config.get('voteLimit')
+const voteImmuneLimit = config.get('voteImmuneLimit')
 const token = config.get('token')
 const maxVolume = config.get('maxVolume')
 const market = config.get('market')
@@ -85,9 +85,9 @@ const gongMessage = [
   'Would some harp music be better?'
 ]
 
-let voteCounter = 0
-const voteLimitPerUser = 1
-let voteScore = {}
+let voteImmuneCounter = 0
+const voteImmuneLimitPerUser = 1
+let voteImmuneScore = {}
 let gongBanned = false
 let gongTrack = '' // What track was a GONG called on
 
@@ -188,11 +188,11 @@ function processInput(text, channel, userName) {
     case 'gongcheck':
       _gongcheck(channel, userName)
       break
-    case 'vote':
-      _vote(channel, userName)
+    case 'voteimmune':
+      _voteImmune(channel, userName)
       break
-    case 'votecheck':
-      _votecheck(channel, userName)
+    case 'voteimmunecheck':
+      _voteImmunecheck(channel, userName)
       break
     case 'list':
     case 'ls':
@@ -449,7 +449,7 @@ function _gong(channel, userName) {
     if (gongScore[userName] >= gongLimitPerUser) {
       _slackMessage('Are you trying to cheat, ' + userName + '? DENIED!', channel)
     } else {
-      if (userName in voteScore) {
+      if (userName in voteImmuneScore) {
         _slackMessage('Having regrets, ' + userName + "? We're glad you came to your senses...", channel)
       }
 
@@ -466,46 +466,46 @@ function _gong(channel, userName) {
   })
 }
 
-function _vote(channel, userName) {
-  logger.info('_vote...')
+function _voteImmune(channel, userName) {
+  logger.info('_voteImmune...')
   _currentTrackTitle(channel, function (err, track) {
     if (err) {
       logger.error(err)(err)
     }
-    logger.info('_vote > track: ' + track)
+    logger.info('_voteImmune > track: ' + track)
 
-    if (!(userName in voteScore)) {
-      voteScore[userName] = 0
+    if (!(userName in voteImmuneScore)) {
+      voteImmuneScore[userName] = 0
     }
 
-    if (voteScore[userName] >= voteLimitPerUser) {
+    if (voteImmuneScore[userName] >= voteImmuneLimitPerUser) {
       _slackMessage('Are you trying to cheat, ' + userName + '? DENIED!', channel)
     } else {
       if (userName in gongScore) {
         _slackMessage('Changed your mind, ' + userName + '? Well, ok then...', channel)
       }
 
-      voteScore[userName] = voteScore[userName] + 1
-      voteCounter++
-      _slackMessage('This is VOTE ' + voteCounter + '/' + voteLimit + ' for ' + track, channel)
-      if (voteCounter >= voteLimit) {
+      voteImmuneScore[userName] = voteImmuneScore[userName] + 1
+      voteImmuneCounter++
+      _slackMessage('This is VOTE ' + voteImmuneCounter + '/' + voteImmuneLimit + ' for ' + track, channel)
+      if (voteImmuneCounter >= voteImmuneLimit) {
         _slackMessage('This track is now immune to GONG! (just this once)', channel)
-        voteCounter = 0
-        voteScore = {}
+        voteImmuneCounter = 0
+        voteImmuneScore = {}
         gongBanned = true
       }
     }
   })
 }
 
-function _votecheck(channel, userName) {
-  logger.info('_votecheck...')
+function _voteImmunecheck(channel, userName) {
+  logger.info('_voteImmunecheck...')
 
   _currentTrackTitle(channel, function (err, track) {
-    logger.info('_votecheck > track: ' + track)
+    logger.info('_voteImmunecheck > track: ' + track)
 
-    _slackMessage('VOTE is currently ' + voteCounter + '/' + voteLimit + ' for ' + track, channel)
-    var voters = Object.keys(voteScore)
+    _slackMessage('VOTE is currently ' + voteImmuneCounter + '/' + voteImmuneLimit + ' for ' + track, channel)
+    var voters = Object.keys(voteImmuneScore)
     if (voters.length > 0) {
       _slackMessage('Voted by ' + voters.join(','), channel)
     }
@@ -556,7 +556,7 @@ function _help(input, channel) {
     '`append` *text* : Append a song to the previous playlist and start playing the same list again.\n' +
     '`gong` : The current track is bad! ' + gongLimit + ' gongs will skip the track\n' +
     '`gongcheck` : How many gong votes there are currently, as well as who has gonged.\n' +
-    '`vote` : The current track is great! ' + voteLimit + ' votes will prevent the track from being gonged\n' +
+    '`voteImmune` : The current track is great! ' + voteImmuneLimit + ' votes will prevent the track from being gonged\n' +
     '`volume` : view current volume\n' +
     '`list` : list current queue\n'
 
@@ -837,8 +837,8 @@ function _currentTrackTitle(channel, cb) {
         gongCounter = 0
         gongScore = {}
         gongBanned = false
-        voteCounter = 0
-        voteScore = {}
+        voteImmuneCounter = 0
+        voteImmuneScore = {}
       } else {
         logger.info('_currentTrackTitle > gongTrack is equal to _track')
       }
