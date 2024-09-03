@@ -1,3 +1,4 @@
+const fs = require('fs');
 const buildNumber = ('76')
 const config = require('nconf')
 const winston = require('winston')
@@ -6,6 +7,7 @@ const utils = require('./utils')
 const process = require('process')
 const parseString = require('xml2js').parseString
 const http = require('http')
+const gongMessage = fs.readFileSync('gong.txt', 'utf8').split('\n').filter(Boolean);
 
 config.argv()
   .env()
@@ -76,16 +78,6 @@ const spotify = Spotify({
 let gongCounter = 0
 let gongScore = {}
 const gongLimitPerUser = 1
-const gongMessage = [
-  'Is it really all that bad?',
-  'Is it that distracting?',
-  'How much is this worth to you?',
-  'I agree. Who added this song anyway?',
-  "Thanks! I didn't want to play this song in the first place...",
-  "Look, I only played this song because it's my masters favourite.",
-  'Good call!',
-  'Would some harp music be better?'
-]
 
 let voteImmuneCounter = 0
 const voteImmuneLimitPerUser = 1
@@ -467,7 +459,7 @@ function _gong(channel, userName) {
 
       gongScore[userName] = gongScore[userName] + 1
       gongCounter++
-      _slackMessage(randomMessage + ' This is GONG ' + gongCounter + '/' + gongLimit + ' for ' + track, channel)
+      _slackMessage(randomMessage + ' This is GONG ' + gongCounter + '/' + gongLimit + ' for ' + "*"+track+"*", channel)
       if (gongCounter >= gongLimit) {
         _slackMessage('The music got GONGED!!', channel)
         _gongplay('play', channel)
