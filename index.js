@@ -197,15 +197,15 @@ function processInput(text, channel, userName) {
     case 'voteimmune':
       _voteImmune(channel, userName)
       break
-      case 'vote':
-        _vote(input, channel, userName)
-        break
+    case 'vote':
+      _vote(input, channel, userName)
+      break
     case 'voteimmunecheck':
       _voteImmunecheck(channel, userName)
       break
-      case 'votecheck':
-        _votecheck(channel, userName)
-        break
+    case 'votecheck':
+      _votecheck(channel, userName)
+      break
     case 'list':
     case 'ls':
     case 'playlist':
@@ -353,7 +353,7 @@ function _countQueue(channel, cb) {
 
 function _showQueue(channel) {
   sonos.getQueue().then(result => {
- //   logger.info('Current queue: ' + JSON.stringify(result, null, 2))
+    //   logger.info('Current queue: ' + JSON.stringify(result, null, 2))
     _status(channel, function (state) {
       logger.info('_showQueue, got state = ' + state)
     })
@@ -517,7 +517,7 @@ let trackVoteCount = {};
 function _vote(input, channel, userName) {
   var voteNb = input[1];
   voteNb = String(voteNb);
-//  logger.info('voteNb: ' + voteNb);
+  //  logger.info('voteNb: ' + voteNb);
 
   sonos.getQueue().then(result => {
     // logger.info('Current queue: ' + JSON.stringify(result, null, 2))
@@ -562,39 +562,39 @@ function _vote(input, channel, userName) {
         _slackMessage('This is VOTE ' + trackVoteCount[voteNb] + '/' + voteLimit + ' for ' + voteTrackName, channel);
         if (trackVoteCount[voteNb] >= voteLimit) {
           logger.info('Track ' + voteTrackName + ' has reached the vote limit.');
-          _slackMessage('Yea... This tune totally rocks.. Lets peg it fot the next one in the queue..  moving on up...', channel);
-        
+          _slackMessage('Yea!! This tune totally rocks :star: Lets peg it fot the next one in the queue..  moving on up... :rocket: ', channel);
+
           // Reset the vote count for the track
           voteImmuneCounter = 0;
           voteImmuneScore = {};
 
-        //Now, lets move the track so it plays next
+          //Now, lets move the track so it plays next
 
-        // Get the current track position
-        sonos.currentTrack().then(track => {
-          logger.info('Got current track: ' + track)
-          var currentTrackPosition = track.queuePosition;
-          logger.info('Current track position: ' + currentTrackPosition);
+          // Get the current track position
+          sonos.currentTrack().then(track => {
+            logger.info('Got current track: ' + track)
+            var currentTrackPosition = track.queuePosition;
+            logger.info('Current track position: ' + currentTrackPosition);
 
-          // Get the track position in the queue
-          var trackPosition = parseInt(voteNb);
-          logger.info('Track position: ' + trackPosition);
+            // Get the track position in the queue
+            var trackPosition = parseInt(voteNb);
+            logger.info('Track position: ' + trackPosition);
 
-          // Define the parameters
-          const startingIndex = trackPosition; // Assuming trackPosition is the starting index
-          const numberOfTracks = 1; // Assuming we are moving one track
-          const insertBefore = currentTrackPosition + 1; // Assuming desiredPosition is where the track should be moved to
-          const updateId = 0; // Leave updateId as 0
+            // Define the parameters
+            const startingIndex = trackPosition; // Assuming trackPosition is the starting index
+            const numberOfTracks = 1; // Assuming we are moving one track
+            const insertBefore = currentTrackPosition + 1; // Assuming desiredPosition is where the track should be moved to
+            const updateId = 0; // Leave updateId as 0
 
-          // Move to the track position using reorderTracksInQueue
-          sonos.reorderTracksInQueue(startingIndex, numberOfTracks, insertBefore, updateId).then(success => {
-            logger.info('Moved track to position: ' + insertBefore);
+            // Move to the track position using reorderTracksInQueue
+            sonos.reorderTracksInQueue(startingIndex, numberOfTracks, insertBefore, updateId).then(success => {
+              logger.info('Moved track to position: ' + insertBefore);
+            }).catch(err => {
+              logger.error('Error occurred: ' + err);
+            });
           }).catch(err => {
             logger.error('Error occurred: ' + err);
           });
-        }).catch(err => {
-          logger.error('Error occurred: ' + err);
-        });
 
         }
       }
@@ -602,57 +602,35 @@ function _vote(input, channel, userName) {
   });
 }
 
-
-
-/*
-function _vote(input, channel, userName) {
-  var voteNb = input[1]
-  voteNb = String(voteNb)
-  logger.info('voteNb: ' + voteNb)
-
+/**
+ * Checks the vote status for all tracks and sends a Slack message with the results.
+ * 
+ * @param {string} channel - The channel to send the message to.
+ */
+function _votecheck(channel) {
+  logger.info('Checking vote status for all tracks:');
   sonos.getQueue().then(result => {
-    // logger.info('Current queue: ' + JSON.stringify(result, null, 2))
-    logger.info('***********   Finding track:' + voteNb);
-    let trackFound = false;
+    const trackNames = {};
     for (var i in result.items) {
-      var queueTrack = result.items[i].id;
-      queueTrack = queueTrack.split('/')[1];
-      //  logger.info('queueTrack: ' + queueTrack)
-      if (voteNb === queueTrack) {
-        var voteTrackName = result.items[i].title;
-        logger.info('voteTrackName: ' + voteTrackName)
-        trackFound = true;
-        break;
+      var queueTrack = result.items[i].id.split('/')[1];
+      var trackName = result.items[i].title;
+      trackNames[queueTrack] = trackName;
+    }
+
+    for (const trackId in trackVoteCount) {
+      if (trackVoteCount.hasOwnProperty(trackId)) {
+        const voteCount = trackVoteCount[trackId];
+        const trackName = trackNames[trackId] || 'Unknown Track';
+        const voters = Object.keys(voteScore).filter(user => voteScore[user] > 0 && voteScore[user] < voteLimitPerUser);
+        const votedBy = voters.map(user => `${user}`).join(', ');
+        _slackMessage("*"+trackName+"*" + ' has received ' + voteCount + ' votes. Voted by: ' + votedBy, channel);
       }
     }
-    if (trackFound) {
-
-      if (!(userName in voteScore)) {
-        voteScore[userName] = 0
-      }
-
-      if (voteScore[userName] >= voteLimitPerUser) {
-        _slackMessage('Are you trying to cheat, ' + userName + '? DENIED!', channel)
-      } else {
-        if (userName in gongScore) {
-          _slackMessage('Changed your mind, ' + userName + '? Well, ok then...', channel)
-        }
-
-        voteScore[userName] = voteScore[userName] + 1
-        voteCounter++
-        _slackMessage('This is VOTE ' + voteCounter + '/' + voteLimit + ' for ' + voteTrackName, channel)
-        if (voteCounter >= voteLimit) {
-          _slackMessage('Yea... This tune totally rocks.. Lets peg it fot the next one in the queue..  moving on up... :rocket: ', channel)
-          voteImmuneCounter = 0
-          voteImmuneScore = {}
-        }
-      }
-
-
-    }
-  })
+  }).catch(err => {
+    logger.error('Error occurred while fetching the queue: ' + err);
+  });
 }
-*/
+
 
 
 function _voteImmunecheck(channel, userName) {
@@ -712,6 +690,7 @@ function _help(input, channel) {
     '`addplaylist` *text* : Add a playlist to the queue and start playing if idle. Will start with a fresh queue.\n' +
     '`append` *text* : Append a song to the previous playlist and start playing the same list again.\n' +
     '`vote` *number* : Vote for a track to be played next!!! :rocket: \n' +
+    '`votecheck` : How many votes there are currently, as well as who has voted.\n' +
     '`gong` : The current track is bad! ' + gongLimit + ' gongs will skip the track\n' +
     '`gongcheck` : How many gong votes there are currently, as well as who has gonged.\n' +
     '`voteimmune` : The current track is great! ' + voteImmuneLimit + ' votes will prevent the track from being gonged\n' +
@@ -870,10 +849,10 @@ function delay(ms) {
 async function _gongplay() {
   try {
     const mediaInfo = await sonos.avTransportService().GetMediaInfo();
- //   logger.info('Current mediaInfo: ' + JSON.stringify(mediaInfo));
+    //   logger.info('Current mediaInfo: ' + JSON.stringify(mediaInfo));
 
     const positionInfo = await sonos.avTransportService().GetPositionInfo();
- //   logger.info('Current positionInfo: ' + JSON.stringify(positionInfo));
+    //   logger.info('Current positionInfo: ' + JSON.stringify(positionInfo));
     logger.info('Current Position: ' + JSON.stringify(positionInfo.Track));
 
     //    await delay(2000); // Ensure delay is awaited
