@@ -111,16 +111,13 @@ https://github.com/htilly/zenmusic/wiki
 
 **KnownBugs**
 
-* Validate add / unique track doesn´t work. I.e - You can add same track 10 times in a row.
-* Vote does not move track in queue.
+~~* Validate add / unique track doesn´t work. I.e - You can add same track 10 times in a row.~~
+~~* Vote does not move track in queue.~~
  
 **ToDo**
 
 * Code cleaning! =)
 * Simple "view" window of what is happening in the channel. I.e. - Put on big-screen of what is happening in #music
-* Admin: Delete single track from queue.
-* Vote: When voting for a song, put it in top of the queue. Queue is sorted based upon the number of votes.
-* A vote shall not automatically skip to the next track. It should just put it higher up the queue.
 * Backend DB
 * Text-to-speech. 
 * Now playing. Announce when starting a new song.
@@ -132,7 +129,7 @@ https://github.com/htilly/zenmusic/wiki
 * Implement some code-testing
 
 **DONE**
-
+* New vote system including votecheck
 * Restrict songs already in the queue
 * Now works with latest async version of node-sonos.
 * Add spotify playlist
