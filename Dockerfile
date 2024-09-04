@@ -1,5 +1,6 @@
 # Use the official Node.js image based on Alpine Linux
-FROM node:22-alpine
+# The --platform flag is used here to make sure we use a multi-platform base image
+FROM --platform=$BUILDPLATFORM node:22-alpine AS base
 
 # Update and install git (if needed for your application)
 RUN apk update && \
