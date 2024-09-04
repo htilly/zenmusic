@@ -4,6 +4,7 @@
     "gongLimit": 3,
     "voteImmuneLimit": 6,
     "voteLimit": 6,
+    "voteTimeLimitMinutes" : 2,
     "sonos" : "IP_TO_SONOS",
     "token" : "SLACK:TOKEN",
     "market" : "US",
