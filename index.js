@@ -9,6 +9,8 @@ const parseString = require('xml2js').parseString
 const http = require('http')
 const gongMessage = fs.readFileSync('gong.txt', 'utf8').split('\n').filter(Boolean);
 const voteMessage = fs.readFileSync('vote.txt', 'utf8').split('\n').filter(Boolean);
+const gongBannedTracks = {};
+
 
 config.argv()
   .env()
@@ -381,10 +383,20 @@ function _showQueue(channel) {
 
       result.items.map(
         function (item, i) {
-          if (item.title === track.title) {
-            tracks.push(':notes: ' + '_#' + i + '_ ' + "*"+item.title+"*" + ' by ' + item.artist)
+          let trackTitle = item.title;
+          if (_isTrackGongBanned(item.title)) {
+            tracks.push(':lock: ' + '_#' + i + '_ ' + trackTitle + ' by ' + item.artist);
+  //          trackTitle = ':lock:' + trackTitle;
+          } else if (item.title === track.title) {
+            trackTitle = '*' + trackTitle + '*';
           } else {
-            tracks.push('>_#' + i + '_ ' + "_"+item.title+"_" + ' by ' + item.artist)
+            trackTitle = '_' + trackTitle + '_';
+          }
+
+          if (item.title === track.title) {
+            tracks.push(':notes: ' + '_#' + i + '_ ' + trackTitle + ' by ' + item.artist);
+          } else {
+            tracks.push('>_#' + i + '_ ' + trackTitle + ' by ' + item.artist);
           }
         }
       )
@@ -443,6 +455,8 @@ function _upNext(channel) {
 
 let voteTimer = null;
 const voteTimeLimit = voteTimeLimitMinutes * 60 * 1000; // Convert minutes to milliseconds
+
+
 
 function _flushvote(channel, userName) {
   logger.info('_flushvote...');
@@ -538,8 +552,7 @@ function _gong(channel, userName) {
 
 
 
-// Global object to store gongBanned status for each track
-const gongBannedTracks = {};
+
 
 function _voteImmune(input, channel, userName) {
   var voteNb = input[1];
@@ -604,7 +617,7 @@ function _listImmune(channel) {
   if (gongBannedTracksList.length === 0) {
     _slackMessage('No tracks are currently immune.', channel);
   } else {
-    const message = 'Immune Tracks:\n' + gongBannedTracksList.join('\n');
+    const message = 'Immune Tracks:\n' + gongBannedTracksList.join ('\n');
     _slackMessage(message, channel);
   }
 }
@@ -613,7 +626,6 @@ function _listImmune(channel) {
 
 // Initialize vote count object
 let trackVoteCount = {};
-
 
 function _vote(input, channel, userName) {
 
