@@ -6,3 +6,4 @@ blacklist.txt
 *.log
 config/config.json
 docker-compose.yml
+Dockerfile-local
