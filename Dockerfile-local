@@ -1,10 +1,10 @@
 # Use the official Node.js image based on Alpine Linux
 # The --platform flag is used here to make sure we use a multi-platform base image
-FROM --platform=$BUILDPLATFORM node:22-alpine AS base
+FROM --platform=$BUILDPLATFORM node:22.8-slim AS base
 
 # Update and install git (if needed for your application)
-RUN apk update && \
-    apk upgrade
+#RUN apk update && \
+#    apk upgrade
 
 # Clear npm cache to reduce image size and avoid potential issues
 RUN npm cache clean --force
