@@ -2,7 +2,6 @@
 
 const config = require('nconf')
 const urllibsync = require('@jsfeb26/urllib-sync')
-const urlencode = require('urlencode')
 const winston = require('winston')
 
 config.argv()
@@ -23,15 +22,14 @@ module.exports = function (config) {
     let accessToken
     let accessTokenExpires
 
-/* Initialize Logger */
-const logger = winston.createLogger({
-    level: logLevel,
-    format: winston.format.json(),
-    transports: [
-        new winston.transports.Console({format: winston.format.combine(winston.format.colorize(), winston.format.simple())})
-    ]
-});
-
+    /* Initialize Logger */
+    const logger = winston.createLogger({
+        level: logLevel,
+        format: winston.format.json(),
+        transports: [
+            new winston.transports.Console({format: winston.format.combine(winston.format.colorize(), winston.format.simple())})
+        ]
+    });
 
     function _getAccessToken() {
         if (accessToken && accessTokenExpires > new Date().getTime()) {
@@ -61,7 +59,7 @@ const logger = winston.createLogger({
 
             var query = ''
             for (var i = 1; i < input.length; i++) {
-                query += urlencode(input[i])
+                query += encodeURIComponent(input[i])
                 // TODO - join
                 if (i < input.length - 1) {
                     query += ' '
@@ -98,7 +96,7 @@ const logger = winston.createLogger({
 
             var query = ''
             for (var i = 1; i < input.length; i++) {
-                query += urlencode(input[i])
+                query += encodeURIComponent(input[i])
                 if (i < input.length - 1) {
                     query += ' '
                 }
@@ -133,7 +131,7 @@ const logger = winston.createLogger({
 
             var query = ''
             for (var i = 1; i < input.length; i++) {
-                query += urlencode(input[i])
+                query += encodeURIComponent(input[i])
                 if (i < input.length - 1) {
                     query += ' '
                 }
@@ -168,7 +166,7 @@ const logger = winston.createLogger({
 
             var query = ''
             for (var i = 1; i < input.length; i++) {
-                query += urlencode(input[i])
+                query += encodeURIComponent(input[i])
                 if (i < input.length - 1) {
                     query += ' '
                 }
