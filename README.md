@@ -125,10 +125,10 @@ https://github.com/htilly/zenmusic/wiki
 * When local playlist is empty -> fallback and start playing "$playlist", i.e. Spotify topp 100.
 * Limit consecutive song additions by non-admin
 * Delete range of songs from queue
-* Vote to flush entire queue
 * Implement some code-testing
 
 **DONE**
+* Vote to flush entire queue
 * New vote system including votecheck
 * Restrict songs already in the queue
 * Now works with latest async version of node-sonos.
