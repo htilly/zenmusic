@@ -16,12 +16,16 @@ jobs:
     - name: Docker Setup QEMU
       uses: docker/setup-qemu-action@v3.2.0
       
-    - name: Verify QEMU
-      run: |
-        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+    - name: Verify QEMU setup
+      run: docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
             
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3.6.1
+
+    - name: Setup Buildx builder
+      run: |
+        docker buildx create --name mybuilder --driver docker-container --use
+        docker buildx inspect --bootstrap
 
     - name: Log in to Docker Hub
       run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
@@ -31,5 +35,5 @@ jobs:
         docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 --push \
           -t ${{ secrets.DOCKERHUB_USERNAME }}/slackonos:latest .
 
-    - name: Verify the platforms
-      run: docker buildx inspect --bootstrap
+    - name: Verify the built platforms
+      run: docker buildx imagetools inspect ${{ secrets.DOCKERHUB_USERNAME }}/slackonos:latest
