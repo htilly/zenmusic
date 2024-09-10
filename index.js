@@ -1107,48 +1107,50 @@ function _add(input, channel, userName) {
   var trackName = data.tracks.items[0].artists[0].name + ' - ' + data.tracks.items[0].name
   var titleName = data.tracks.items[0].name
 
-  sonos.getQueue().then(result => {
-    logger.info('***********   Searching if the following track is already in the queue:' + titleName);
-    let trackFound = false;
-    for (var i in result.items) {
-      var queueTrack = result.items[i].title;
-      if (titleName === queueTrack) {
-
-        trackFound = true;
-        break;
-      }
-    }
-    if (trackFound) {
-      console.log("Track already in the queue, skipping...");
-      _slackMessage("Track already in the queue.. I will let it go for this time" + userName + "....", channel)
-    } else {
-      sonos.getCurrentState().then(state => {
-        logger.info('Got current state: ' + state);
-        if (state === 'stopped') {
-          sonos.flush().then(result => {
-            logger.info('Flushed queue: ' + JSON.stringify(result, null, 2));
-            logger.info('State: ' + state + ' - flushing');
-            _addToSpotify(userName, uri, albumImg, trackName, channel);
-            logger.info('Adding track:' + trackName);
-            setTimeout(() => _playInt('play', channel), 500);
-          }).catch(err => {
-            logger.error('Error flushing queue: ' + err);
-          });
-        } else if (state === 'playing') {
+  sonos.getCurrentState().then(state => {
+    logger.info('Got current state: ' + state);
+    if (state === 'stopped') {
+      sonos.flush().then(result => {
+        logger.info('Flushed queue: ' + JSON.stringify(result, null, 2));
+        logger.info('State: ' + state + ' - flushing');
+        _addToSpotify(userName, uri, albumImg, trackName, channel);
+        logger.info('Adding track:' + trackName);
+        setTimeout(() => _playInt('play', channel), 500);
+      }).catch(err => {
+        logger.error('Error flushing queue: ' + err);
+      });
+    } else if (state === 'playing') {
+      sonos.getQueue().then(result => {
+        logger.info('Searching for duplicated track:' + titleName);
+        let trackFound = false;
+        for (var i in result.items) {
+          var queueTrack = result.items[i].title;
+          if (titleName === queueTrack) {
+            trackFound = true;
+            break;
+          }
+        }
+        if (trackFound) {
+          console.log("Track already in the queue, skipping...");
+          _slackMessage("Track already in the queue.. I will let it go for this time" + userName + "....", channel);
+        } else {
           logger.info('State: ' + state + ' - playing...');
           // Add the track to playlist...
           _addToSpotify(userName, uri, albumImg, trackName, channel);
-        } else if (state === 'paused') {
-          // Handle paused state if needed
         }
       }).catch(err => {
-        logger.error('Error getting current state: ' + err);
+        logger.error('Error fetching queue: ' + err);
       });
+    } else if (state === 'paused') {
+      // Handle paused state if needed
+      _slackMessage("SlackONOS is currently paused..  ask an admin to resume the playlist...", channel);
+
     }
   }).catch(err => {
-    logger.error('Error fetching queue: ' + err);
+    logger.error('Error getting current state: ' + err);
   });
 }
+
 
 function _addalbum(input, channel, userName) {
   var [data, message] = spotify.searchSpotifyAlbum(input, channel, userName, 1)
