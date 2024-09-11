@@ -1,5 +1,4 @@
 const fs = require('fs');
-const buildNumber = ('76')
 const config = require('nconf')
 const winston = require('winston')
 const Spotify = require('./spotify')
@@ -9,6 +8,7 @@ const parseString = require('xml2js').parseString
 const http = require('http')
 const gongMessage = fs.readFileSync('gong.txt', 'utf8').split('\n').filter(Boolean);
 const voteMessage = fs.readFileSync('vote.txt', 'utf8').split('\n').filter(Boolean);
+const buildNumber = Number(fs.readFileSync('build.txt', 'utf8').split('\n').filter(Boolean)[0]);
 const gongBannedTracks = {};
 
 
@@ -838,7 +838,7 @@ function _help(input, channel) {
       '`blacklist add @username` : add `@username` to the blacklist\n' +
       '`blacklist del @username` : remove `@username` from the blacklist\n'
   }
-  message += ' ===  ===  === = SlackONOS@GitHub  ===  ===  === ==\n'
+  message += ' ===  ===  === SlackONOS@GitHub ===  ===  ===\n'
   _slackMessage(message, channel)
 }
 
@@ -1502,11 +1502,12 @@ function _status(channel, state) {
 function _debug(channel) {
   var url = 'http://' + sonosIp + ':1400/xml/device_description.xml'
 
+  
   xmlToJson(url, function (err, data) {
     if (err) {
       logger.error('Error occurred ' + err)
     }
-    logger.info('BuildNumber of Slackonos: ', buildNumber)
+    logger.info('BuildNumber of SlackONOS: ', buildNumber)
     logger.info('Platform: ', process.platform)
     logger.info('Node version: ', process.version)
     logger.info('Node dependencies: ', process.versions)
@@ -1526,7 +1527,7 @@ function _debug(channel) {
 
     _slackMessage(
       '\n------------------------------' +
-      '\n*Slackonos Info*' +
+      '\n*SlackONOS Info*' +
       '\n' +
       '\nBuildNumber:  ' + buildNumber +
       '\n------------------------------' +
