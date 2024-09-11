@@ -23,6 +23,7 @@ config.argv()
     gongLimit: 3,
     voteImmuneLimit: 3,
     voteLimit: 3,
+    flushVoteLimit: 6,
     maxVolume: '75',
     market: 'US',
     blacklist: [],
@@ -240,6 +241,9 @@ function processInput(text, channel, userName) {
     default:
       matched = false
       break
+      case 'flush':
+        _flush(input, channel)
+        break
   }
 
   if (!matched && channel === adminChannel) {
@@ -835,10 +839,10 @@ function _help(input, channel) {
     '`append` *text* : append a song to the previous playlist and start playing the same list again.\n' +
     '`vote` *number* : vote for a track to be played next!!! :rocket: \n' +
     '`votecheck` : how many votes there are currently, as well as who has voted.\n' +
-    '`gong` : current track is bad! ' + gongLimit + ' gongs will skip the track\n' +
+    '`gong` : current track is bad! *' + gongLimit + '* gongs will skip the track\n' +
     '`gongcheck` : how many gong votes there are currently, as well as who has gonged.\n' +
-    '`voteimmune` *number* : vote to make the current track immune to gong. ' + voteImmuneLimit + ' votes will make it immune\n' +
-    '`flushvote` : vote to flush the queue. ' + flushVoteLimit + ' votes will flush the queue :toilet: \n' +
+    '`voteimmune` *number* : vote to make the current track immune to gong. *' + voteImmuneLimit + '* votes will make it immune\n' +
+    '`flushvote` : vote to flush the queue. *' + flushVoteLimit + '* votes will flush the queue :toilet: \n' +
     '`upnext` : show the next track to be played\n' +
     '`volume` : view current volume\n' +
     '`list` : list current queue\n'
@@ -925,6 +929,7 @@ function _resume(input, channel, state) {
 
 function _flush(input, channel) {
   if (channel !== adminChannel) {
+    _slackMessage('Where you supposed to type _flushvote_?', channel)
     return
   }
   sonos.flush().then(result => {
@@ -1295,7 +1300,7 @@ function _search(input, channel, userName) {
 
   var trackNames = []
   for (var i = 1; i <= data.tracks.items.length; i++) {
-    var trackName = data.tracks.items[i - 1].artists[0].name + ' - ' + data.tracks.items[i - 1].name
+    var trackName = data.tracks.items[i - 1].name + ' - ' + data.tracks.items[i - 1].artists[0].name
     trackNames.push(trackName)
   }
 
