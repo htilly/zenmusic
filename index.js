@@ -310,6 +310,29 @@ function _slackMessage(message, id) {
   }
 }
 
+async function _checkUser(userId) {
+  try {
+    // Clean the userId if wrapped in <@...>
+    userId = userId.replace(/[<@>]/g, "");
+
+    // Fetch user info from Slack API
+    const result = await web.users.info({ user: userId });
+    if (result.ok && result.user) {
+      return result.user.name;
+    } else {
+      logger.error('User not found: ' + userId);
+      return null;
+    }
+  } catch (error) {
+    if (error.data && error.data.error === 'user_not_found') {
+      logger.error('User not found: ' + userId);
+    } else {
+      logger.error('Error fetching user info: ' + error);
+    }
+    return null;
+  }
+}
+
 function _getVolume(channel) {
   sonos.getVolume().then(vol => {
     logger.info('The volume is: ' + vol)
@@ -1093,19 +1116,35 @@ function _currentTrackTitle(channel, cb) {
   })
 }
 
-function _add(input, channel, userName) {
-  var [data, message] = spotify.searchSpotify(input, channel, userName, 1)
-  if (message) {
-    _slackMessage(message, channel)
-  }
-  if (!data) {
-    return
+async function _add(input, channel, userId) {
+  // Convert userId to userName
+  const userName = await _checkUser(userId);
+  if (!userName) {
+    logger.error('Failed to fetch username for user ID: ' + userId);
+    return;
   }
 
-  var uri = data.tracks.items[0].uri
-  var albumImg = data.tracks.items[0].album.images[2].url
-  var trackName = data.tracks.items[0].artists[0].name + ' - ' + data.tracks.items[0].name
-  var titleName = data.tracks.items[0].name
+  // Check if the user is on the blacklist
+  logger.info('Checking the following user: ' + userName);
+  console.log('Blacklisted users:', blacklist);
+  if (blacklist.includes(userName)) {
+    logger.info('User is on the blacklist: ' + userName);
+    _slackMessage("Well... this is awkward.. U're *blacklisted*! ", channel);
+    return;
+  }
+
+  var [data, message] = spotify.searchSpotify(input, channel, userName, 1);
+  if (message) {
+    _slackMessage(message, channel);
+  }
+  if (!data) {
+    return;
+  }
+
+  var uri = data.tracks.items[0].uri;
+  var albumImg = data.tracks.items[0].album.images[2].url;
+  var trackName = data.tracks.items[0].artists[0].name + ' - ' + data.tracks.items[0].name;
+  var titleName = data.tracks.items[0].name;
 
   sonos.getCurrentState().then(state => {
     logger.info('Got current state: ' + state);
@@ -1131,8 +1170,8 @@ function _add(input, channel, userName) {
           }
         }
         if (trackFound) {
-          console.log("Track already in the queue, skipping...");
-          _slackMessage("Track already in the queue.. I will let it go for this time" + userName + "....", channel);
+          console.log("Track " + titleName + " is already in the queue, skipping...");
+          _slackMessage("Track already in the queue.. I will let it go for this time " + userName + "....", channel);
         } else {
           logger.info('State: ' + state + ' - playing...');
           // Add the track to playlist...
@@ -1144,7 +1183,6 @@ function _add(input, channel, userName) {
     } else if (state === 'paused') {
       // Handle paused state if needed
       _slackMessage("SlackONOS is currently paused..  ask an admin to resume the playlist...", channel);
-
     }
   }).catch(err => {
     logger.error('Error getting current state: ' + err);
@@ -1558,44 +1596,49 @@ function _debug(channel) {
   })
 }
 
-// This function does not currectly work due to migration away from dataStore
-function _blacklist(input, channel) {
+async function _blacklist(input, channel) {
   if (channel !== adminChannel) {
-    return
+    return;
   }
 
-  var action = ((input[1]) ? input[1] : '')
-  var slackUser = ((input[2]) ? input[2] : '')
+  var action = input[1] ? input[1] : '';
+  var slackUser = input[2] ? input[2] : '';
 
-  if (input[2] !== '' && typeof slackUser !== 'undefined') {
-    var username = slackUser
-  } else if (input[2] !== '') {
-    var message = 'The user ' + (input[2]) + ' is not a valid Slack user.'
+  let message = '';
+
+  if (slackUser !== '') {
+    var username = await _checkUser(slackUser);
+    if (!username) {
+      message = 'The user ' + slackUser + ' is not a valid Slack user.';
+      _slackMessage(message, channel);
+      return;
+    }
   }
 
   if (action === '') {
-    message = 'The following users are blacklisted:\n```\n' + blacklist.join('\n') + '\n```'
+    message = 'The following users are blacklisted:\n```\n' + blacklist.join('\n') + '\n```';
   } else if (typeof username !== 'undefined') {
     if (action === 'add') {
-      var i = blacklist.indexOf(username)
+      var i = blacklist.indexOf(username);
       if (i === -1) {
-        blacklist.push(username)
-        message = 'The user ' + username + ' has been added to the blacklist.'
+        blacklist.push(username);
+        message = 'The user ' + username + ' has been added to the blacklist.';
       } else {
-        message = 'The user ' + username + ' is already on the blacklist.'
+        message = 'The user ' + username + ' is already on the blacklist.';
       }
     } else if (action === 'del') {
+      var i = blacklist.indexOf(username);
       if (i !== -1) {
-        blacklist.splice(i, 1)
-        message = 'The user ' + username + ' has been removed from the blacklist.'
+        blacklist.splice(i, 1);
+        message = 'The user ' + username + ' has been removed from the blacklist.';
       } else {
-        message = 'The user ' + username + ' is not on the blacklist.'
+        message = 'The user ' + username + ' is not on the blacklist.';
       }
     } else {
-      message = 'Usage: `blacklist add|del @username`'
+      message = 'Usage: `blacklist add|del @username`';
     }
   }
-  _slackMessage(message, channel)
+  _slackMessage(message, channel);
 }
 
 function _purgeHalfQueue(input, channel) {
