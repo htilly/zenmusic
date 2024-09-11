@@ -7,3 +7,4 @@ blacklist.txt
 config/config.json
 docker-compose.yml
 Dockerfile-local
+build.txt
