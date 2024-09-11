@@ -31,7 +31,7 @@ config.argv()
     logLevel: 'info'
   })
 
-const adminChannel = config.get('adminChannel')
+// const adminChannel = config.get('adminChannel');
 const gongLimit = config.get('gongLimit')
 const voteImmuneLimit = config.get('voteImmuneLimit')
 const voteLimit = config.get('voteLimit')
@@ -153,6 +153,35 @@ rtm.on('message', (event) => {
 rtm.on('error', (error) => {
   logger.error(`Error: ${error}`);
 });
+
+
+(async () => {
+  try {
+    // Fetch both public and private channels
+    const response = await web.conversations.list({
+      types: 'public_channel,private_channel'
+    });
+    const channels = response.channels;
+
+    // Get the admin channel name from config (ensure no '#' prefix)
+    const adminChannelName = config.get('adminChannel').replace('#', '');
+
+    // Find the admin channel by name
+    const adminChannelInfo = channels.find(channel => channel.name === adminChannelName);
+    if (!adminChannelInfo) {
+      throw new Error(`Admin channel "${adminChannelName}" not found`);
+    }
+
+    // Get the ID of the Admin channel
+    global.adminChannel = adminChannelInfo.id;
+    logger.info('Admin channelID: ' + adminChannel);
+
+    // Rest of your code that uses adminChannel
+
+  } catch (error) {
+    logger.error(`Error fetching channels: ${error}`);
+  }
+})();
 
 
 
@@ -337,6 +366,9 @@ async function _checkUser(userId) {
   }
 }
 
+
+
+
 function _getVolume(channel) {
   sonos.getVolume().then(vol => {
     logger.info('The volume is: ' + vol)
@@ -347,7 +379,6 @@ function _getVolume(channel) {
 }
 
 function _setVolume(input, channel, userName) {
-  const adminChannel = config.get('adminChannel'); // Add this line
   if (channel !== adminChannel) {
     return
   }
