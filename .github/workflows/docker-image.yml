@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - master  # Trigger on pushes to the master branch
+    paths-ignore:
+      - 'build.txt'  # Exclude build.txt from triggering the workflow
 
 jobs:
   build:
@@ -29,3 +31,25 @@ jobs:
 
     - name: Verify the platforms
       run: docker buildx inspect --bootstrap
+
+    - name: Increment build number in build.txt
+      run: |
+        # Read the current build number
+        BUILD_NUMBER=$(cat build.txt)
+        # Increment the build number by 1
+        BUILD_NUMBER=$((BUILD_NUMBER + 1))
+        # Write the new build number back to build.txt
+        echo $BUILD_NUMBER > build.txt
+
+    - name: Commit and push updated build.txt
+      run: |
+        # Configure git
+        git config --local user.name "github-actions[bot]"
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+
+        # Add build.txt
+        git add build.txt
+        git commit -m "Increment build number to $BUILD_NUMBER"
+
+        # Push changes
+        git push
