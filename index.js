@@ -155,28 +155,59 @@ rtm.on('error', (error) => {
 });
 
 
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+
 (async () => {
   try {
-    // Fetch both public and private channels
-    const response = await web.conversations.list({
-      types: 'public_channel,private_channel'
-    });
-    const channels = response.channels;
+    let allChannels = [];
+    let nextCursor;
 
-    // Get the admin channel name from config (ensure no '#' prefix)
+    // Loop through paginated responses to get all private channels
+    do {
+      try {
+        const response = await web.conversations.list({
+          types: 'private_channel',  // Only search for private channels
+          cursor: nextCursor
+        });
+        
+        // Add the fetched channels to the list
+        allChannels = allChannels.concat(response.channels);
+        nextCursor = response.response_metadata ? response.response_metadata.next_cursor : null;
+
+      } catch (error) {
+        // If rate limit error occurs, respect the retry_after value and wait
+        if (error.data && error.data.retry_after) {
+          const retryAfter = error.data.retry_after;
+          console.warn(`Rate limit hit. Retrying after ${retryAfter} seconds...`);
+          await delay(retryAfter * 1000); // Wait for the time specified in retry_after (in seconds)
+        } else {
+          // Throw other errors if not related to rate limiting
+          throw error;
+        }
+      }
+    } while (nextCursor);
+
+    // Log all fetched private channel names
+    logger.info('Fetched private channels: ' + allChannels.map(channel => channel.name).join(', '));
+
+    // Get admin channel name from config
     const adminChannelName = config.get('adminChannel').replace('#', '');
+    logger.info('Admin channel (in configfile): ' + adminChannelName);
 
     // Find the admin channel by name
-    const adminChannelInfo = channels.find(channel => channel.name === adminChannelName);
+    const adminChannelInfo = allChannels.find(channel => channel.name === adminChannelName);
     if (!adminChannelInfo) {
       throw new Error(`Admin channel "${adminChannelName}" not found`);
     }
 
-    // Get the ID of the Admin channel
+    // Get the ID of the Admin channel and store it in global scope
     global.adminChannel = adminChannelInfo.id;
-    logger.info('Admin channelID: ' + adminChannel);
+    logger.info('Admin channelID: ' + global.adminChannel);
 
-    // Rest of your code that uses adminChannel
+    // Rest of your code that uses global.adminChannel
 
   } catch (error) {
     logger.error(`Error fetching channels: ${error}`);
@@ -275,7 +306,7 @@ function processInput(text, channel, userName) {
         break
   }
 
-  if (!matched && channel === adminChannel) {
+  if (!matched && channel === global.adminChannel) {
     switch (term) {
       case 'debug':
         _debug(channel)
@@ -379,7 +410,7 @@ function _getVolume(channel) {
 }
 
 function _setVolume(input, channel, userName) {
-  if (channel !== adminChannel) {
+  if (channel !== global.adminChannel) {
     return
   }
 
@@ -847,7 +878,7 @@ function _gongcheck(channel, userName) {
 }
 
 function _previous(input, channel) {
-  if (channel !== adminChannel) {
+  if (channel !== global.adminChannel) {
     return
   }
   sonos.previous(function (err, previous) {
@@ -878,7 +909,7 @@ function _help(input, channel) {
     '`volume` : view current volume\n' +
     '`list` : list current queue\n'
 
-  if (channel === adminChannel) {
+  if (channel === global.adminChannel) {
     message += '------ ADMIN FUNCTIONS ------\n' +
       '`debug` : show debug info for Spotify, Node and Sonos\n' +
       '`flush` : flush the current queue\n' +
@@ -901,7 +932,7 @@ function _help(input, channel) {
 }
 
 function _play(input, channel, state) {
-  if (channel !== adminChannel) {
+  if (channel !== global.adminChannel) {
     return
   }
   sonos.selectQueue()
@@ -923,7 +954,7 @@ function _playInt(input, channel) {
 }
 
 function _stop(input, channel, state) {
-  if (channel !== adminChannel) {
+  if (channel !== global.adminChannel) {
     return
   }
   sonos.stop().then(result => {
@@ -935,7 +966,7 @@ function _stop(input, channel, state) {
 }
 
 function _pause(input, channel, state) {
-  if (channel !== adminChannel) {
+  if (channel !== global.adminChannel) {
     return
   }
   sonos.pause().then(result => {
@@ -947,7 +978,7 @@ function _pause(input, channel, state) {
 }
 
 function _resume(input, channel, state) {
-  if (channel !== adminChannel) {
+  if (channel !== global.adminChannel) {
     return
   }
   sonos.play().then(result => {
@@ -959,7 +990,7 @@ function _resume(input, channel, state) {
 }
 
 function _flush(input, channel) {
-  if (channel !== adminChannel) {
+  if (channel !== global.adminChannel) {
     _slackMessage('Where you supposed to type _flushvote_?', channel)
     return
   }
@@ -980,7 +1011,7 @@ function _flushInt(input, channel) {
 }
 
 function _shuffle(input, channel, byPassChannelValidation) {
-  if (channel !== adminChannel && !byPassChannelValidation) {
+  if (channel !== global.adminChannel && !byPassChannelValidation) {
     return
   }
   sonos.setPlayMode('SHUFFLE').then(success => {
@@ -992,7 +1023,7 @@ function _shuffle(input, channel, byPassChannelValidation) {
 }
 
 function _normal(input, channel, byPassChannelValidation) {
-  if (channel !== adminChannel && !byPassChannelValidation) {
+  if (channel !== global.adminChannel && !byPassChannelValidation) {
     return
   }
   sonos.setPlayMode('NORMAL').then(success => {
@@ -1003,9 +1034,6 @@ function _normal(input, channel, byPassChannelValidation) {
   })
 }
 
-function delay(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
 
 async function _gongplay() {
   try {
@@ -1063,7 +1091,7 @@ async function _gongplay() {
 }
 
 function _removeTrack(input, channel, byPassChannelValidation) {
-  if (channel !== adminChannel && !byPassChannelValidation) {
+  if (channel !== global.adminChannel && !byPassChannelValidation) {
     return
   }
   var trackNb = parseInt(input[1]) + 1
@@ -1077,7 +1105,7 @@ function _removeTrack(input, channel, byPassChannelValidation) {
 }
 
 function _nextTrack(channel, byPassChannelValidation) {
-  if (channel !== adminChannel && !byPassChannelValidation) {
+  if (channel !== global.adminChannel && !byPassChannelValidation) {
     return
   }
   sonos.next().then(success => {
@@ -1255,7 +1283,7 @@ function _addalbum(input, channel, userName) {
       _addToSpotify(userName, uri, albumImg, trackName, channel)
     } else if (state === 'paused') {
       _addToSpotify(userName, uri, albumImg, trackName, channel, function () {
-        if (channel === adminChannel) {
+        if (channel === global.adminChannel) {
           _slackMessage('Sonos is currently PAUSED. Type `resume` to start playing...', channel)
         }
       })
@@ -1301,7 +1329,7 @@ function _append(input, channel, userName) {
     } else if (state === 'paused') {
       logger.info('State: ' + state + ' - telling them no...')
       _addToSpotify(userName, uri, albumImg, trackName, channel, function () {
-        if (channel === adminChannel) {
+        if (channel === global.adminChannel) {
           _slackMessage('Sonos is currently PAUSED. Type `resume` to start playing...', channel)
         }
       })
@@ -1501,7 +1529,7 @@ function _addplaylist(input, channel, userName) {
       _addToSpotifyPlaylist(userName, uri, trackName, channel)
     } else if (state === 'paused') {
       _addToSpotifyPlaylist(userName, uri, trackName, channel, function () {
-        if (channel === adminChannel) {
+        if (channel === global.adminChannel) {
           _slackMessage('Sonos is currently PAUSED. Type `resume` to start playing...', channel)
         }
       })
@@ -1548,7 +1576,7 @@ function _bestof(input, channel, userName) {
       _addToSpotifyArtist(userName, trackName, spid, channel)
     } else if (state === 'paused') {
       _addToSpotifyArtist(userName, trackName, spid, channel, function () {
-        if (channel === adminChannel) {
+        if (channel === global.adminChannel) {
           _slackMessage('Sonos is currently PAUSED. Type `resume` to start playing...', channel)
         }
       })
@@ -1633,7 +1661,7 @@ function _debug(channel) {
 }
 
 async function _blacklist(input, channel) {
-  if (channel !== adminChannel) {
+  if (channel !== global.adminChannel) {
     return;
   }
 
