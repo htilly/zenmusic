@@ -201,8 +201,8 @@ function delay(ms) {
     // Find the admin channel by name
     const adminChannelInfo = allChannels.find(channel => channel.name === adminChannelName);
     if (!adminChannelInfo) {
-      throw new Error(`Admin channel "${adminChannelName}" not found`);
       logger.info('Admin channel not found. Make sure the channel is named properly in config.json and that the channel is private. It need to be the channel name, not the SlackID.');
+      throw new Error(`Admin channel "${adminChannelName}" not found`);
     }
 
     // Get the ID of the Admin channel and store it in global scope
