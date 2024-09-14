@@ -12,7 +12,7 @@
 
 
 
-(&#x1F534;) *** config.json MUST be moved to config folder. Also, admin channel in config.json must now be slack channel ID, not the "name" *** (&#x1F534;)
+(&#x1F534;) *** config.json MUST be moved to config folder.*** (&#x1F534;)
 
 **What is it?**
 
@@ -34,14 +34,13 @@ DOCKER COMPOSE
 (you must point to the config.json, example can be found [here](https://github.com/htilly/zenmusic/blob/master/config/config.json.example))
 
 ```
-version: '3.4'
 services:
 slackonos:
   container_name: slackonos
   image: htilly/slackonos:latest
   restart: unless-stopped
   volumes:
-    - /PATH_TO_CONFIG_FILE/config.json:/app/config/config.json
+    - /PATH_TO_CONFIG_FILE_FOLDER:/app/config
 ```
 
 
