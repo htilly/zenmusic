@@ -170,6 +170,7 @@ function delay(ms) {
       try {
         const response = await web.conversations.list({
           types: 'private_channel',  // Only search for private channels
+          exclude_archived: true,    // Exclude archived channels
           cursor: nextCursor
         });
         
@@ -201,6 +202,7 @@ function delay(ms) {
     const adminChannelInfo = allChannels.find(channel => channel.name === adminChannelName);
     if (!adminChannelInfo) {
       throw new Error(`Admin channel "${adminChannelName}" not found`);
+      logger.info('Admin channel not found. Make sure the channel is named properly in config.json and that the channel is private. It need to be the channel name, not the SlackID.');
     }
 
     // Get the ID of the Admin channel and store it in global scope
@@ -910,7 +912,7 @@ function _help(input, channel) {
     '`list` : list current queue\n'
 
   if (channel === global.adminChannel) {
-    message += '------ ADMIN FUNCTIONS ------\n' +
+    message += '*------ ADMIN FUNCTIONS ------*\n' +
       '`debug` : show debug info for Spotify, Node and Sonos\n' +
       '`flush` : flush the current queue\n' +
       '`remove` *number* : removes the track in the queue\n' +
