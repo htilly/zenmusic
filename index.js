@@ -1,4 +1,8 @@
 const fs = require('fs');
+const os = require('os');
+const mp3Duration = require('mp3-duration');
+const path = require('path');
+const GTTS = require('gtts'); // Import the gtts library
 const config = require('nconf')
 const winston = require('winston')
 const Spotify = require('./spotify')
@@ -8,7 +12,9 @@ const parseString = require('xml2js').parseString
 const http = require('http')
 const gongMessage = fs.readFileSync('gong.txt', 'utf8').split('\n').filter(Boolean);
 const voteMessage = fs.readFileSync('vote.txt', 'utf8').split('\n').filter(Boolean);
+const ttsMessage = fs.readFileSync('tts.txt', 'utf8').split('\n').filter(Boolean);
 const buildNumber = Number(fs.readFileSync('build.txt', 'utf8').split('\n').filter(Boolean)[0]);
+const { execSync } = require('child_process');
 const gongBannedTracks = {};
 
 
@@ -28,6 +34,7 @@ config.argv()
     market: 'US',
     blacklist: [],
     searchLimit: 7,
+    webPort: 8181,
     logLevel: 'info'
   })
 
@@ -45,6 +52,11 @@ const clientSecret = config.get('spotifyClientSecret')
 const searchLimit = config.get('searchLimit')
 const logLevel = config.get('logLevel')
 const sonosIp = config.get('sonos')
+const webPort = config.get('webPort')
+let ipAddress = config.get('ipAddress')
+
+
+
 
 let blacklist = config.get('blacklist')
 if (!Array.isArray(blacklist)) {
@@ -160,39 +172,25 @@ function delay(ms) {
 }
 
 
-(async () => {
+async function _lookupChannelID() {
   try {
     let allChannels = [];
     let nextCursor;
 
-    // Loop through paginated responses to get all private channels
+    // Loop through paginated responses to get all channels (both public and private)
     do {
-      try {
-        const response = await web.conversations.list({
-          types: 'private_channel',  // Only search for private channels
-          exclude_archived: true,    // Exclude archived channels
-          cursor: nextCursor
-        });
-        
-        // Add the fetched channels to the list
-        allChannels = allChannels.concat(response.channels);
-        nextCursor = response.response_metadata ? response.response_metadata.next_cursor : null;
+      const response = await web.conversations.list({
+        limit: 1000,
+        cursor: nextCursor,
+        types: 'public_channel,private_channel'
+      });
 
-      } catch (error) {
-        // If rate limit error occurs, respect the retry_after value and wait
-        if (error.data && error.data.retry_after) {
-          const retryAfter = error.data.retry_after;
-          console.warn(`Rate limit hit. Retrying after ${retryAfter} seconds...`);
-          await delay(retryAfter * 1000); // Wait for the time specified in retry_after (in seconds)
-        } else {
-          // Throw other errors if not related to rate limiting
-          throw error;
-        }
-      }
+      allChannels = allChannels.concat(response.channels);
+      nextCursor = response.response_metadata.next_cursor;
     } while (nextCursor);
 
-    // Log all fetched private channel names
-    logger.info('Fetched private channels: ' + allChannels.map(channel => channel.name).join(', '));
+    // Log all fetched channel names
+    logger.info('Fetched channels: ' + allChannels.map(channel => channel.name).join(', '));
 
     // Get admin channel name from config
     const adminChannelName = config.get('adminChannel').replace('#', '');
@@ -201,7 +199,7 @@ function delay(ms) {
     // Find the admin channel by name
     const adminChannelInfo = allChannels.find(channel => channel.name === adminChannelName);
     if (!adminChannelInfo) {
-      logger.info('Admin channel not found. Make sure the channel is named properly in config.json and that the channel is private. It need to be the channel name, not the SlackID.');
+      logger.info('Admin channel not found. Make sure the channel is named properly in config.json and that the channel is private. It needs to be the channel name, not the SlackID.');
       throw new Error(`Admin channel "${adminChannelName}" not found`);
     }
 
@@ -209,12 +207,28 @@ function delay(ms) {
     global.adminChannel = adminChannelInfo.id;
     logger.info('Admin channelID: ' + global.adminChannel);
 
-    // Rest of your code that uses global.adminChannel
+    // Get standard channel name from config
+    const standardChannelName = config.get('standardChannel').replace('#', '');
+    logger.info('Standard channel (in configfile): ' + standardChannelName);
+
+    // Find the standard channel by name
+    const standardChannelInfo = allChannels.find(channel => channel.name === standardChannelName);
+    if (!standardChannelInfo) {
+      logger.info('Standard channel not found. Make sure the channel is named properly in config.json. It needs to be the channel name, not the SlackID.');
+      throw new Error(`Standard channel "${standardChannelName}" not found`);
+    }
+
+    // Get the ID of the Standard channel and store it in global scope
+    global.standardChannel = standardChannelInfo.id;
+    logger.info('Standard channelID: ' + global.standardChannel);
 
   } catch (error) {
     logger.error(`Error fetching channels: ${error}`);
   }
-})();
+}
+
+// Call the function to lookup channel IDs
+_lookupChannelID();
 
 
 
@@ -359,6 +373,10 @@ function processInput(text, channel, userName) {
         break
         case 'listimmune': 
         _listImmune(channel)
+        break
+      case 'tts':
+      case 'say':
+        _tts(input, channel)
         break
       default:
     }
@@ -919,6 +937,7 @@ function _help(input, channel) {
       '`setvolume` *number* : sets volume\n' +
       '`play` : play track\n' +
       '`stop` : stop life\n' +
+      '`say` *text* : text to speech\n' +
       '`pause` : pause life\n' +
       '`resume` : resume after pause\n' +
       '`next` : play next track\n' +
@@ -1603,33 +1622,122 @@ function _status(channel, state) {
   })
 }
 
-function _debug(channel) {
-  var url = 'http://' + sonosIp + ':1400/xml/device_description.xml'
 
+function _debug(channel) {
+  var url = 'http://' + sonosIp + ':1400/xml/device_description.xml';
+
+  // Function to get the IP address of the machine (Docker container if inside Docker)
+  function getIPAddress() {
+    const interfaces = os.networkInterfaces();
+    for (const name of Object.keys(interfaces)) {
+      for (const iface of interfaces[name]) {
+        if (iface.family === 'IPv4' && !iface.internal) {
+          return iface.address;
+        }
+      }
+    }
+    return 'IP address not found';
+  }
+
+  // Improved function to check if running inside Docker
+  function isRunningInDocker() {
+    try {
+      // Check if running in Docker by inspecting /proc/1/cgroup and the presence of .dockerenv
+      const cgroup = fs.readFileSync('/proc/1/cgroup', 'utf8');
+      if (cgroup.includes('docker')) {
+        return true;
+      }
+    } catch (err) {
+      // Ignore errors, continue to next check
+    }
+
+    try {
+      // Check if .dockerenv file exists (another indication of being inside Docker)
+      if (fs.existsSync('/.dockerenv')) {
+        return true;
+      }
+    } catch (err) {
+      // Ignore errors
+    }
+
+    return false; // Default to not inside Docker if all checks fail
+  }
+
+  // Function to get the host's IP address if running inside Docker
+  function getHostIPAddress() {
+    try {
+      const result = fs.readFileSync('/proc/net/route', 'utf8');
+      const lines = result.split('\n');
+      
+      for (const line of lines) {
+        const columns = line.trim().split(/\s+/);
+        
+        // Look for the default route (Destination is 00000000)
+        if (columns[1] === '00000000') {
+          const hexIp = columns[2];  // Gateway IP is in the third column
+          const gatewayIp = hexToIp(hexIp);
+          return gatewayIp;
+        }
+      }
+      
+      return 'Host IP address not found';
+    } catch (err) {
+      return 'Host IP address not found';
+    }
+  }
   
+  // Helper function to convert hex IP from /proc/net/route to a readable IP address
+  function hexToIp(hex) {
+    return [
+      parseInt(hex.slice(6, 8), 16),
+      parseInt(hex.slice(4, 6), 16),
+      parseInt(hex.slice(2, 4), 16),
+      parseInt(hex.slice(0, 2), 16)
+    ].join('.');
+  }
+
+  const isDocker = isRunningInDocker();  // Improved check for Docker environment
+
+
+  if (isDocker) {
+    // Check if IP is defined in the environment
+    // Get the IP address from the configuration
+    console.log('IP Address from config:', ipAddress);
+    if (!ipAddress) {
+      // Log error and set a default value for IP
+      const warningMessage = 'Make sure you have configured IP in the config.json';
+      logger.error(warningMessage);
+      ipAddress = warningMessage; // Set the value of IP to the warning message
+    }
+  } else {
+    ipAddress = getIPAddress();  // IP of the machine if not in Docker
+  }
+
+  const dockerIPAddress = isDocker ? getHostIPAddress() : null;  // Host IP if running inside Docker
+
   xmlToJson(url, function (err, data) {
     if (err) {
-      logger.error('Error occurred ' + err)
+      logger.error('Error occurred ' + err);
     }
-    logger.info('BuildNumber of SlackONOS: ', buildNumber)
-    logger.info('Platform: ', process.platform)
-    logger.info('Node version: ', process.version)
-    logger.info('Node dependencies: ', process.versions)
-    const nodeVersion = JSON.stringify(process.versions)
+    logger.info('BuildNumber of SlackONOS: ', buildNumber);
+    logger.info('Platform: ', process.platform);
+    logger.info('Node version: ', process.version);
+    logger.info('Node dependencies: ', process.versions);
+    const nodeVersion = JSON.stringify(process.versions);
 
-    //    logger.info(data.root.device)
-    logger.info(data.root.device[0].modelDescription)
-    logger.info(data.root.device[0].softwareVersion)
-    logger.info(data.root.device[0].displayName)
-    logger.info(data.root.device[0].hardwareVersion)
-    logger.info(data.root.device[0].apiVersion)
-    logger.info(data.root.device[0].roomName)
-    logger.info(data.root.device[0].friendlyName)
-    logger.info(data.root.device[0].modelNumber)
-    logger.info(data.root.device[0].serialNum)
-    logger.info(data.root.device[0].MACAddress)
+    // Log Sonos information
+    logger.info(data.root.device[0].modelDescription);
+    logger.info(data.root.device[0].softwareVersion);
+    logger.info(data.root.device[0].displayName);
+    logger.info(data.root.device[0].hardwareVersion);
+    logger.info(data.root.device[0].apiVersion);
+    logger.info(data.root.device[0].roomName);
+    logger.info(data.root.device[0].friendlyName);
+    logger.info(data.root.device[0].modelNumber);
+    logger.info(data.root.device[0].serialNum);
+    logger.info(data.root.device[0].MACAddress);
 
-    _slackMessage(
+    let message = 
       '\n------------------------------' +
       '\n*SlackONOS Info*' +
       '\n' +
@@ -1637,7 +1745,6 @@ function _debug(channel) {
       '\n------------------------------' +
       '\n*Spotify Info*' +
       '\n' +
-      // '\nSpotify Status: ' + slackStatus +
       '\nMarket:  ' + market +
       '\n------------------------------' +
       '\n*Node Info*' +
@@ -1645,6 +1752,9 @@ function _debug(channel) {
       '\nPlatform:  ' + process.platform +
       '\nNode version:  ' + process.version +
       '\nNode dependencies:  ' + nodeVersion +
+      '\nIP:  ' + ipAddress +
+      '\nRunning inside Docker:  ' + (isDocker ? 'Yes' : 'No') +
+      (dockerIPAddress ? '\nHost IP (Docker):  ' + dockerIPAddress : '') +
       '\n------------------------------' +
       '\n*Sonos Info*' +
       '\n' +
@@ -1658,9 +1768,13 @@ function _debug(channel) {
       '\nSW Version:  ' + (data.root.device[0].softwareVersion) +
       '\nHW Version:  ' + (data.root.device[0].hardwareVersion) +
       '\nAPI Version:  ' + (data.root.device[0].apiVersion) +
-      '\n------------------------------', channel)
-  })
+      '\n------------------------------';
+
+    _slackMessage(message, channel);
+  });
 }
+
+
 
 async function _blacklist(input, channel) {
   if (channel !== global.adminChannel) {
@@ -1706,6 +1820,173 @@ async function _blacklist(input, channel) {
   }
   _slackMessage(message, channel);
 }
+
+
+let serverInstance = null;
+
+async function _tts(input, channel) {
+  
+  // Get random message
+  logger.info('ttsMessage.length: ' + ttsMessage.length)
+  var ran = Math.floor(Math.random() * ttsMessage.length)
+  var ttsSayMessage = ttsMessage[ran]
+  logger.info('ttsMessage: ' + ttsSayMessage)
+  message = input.slice(1).join(' ')
+
+  const text = ttsSayMessage + "... Message as follows... " + message + ".... I repeat...  " + message; // Remove the leading "say"
+  const filePath = path.join(__dirname, 'tts.mp3');
+ _slackMessage(':mega:' + ' ' + ttsSayMessage + ':  ' + '*' + message + '*', standardChannel);
+ _slackMessage( 'I will post the message in the music channel: ' + standardChannel + ', for you', channel);
+  logger.info('Generating TTS for text: ' + text);
+
+  try {
+    const positionInfo = await sonos.avTransportService().GetPositionInfo();
+    logger.info('Current Position: ' + JSON.stringify(positionInfo.Track));
+
+    // Ensure previous TTS file is deleted
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath); // Synchronous cleanup of previous file before creating a new one
+      logger.info('Old TTS file deleted before generating a new one.');
+    }
+
+    // Stop any curre nt playback before generating new TTS
+    try {
+      await sonos.stop();  // Stop any current playback before starting a new one
+      logger.info('Previous track stopped.');
+    } catch (error) {
+      logger.warn('No track was playing or error stopping the track: ' + error.message);
+    }
+
+
+    
+    // Generate the TTS file using gtts
+    await new Promise((resolve, reject) => {
+      const gtts = new GTTS(text, 'en'); // 'en' stands for English language
+      gtts.save(filePath, (err) => {
+        if (err) {
+          reject('TTS generation error: ' + err.message);
+        } else {
+          logger.info('TTS file generated successfully');
+          resolve();
+        }
+      });
+    });
+
+    // If the server is running, close and reset it
+    if (serverInstance) {
+      serverInstance.close(() => {
+        logger.info('Previous server instance closed.');
+      });
+      serverInstance = null; // Reset the instance
+    }
+
+    // Create the server to serve the TTS file
+    serverInstance = http.createServer((req, res) => {
+      if (req.url === '/tts.mp3') {
+        fs.readFile(filePath, (err, data) => {
+          if (err) {
+            res.writeHead(500);
+            res.end('Internal Server Error');
+          } else {
+            res.writeHead(200, {
+              'Content-Type': 'audio/mpeg',
+              'Content-Disposition': 'attachment; filename="tts.mp3"',
+            });
+            res.end(data);
+          }
+        });
+      } else {
+        res.writeHead(404);
+        res.end('Not Found');
+      }
+    });
+
+    serverInstance.listen(webPort, () => {
+      logger.info('Server is listening on port ' + webPort);
+    });
+
+    serverInstance.on('error', (err) => {
+      if (err.code === 'EADDRINUSE') {
+        logger.warn('Port ' + webPort + ' is already in use. Reusing the existing server.');
+      } else {
+        logger.error('Server error: ' + err);
+      }
+    });
+
+    process.on('SIGTERM', () => {
+      if (serverInstance) {
+        serverInstance.close(() => {
+          logger.info('Server closed gracefully.');
+          process.exit(0);
+        });
+      }
+    });
+
+    // Wait for the server to be ready before playing
+    await delay(2000); // Increased delay
+
+    // Play the TTS file
+    await sonos.play('http://' + ipAddress + ':' + webPort + '/tts.mp3')
+      .then(() => {
+        logger.info('Playing notification...');
+      })
+      .catch((error) => {
+        logger.error('Error occurred during playback: ' + JSON.stringify(error));
+      });
+
+    // Determine the duration of the MP3 file
+    const mp3Length = await new Promise((resolve, reject) => {
+      mp3Duration(filePath, (err, duration) => {
+        if (err) {
+          reject('Error fetching MP3 duration: ' + err.message);
+        } else {
+          logger.info('MP3 duration: ' + duration + ' seconds');
+          resolve(duration);
+        }
+      });
+    });
+
+    // Delay based on the actual MP3 length
+    await delay(mp3Length * 1000); // Convert seconds to milliseconds
+
+    const nextToPlay = positionInfo.Track + 1;
+    logger.info('Next to play: ' + nextToPlay);
+
+    try {
+      await sonos.selectTrack(nextToPlay);
+      logger.info('Track selected successfully.');
+    } catch (error) {
+      logger.info('Jumping to next track failed: ' + error);
+    }
+
+    await sonos.play();
+
+  } finally {
+    // Cleanup queue and remove the track
+    await sonos.getQueue().then((result) => {
+      const removeGong = result.total;
+      sonos.removeTracksFromQueue([removeGong], 1)
+        .then(() => {
+          logger.info('Removed track with index: ' + removeGong);
+        })
+        .catch((err) => {
+          logger.error('Error occurred while removing track: ' + err);
+        });
+    });
+
+    // Remove the TTS file
+    fs.unlink(filePath, (err) => {
+      if (err) {
+        logger.error('Error deleting the TTS file: ' + err.message);
+      } else {
+        logger.info('TTS file deleted successfully');
+      }
+    });
+  }
+}
+
+
+
 
 function _purgeHalfQueue(input, channel) {
   sonos.getQueue().then(result => {

@@ -9,8 +9,7 @@ In order to get the bot up and running you need to do the following.
 3: A working Sonos player configured with Spotify
 4: You need to know the IP of your Sonos player.
 
-Note: There is also options to install in docker or Heroku. 
-
+Note: In order to get Text-to-speach working you need to know the IP of the host running SlackONOS as well as having a TCP port (in setting) open for traffic from the Sonos to the device.
 
 #Slack
 
