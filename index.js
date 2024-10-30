@@ -907,48 +907,14 @@ function _previous(input, channel) {
 }
 
 function _help(input, channel) {
-  var message = 'Current commands!\n' +
-    ' ===  ===  ===  ===  ===  ===  === \n' +
-    '`add` *text* : add song to the queue and start playing if idle. Will start with a fresh queue.\n' +
-    '`addalbum` *text* : add an album to the queue and start playing if idle. Will start with a fresh queue.\n' +
-    '`bestof` : *text* : add topp 10 tracks by the artist\n' +
-    '`status` : show current status of Sonos\n' +
-    '`current` : list current track\n' +
-    '`search` *text* : search for a track, does NOT add it to the queue\n' +
-    '`searchalbum` *text* : search for an album, does NOT add it to the queue\n' +
-    '`searchplaylist` *text* : search for a playlist, does NOT add it to the queue\n' +
-    '`addplaylist` *text* : add a playlist to the queue and start playing if idle. Will start with a fresh queue.\n' +
-    '`append` *text* : append a song to the previous playlist and start playing the same list again.\n' +
-    '`vote` *number* : vote for a track to be played next!!! :rocket: \n' +
-    '`votecheck` : how many votes there are currently, as well as who has voted.\n' +
-    '`gong` : current track is bad! *' + gongLimit + '* gongs will skip the track\n' +
-    '`gongcheck` : how many gong votes there are currently, as well as who has gonged.\n' +
-    '`voteimmune` *number* : vote to make the current track immune to gong. *' + voteImmuneLimit + '* votes will make it immune\n' +
-    '`flushvote` : vote to flush the queue. *' + flushVoteLimit + '* votes will flush the queue :toilet: \n' +
-    '`upnext` : show the next track to be played\n' +
-    '`volume` : view current volume\n' +
-    '`list` : list current queue\n'
+  const helpTextPath = path.join(__dirname, 'helpText.txt');
+  const helpTextPathAdmin = path.join(__dirname, 'helpTextAdmin.txt');
+  const adminMessage = fs.readFileSync(helpTextPathAdmin, 'utf8');
+  let message = fs.readFileSync(helpTextPath, 'utf8');
 
   if (channel === global.adminChannel) {
-    message += '*------ ADMIN FUNCTIONS ------*\n' +
-      '`debug` : show debug info for Spotify, Node and Sonos\n' +
-      '`flush` : flush the current queue\n' +
-      '`remove` *number* : removes the track in the queue\n' +
-      '`setvolume` *number* : sets volume\n' +
-      '`play` : play track\n' +
-      '`stop` : stop life\n' +
-      '`say` *text* : text to speech\n' +
-      '`pause` : pause life\n' +
-      '`resume` : resume after pause\n' +
-      '`next` : play next track\n' +
-      '`previous` : play previous track\n' +
-      '`shuffle` : set playmode to shuffle\n' +
-      '`normal` : set playmode to normal\n' +
-      '`blacklist` : show users on blacklist\n' +
-      '`blacklist add @username` : add `@username` to the blacklist\n' +
-      '`blacklist del @username` : remove `@username` from the blacklist\n'
+    message += '\n' + adminMessage;
   }
-  message += ' ===  ===  === SlackONOS@GitHub ===  ===  ===\n'
   _slackMessage(message, channel)
 }
 

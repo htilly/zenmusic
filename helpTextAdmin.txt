@@ -1,0 +1,19 @@
+*------ ADMIN FUNCTIONS ------*
+`debug` : show debug info for Spotify, Node and Sonos
+`flush` : flush the current queue
+`remove` *number* : removes the track in the queue
+`setvolume` *number* : sets volume
+`play` : play track
+`stop` : stop life
+`say` *text* : text to speech
+`pause` : pause life
+`resume` : resume after pause
+`next` : play next track
+`previous` : play previous track
+`shuffle` : set playmode to shuffle
+`normal` : set playmode to normal
+`blacklist` : show users on blacklist
+`blacklist add @username` : add `@username` to the blacklist
+`blacklist del @username` : remove `@username` from the blacklist
+
+ ===  ===  === SlackONOS@GitHub ===  ===  ===
