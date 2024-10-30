@@ -19,7 +19,7 @@
   },
   "devDependencies": {
     "mocha": "^10.8.1",
-    "chai": "5.1.1"
+    "chai": "5.1.2"
   },
   "author": "",
   "license": "ISC",
