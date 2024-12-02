@@ -252,13 +252,13 @@ function processInput(text, channel, userName) {
       _append(input, channel, userName)
       break
     case 'searchplaylist':
-      _searchplaylist(input, channel)
+      _searchplaylist(input, channel, userName)
       break
     case 'searchalbum':
       _searchalbum(input, channel)
       break
     case 'addplaylist':
-      _addplaylist(input, channel)
+      _addplaylist(input, channel, userName)
       break
     case 'search':
       _search(input, channel, userName)
@@ -1359,59 +1359,48 @@ function _search(input, channel, userName) {
   _slackMessage(message, channel)
 }
 
-function _searchplaylist(input, channel, userName) {
-  var [data, message] = spotify.searchSpotifyPlaylist(input, channel, userName, searchLimit)
+async function _searchplaylist(input, channel, userName) {
+  logger.info('_searchplaylist ' + input);
+
+  // Ensure userName is defined; set a fallback if it’s undefined
+  userName = userName || "User";
+
+  const [data, message] = await spotify.searchSpotifyPlaylist(input, channel, userName, searchLimit);
+
   if (message) {
-    _slackMessage(message, channel)
+    _slackMessage(message, channel);
   }
-  if (!data) {
-    return
+
+  // Log the full response from Spotify API
+  // logger.info('Spotify API response: ' + JSON.stringify(data, null, 2));
+
+  if (!data || !data.playlists || !data.playlists.items || data.playlists.items.length === 0) {
+    logger.info('No playlists found for the given input.');
+    _slackMessage('No playlists found for the given input.', channel);
+    return;
   }
-  logger.debug(data)
-  if (data.playlists && data.playlists.items && data.playlists.items.length > 0) {
-    var trackNames = []
 
-    for (var i = 1; i <= data.playlists.items.length; i++) {
-      var trackName = data.playlists.items[i - 1].name
+  // Filter out null items
+  const validPlaylists = data.playlists.items.filter(playlist => playlist !== null);
 
-      trackNames.push(trackName)
-    }
+  // logger.info('Valid playlists found: ' + JSON.stringify(validPlaylists, null, 2));
 
-    message = 'I found the following playlist(s):\n```\n' + trackNames.join('\n') + '\n```\nIf you want to play it, use the `addplaylist` command..\n'
-    _slackMessage(message, channel)
-  } else {
-    message = 'Sorry could not find that playlist :('
-    _slackMessage(message, channel)
+  var playlistNames = [];
+  for (let i = 0; i < validPlaylists.length; i++) {
+    const playlist = validPlaylists[i];
+    const playlistName = playlist.name;
+    playlistNames.push(playlistName);
   }
+
+  // Print the result...
+  const resultMessage = userName +
+    ', I found the following playlist(s):\n```\n' +
+    playlistNames.join('\n') +
+    '\n```\nIf you want to play it, use the `addplaylist` command..\n';
+  _slackMessage(resultMessage, channel);
 }
 
-function _searchalbum(input, channel, userName) {
-  var [data, message] = spotify.searchSpotifyAlbum(input, channel, userName, searchLimit)
-  if (message) {
-    _slackMessage(message, channel)
-  }
-  if (!data) {
-    return
-  }
-  //    var data = JSON.parse(getapi.data.toString())
-  logger.debug(data)
-  if (data.albums && data.albums.items && data.albums.items.length > 0) {
-    var trackNames = []
 
-    for (var i = 1; i <= data.albums.items.length; i++) {
-      //  var spid = data.albums.items[i - 1].id
-      //  var uri = data.albums.items[i - 1].uri
-      //  var external_url = data.albums.items[i - 1].external_urls.spotify
-      //           var trackName = data.albums.items[i-1].name;
-      var trackName = data.albums.items[i - 1].artists[0].name + ' - ' + data.albums.items[i - 1].name
-
-      trackNames.push(trackName)
-    }
-
-    message = 'I found the following album(s):\n```\n' + trackNames.join('\n') + '\n```\nIf you want to play it, use the `addalbum` command..\n'
-    _slackMessage(message, channel)
-  }
-}
 
 // FIXME - misnamed s/ add to sonos, appears funcionally identical to _addToSpotifyPlaylist
 // function _addToSpotify (userName, uri, albumImg, trackName, channel, cb) {
