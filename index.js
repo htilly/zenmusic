@@ -4,7 +4,7 @@ const mp3Duration = require('mp3-duration');
 const path = require('path');
 const GTTS = require('gtts'); // Import the gtts library
 const config = require('nconf')
-const winston = require('winston')
+const winston = require('winston');
 const Spotify = require('./spotify')
 const utils = require('./utils')
 const process = require('process')
@@ -16,6 +16,8 @@ const ttsMessage = fs.readFileSync('tts.txt', 'utf8').split('\n').filter(Boolean
 const buildNumber = Number(fs.readFileSync('build.txt', 'utf8').split('\n').filter(Boolean)[0]);
 const { execSync } = require('child_process');
 const gongBannedTracks = {};
+const { OpenAI } = require("openai");
+
 
 
 config.argv()
@@ -54,6 +56,9 @@ const logLevel = config.get('logLevel')
 const sonosIp = config.get('sonos')
 const webPort = config.get('webPort')
 let ipAddress = config.get('ipAddress')
+const openaiApiKey = config.get('openaiApiKey')
+
+
 
 
 
@@ -63,16 +68,33 @@ if (!Array.isArray(blacklist)) {
   blacklist = blacklist.replace(/\s*(,|^|$)\s*/g, '$1').split(/\s*,\s*/)
 }
 
-/* Initialize Logger */
+
+// Set a default log level if `logLevel` is undefined
 const logger = winston.createLogger({
-  level: logLevel,
-  format: winston.format.json(),
+  level: logLevel || 'info',
+  format: winston.format.combine(
+    winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),  // Add timestamps
+    winston.format.errors({ stack: true }),                       // Include error stack traces
+    winston.format.json()                                         // Log in JSON format
+  ),
   transports: [
+    // Console transport with colorized, simple format for easier readability
     new winston.transports.Console({
-      format: winston.format.combine(winston.format.colorize(), winston.format.simple())
-    })
+      format: winston.format.combine(
+        winston.format.colorize(),
+        winston.format.printf(({ timestamp, level, message, stack }) => {
+          return stack
+            ? `${timestamp} [${level}]: ${message}\n${stack}`   // Log stack trace for errors
+            : `${timestamp} [${level}]: ${message}`;
+        })
+      )
+    }),
+    // Optional file transport for log persistence
+    // new winston.transports.File({ filename: 'app.log' })
   ]
-})
+});
+
+module.exports = logger;
 
 /* Initialize Sonos */
 const SONOS = require('sonos')
@@ -112,8 +134,8 @@ if (!token) {
   throw new Error('SLACK_API_TOKEN is not set');
 }
 
-const { RTMClient } = require('@slack/rtm-api'); 
-const { WebClient } = require('@slack/web-api'); 
+const { RTMClient } = require('@slack/rtm-api');
+const { WebClient } = require('@slack/web-api');
 const rtm = new RTMClient(token, {
   logLevel: 'error',
   dataStore: false,
@@ -292,7 +314,7 @@ function processInput(text, channel, userName) {
     case 'list':
     case 'ls':
     case 'playlist':
-      _showQueue(channel)
+      _showQueue(input, channel)
       break
     case 'upnext':
       _upNext(channel)
@@ -301,7 +323,7 @@ function processInput(text, channel, userName) {
       _getVolume(channel)
       break
     case 'flushvote':
-      _flushvote(channel, userName)
+      _flushvote(input, channel, userName)
       break
     case 'size':
     case 'count':
@@ -309,17 +331,17 @@ function processInput(text, channel, userName) {
       _countQueue(channel)
       break
     case 'status':
-      _status(channel)
+      _status(input, channel, userName)
       break
     case 'help':
-      _help(input, channel)
+      _help(input, channel, userName)
       break
     default:
       matched = false
       break
-      case 'flush':
-        _flush(input, channel)
-        break
+    case 'flush':
+      _flush(input, channel)
+      break
   }
 
   if (!matched && channel === global.adminChannel) {
@@ -371,12 +393,15 @@ function processInput(text, channel, userName) {
       case 'snap':
         _purgeHalfQueue(input, channel)
         break
-        case 'listimmune': 
+      case 'listimmune':
         _listImmune(channel)
         break
       case 'tts':
       case 'say':
         _tts(input, channel)
+        break
+      case 'ai':
+        _ai(input, channel, userName)
         break
       default:
     }
@@ -472,58 +497,64 @@ function _countQueue(channel, cb) {
   })
 }
 
-function _showQueue(channel) {
+global._showQueue = function (input, channel, userName) {
+  if (!channel) {
+    console.error("Error: No channel ID provided to _showQueue.");
+    return;
+  }
+
   sonos.getQueue().then(result => {
-    //   logger.info('Current queue: ' + JSON.stringify(result, null, 2))
     _status(channel, function (state) {
-      logger.info('_showQueue, got state = ' + state)
-    })
+      logger.info('_showQueue, got state = ' + state);
+    });
+
     _currentTrack(channel, function (err, track) {
       if (!result) {
-        logger.debug(result)
-        _slackMessage('Seems like the queue is empty... Have you tried adding a song?!', channel)
+        logger.debug(result);
+        _slackMessage('Seems like the queue is empty... Have you tried adding a song?!', channel);
+        return;
       }
       if (err) {
-        logger.error(err)
+        logger.error(err);
+        _slackMessage("Error retrieving current track.", channel);
+        return;
       }
-      var message = 'Total tracks in queue: ' + result.total + '\n====================\n'
-      logger.info('Total tracks in queue: ' + result.total)
-      const tracks = []
 
-      result.items.map(
-        function (item, i) {
-          let trackTitle = item.title;
-          if (_isTrackGongBanned(item.title)) {
-            tracks.push(':lock: ' + '_#' + i + '_ ' + trackTitle + ' by ' + item.artist);
-  //          trackTitle = ':lock:' + trackTitle;
-          } else if (item.title === track.title) {
-            trackTitle = '*' + trackTitle + '*';
-          } else {
-            trackTitle = '_' + trackTitle + '_';
-          }
+      let message = 'Total tracks in queue: ' + result.total + '\n====================\n';
+      logger.info('Total tracks in queue: ' + result.total);
+      const tracks = [];
 
-          if (item.title === track.title) {
-            tracks.push(':notes: ' + '_#' + i + '_ ' + trackTitle + ' by ' + item.artist);
-          } else {
-            tracks.push('>_#' + i + '_ ' + trackTitle + ' by ' + item.artist);
-          }
+      result.items.map((item, i) => {
+        let trackTitle = item.title;
+
+        if (_isTrackGongBanned(item.title)) {
+          tracks.push(':lock: ' + '_#' + i + '_ ' + trackTitle + ' by ' + item.artist);
+        } else if (item.title === track.title) {
+          trackTitle = '*' + trackTitle + '*';
+          tracks.push(':notes: ' + '_#' + i + '_ ' + trackTitle + ' by ' + item.artist);
+        } else {
+          trackTitle = '_' + trackTitle + '_';
+          tracks.push('>_#' + i + '_ ' + trackTitle + ' by ' + item.artist);
         }
-      )
-      for (var i in tracks) {
-        message += tracks[i] + '\n'
-        if (i > 0 && Math.floor(i % 100) === 0) {
-          _slackMessage(message, channel)
-          message = ''
+      });
+
+      tracks.forEach((track, i) => {
+        message += track + '\n';
+        if (i > 0 && i % 100 === 0) {
+          _slackMessage(message, channel);
+          message = ''; // Reset message for the next batch
         }
-      }
+      });
+
       if (message) {
-        _slackMessage(message, channel)
+        _slackMessage(message, channel);
       }
-    })
+    });
   }).catch(err => {
-    logger.error('Error fetch queue: ' + err)
-  })
-}
+    logger.error('Error fetching queue: ' + err);
+    _slackMessage("Error retrieving queue.", channel);
+  });
+};
 
 function _upNext(channel) {
   sonos.getQueue().then(result => {
@@ -544,8 +575,8 @@ function _upNext(channel) {
         function (item, i) {
           if (i === currentIndex) {
             currentIndex = i
-            tracks.push('_#' + i + '_ ' + "_"+item.title+"_" + ' by ' + item.artist)
-          } 
+            tracks.push('_#' + i + '_ ' + "_" + item.title + "_" + ' by ' + item.artist)
+          }
         }
       )
       tracks = tracks.slice(Math.max(currentIndex - 5, 0), Math.min(currentIndex + 20, tracks.length))
@@ -567,7 +598,7 @@ const voteTimeLimit = voteTimeLimitMinutes * 60 * 1000; // Convert minutes to mi
 
 
 
-function _flushvote(channel, userName) {
+global._flushvote = function (input, channel, userName) {
   logger.info('_flushvote...');
 
   if (!(userName in flushVoteScore)) {
@@ -579,8 +610,8 @@ function _flushvote(channel, userName) {
   } else {
     flushVoteScore[userName] = flushVoteScore[userName] + 1;
     voteCounter++;
-logger.info('1voteCounter: ' + voteCounter);
-logger.info('1voteTimer: ' + voteTimer);
+    logger.info('1voteCounter: ' + voteCounter);
+    logger.info('1voteTimer: ' + voteTimer);
     if (voteCounter === 1) {
       // Start the timer on the first vote
       voteTimer = setTimeout(() => {
@@ -595,7 +626,7 @@ logger.info('1voteTimer: ' + voteTimer);
       logger.info('3voteTimer: ' + voteTimer);
     }
 
-    _slackMessage('This is VOTE ' + "*"+voteCounter+"*" + '/' + flushVoteLimit + ' for a full flush of the playlist!!', channel);
+    _slackMessage('This is VOTE ' + "*" + voteCounter + "*" + '/' + flushVoteLimit + ' for a full flush of the playlist!!', channel);
 
     if (voteCounter >= flushVoteLimit) {
       clearTimeout(voteTimer); // Clear the timer if the vote limit is reached
@@ -612,8 +643,9 @@ logger.info('1voteTimer: ' + voteTimer);
 }
 
 
-function _gong(channel, userName) {
+global._gong = function (channel, userName) {
   logger.info('_gong...')
+  logger.info('userName: ' + userName)
   _currentTrackTitle(channel, function (err, track) {
     if (err) {
       logger.error(err)
@@ -648,7 +680,7 @@ function _gong(channel, userName) {
 
       gongScore[userName] = gongScore[userName] + 1
       gongCounter++
-      _slackMessage(randomMessage + ' This is GONG ' + gongCounter + '/' + gongLimit + ' for ' + "*"+track+"*", channel)
+      _slackMessage(randomMessage + ' This is GONG ' + gongCounter + '/' + gongLimit + ' for ' + "*" + track + "*", channel)
       if (gongCounter >= gongLimit) {
         _slackMessage('The music got GONGED!!', channel)
         _gongplay('play', channel)
@@ -726,7 +758,7 @@ function _listImmune(channel) {
   if (gongBannedTracksList.length === 0) {
     _slackMessage('No tracks are currently immune.', channel);
   } else {
-    const message = 'Immune Tracks:\n' + gongBannedTracksList.join ('\n');
+    const message = 'Immune Tracks:\n' + gongBannedTracksList.join('\n');
     _slackMessage(message, channel);
   }
 }
@@ -736,14 +768,14 @@ function _listImmune(channel) {
 // Initialize vote count object
 let trackVoteCount = {};
 
-function _vote(input, channel, userName) {
+global._vote = function (input, channel, userName) {
 
-      // Get message
-      logger.info('voteMessage.length: ' + voteMessage.length)
-      var ran = Math.floor(Math.random() * voteMessage.length)
-      var randomMessage = voteMessage[ran]
-      logger.info('voteMessage: ' + randomMessage)
-  
+  // Get message
+  logger.info('voteMessage.length: ' + voteMessage.length)
+  var ran = Math.floor(Math.random() * voteMessage.length)
+  var randomMessage = voteMessage[ran]
+  logger.info('voteMessage: ' + randomMessage)
+
   var voteNb = input[1];
   voteNb = Number(voteNb) + 1; // Add 1 to match the queue index
   voteNb = String(voteNb);
@@ -789,7 +821,7 @@ function _vote(input, channel, userName) {
         // Log the vote count for the track
         logger.info('Track ' + voteTrackName + ' has received ' + trackVoteCount[voteNb] + ' votes.');
 
-        _slackMessage('This is VOTE ' + trackVoteCount[voteNb] + '/' + voteLimit + ' for ' + "*"+voteTrackName+"*", channel);
+        _slackMessage('This is VOTE ' + trackVoteCount[voteNb] + '/' + voteLimit + ' for ' + "*" + voteTrackName + "*", channel);
         if (trackVoteCount[voteNb] >= voteLimit) {
           logger.info('Track ' + voteTrackName + ' has reached the vote limit.');
           _slackMessage(randomMessage, channel);
@@ -853,7 +885,7 @@ function _votecheck(channel) {
         const trackName = trackNames[trackId] || 'Unknown Track';
         const voters = Object.keys(voteScore).filter(user => voteScore[user] > 0 && voteScore[user] < voteLimitPerUser);
         const votedBy = voters.map(user => `${user}`).join(', ');
-        _slackMessage("*"+trackName+"*" + ' has received ' + voteCount + ' votes. Voted by: ' + votedBy, channel);
+        _slackMessage("*" + trackName + "*" + ' has received ' + voteCount + ' votes. Voted by: ' + votedBy, channel);
       }
     }
   }).catch(err => {
@@ -906,7 +938,7 @@ function _previous(input, channel) {
   })
 }
 
-function _help(input, channel) {
+global._help = function (input, channel, userName) {
   const helpTextPath = path.join(__dirname, 'helpText.txt');
   const helpTextPathAdmin = path.join(__dirname, 'helpTextAdmin.txt');
   const adminMessage = fs.readFileSync(helpTextPathAdmin, 'utf8');
@@ -918,7 +950,7 @@ function _help(input, channel) {
   _slackMessage(message, channel)
 }
 
-function _play(input, channel, state) {
+global._play = function (input, channel, state) {
   if (channel !== global.adminChannel) {
     return
   }
@@ -940,7 +972,7 @@ function _playInt(input, channel) {
   })
 }
 
-function _stop(input, channel, state) {
+function _stop(channel, state) {
   if (channel !== global.adminChannel) {
     return
   }
@@ -952,7 +984,7 @@ function _stop(input, channel, state) {
   })
 }
 
-function _pause(input, channel, state) {
+function _pause(channel, state) {
   if (channel !== global.adminChannel) {
     return
   }
@@ -976,17 +1008,27 @@ function _resume(input, channel, state) {
   })
 }
 
-function _flush(input, channel) {
-  if (channel !== global.adminChannel) {
-    _slackMessage('Where you supposed to type _flushvote_?', channel)
-    return
+global._flush = function (input, channel) {
+  if (!channel || typeof channel !== 'string') {
+    console.error("Invalid channel ID provided:", channel);
+    return;
   }
+
+  console.log("Received channel:", channel);
+  console.log("Admin channel:", global.adminChannel);
+
+  if (channel !== global.adminChannel) {
+    _slackMessage('Were you supposed to type _flushvote_?', channel);
+    return;
+  }
+
   sonos.flush().then(result => {
-    logger.info('Flushed queue: ' + JSON.stringify(result, null, 2))
-    _slackMessage('Sonos queue is clear.', channel)
+    logger.info('Flushed queue: ' + JSON.stringify(result, null, 2));
+    _slackMessage('Sonos queue is clear.', channel);
   }).catch(err => {
-    logger.error('Error flushing queue: ' + err)
-  })
+    logger.error('Error flushing queue: ' + err);
+    _slackMessage('Error clearing the Sonos queue.', channel);
+  });
 }
 
 function _flushInt(input, channel) {
@@ -1102,7 +1144,7 @@ function _nextTrack(channel, byPassChannelValidation) {
   })
 }
 
-function _currentTrack(channel, cb, err) {
+global._currentTrack = function (input, channel, cb, err) {
   sonos.currentTrack().then(track => {
     logger.info('Got current track: ' + track)
     if (err) {
@@ -1167,13 +1209,32 @@ function _currentTrackTitle(channel, cb) {
   })
 }
 
-async function _add(input, channel, userId) {
-  // Convert userId to userName
-  const userName = await _checkUser(userId);
-  if (!userName) {
-    logger.error('Failed to fetch username for user ID: ' + userId);
+global._add = async function (input, channel, userIdOrName) {
+  console.log("Called _add with parameters:");
+  console.log(" - input:", input);
+  console.log(" - channel:", channel);
+  console.log(" - userIdOrName:", userIdOrName);
+
+  let userName = userIdOrName;
+
+  // Check if userIdOrName is provided, otherwise return an error message
+  if (!userIdOrName) {
+    console.log("Error: No user ID or name provided.");
+    _slackMessage("Error: No user ID or name provided.", channel);
     return;
   }
+
+  // Convert userId to userName if it's an ID (assuming no "@" character means ID)
+  if (!userName.includes("@")) {
+    userName = await _checkUser(userIdOrName);
+    if (!userName) {
+      console.log("Failed to fetch username for user ID:", userIdOrName);
+      _slackMessage("Error fetching user information.", channel);
+      return;
+    }
+  }
+
+  console.log("Checking the following user:", userName);
 
   // Check if the user is on the blacklist
   logger.info('Checking the following user: ' + userName);
@@ -1184,7 +1245,11 @@ async function _add(input, channel, userId) {
     return;
   }
 
-  var [data, message] = spotify.searchSpotify(input, channel, userName, 1);
+  logger.info("Input: " + input);
+  logger.info("Input (format and content): Type - " + typeof input + ", Value - " + JSON.stringify(input));
+
+  const [data, message] = spotify.searchSpotify(input, channel, userName, 1);
+  logger.info('SearchData: ' + JSON.stringify(data, null, 2));
   if (message) {
     _slackMessage(message, channel);
   }
@@ -1192,10 +1257,10 @@ async function _add(input, channel, userId) {
     return;
   }
 
-  var uri = data.tracks.items[0].uri;
-  var albumImg = data.tracks.items[0].album.images[2].url;
-  var trackName = data.tracks.items[0].artists[0].name + ' - ' + data.tracks.items[0].name;
-  var titleName = data.tracks.items[0].name;
+  const uri = data.tracks.items[0].uri;
+  const albumImg = data.tracks.items[0].album.images[2].url;
+  const trackName = `${data.tracks.items[0].artists[0].name} - ${data.tracks.items[0].name}`;
+  const titleName = data.tracks.items[0].name;
 
   sonos.getCurrentState().then(state => {
     logger.info('Got current state: ' + state);
@@ -1213,35 +1278,33 @@ async function _add(input, channel, userId) {
       sonos.getQueue().then(result => {
         logger.info('Searching for duplicated track:' + titleName);
         let trackFound = false;
-        for (var i in result.items) {
-          var queueTrack = result.items[i].title;
-          if (titleName === queueTrack) {
+        for (const item of result.items) {
+          if (titleName === item.title) {
             trackFound = true;
             break;
           }
         }
         if (trackFound) {
-          console.log("Track " + titleName + " is already in the queue, skipping...");
-          _slackMessage("Track already in the queue.. I will let it go for this time " + userName + "....", channel);
+          console.log(`Track "${titleName}" is already in the queue, skipping...`);
+          _slackMessage(`Track already in the queue.. I will let it go for this time ${userName}....`, channel);
         } else {
           logger.info('State: ' + state + ' - playing...');
-          // Add the track to playlist...
           _addToSpotify(userName, uri, albumImg, trackName, channel);
         }
       }).catch(err => {
         logger.error('Error fetching queue: ' + err);
       });
     } else if (state === 'paused') {
-      // Handle paused state if needed
-      _slackMessage("SlackONOS is currently paused..  ask an admin to resume the playlist...", channel);
+      _slackMessage("SlackONOS is currently paused.. ask an admin to resume the playlist...", channel);
     }
   }).catch(err => {
     logger.error('Error getting current state: ' + err);
   });
-}
+};
 
 
-function _addalbum(input, channel, userName) {
+
+global._addalbum = function (input, channel, userName) {
   var [data, message] = spotify.searchSpotifyAlbum(input, channel, userName, 1)
   if (message) {
     _slackMessage(message, channel)
@@ -1333,7 +1396,7 @@ function _append(input, channel, userName) {
   })
 }
 
-function _search(input, channel, userName) {
+global._search = function (input, channel, userName) {
   logger.info('_search ' + input)
   var [data, message] = spotify.searchSpotify(input, channel, userName, searchLimit)
 
@@ -1532,7 +1595,7 @@ function _addplaylist(input, channel, userName) {
   })
 }
 
-function _bestof(input, channel, userName) {
+global._bestof = function (input, channel, userName) {
   var [data, message] = spotify.searchSpotifyArtist(input, channel, userName, 1)
   if (message) {
     _slackMessage(message, channel)
@@ -1579,7 +1642,7 @@ function _bestof(input, channel, userName) {
   })
 }
 
-function _status(channel, state) {
+global._status = function (input, channel, userName, state) {
   sonos.getCurrentState().then(state => {
     logger.info('Got current state: ' + state)
     _slackMessage("Sonos state is '" + state + "'", channel)
@@ -1634,10 +1697,10 @@ function _debug(channel) {
     try {
       const result = fs.readFileSync('/proc/net/route', 'utf8');
       const lines = result.split('\n');
-      
+
       for (const line of lines) {
         const columns = line.trim().split(/\s+/);
-        
+
         // Look for the default route (Destination is 00000000)
         if (columns[1] === '00000000') {
           const hexIp = columns[2];  // Gateway IP is in the third column
@@ -1645,13 +1708,13 @@ function _debug(channel) {
           return gatewayIp;
         }
       }
-      
+
       return 'Host IP address not found';
     } catch (err) {
       return 'Host IP address not found';
     }
   }
-  
+
   // Helper function to convert hex IP from /proc/net/route to a readable IP address
   function hexToIp(hex) {
     return [
@@ -1703,7 +1766,7 @@ function _debug(channel) {
     logger.info(data.root.device[0].serialNum);
     logger.info(data.root.device[0].MACAddress);
 
-    let message = 
+    let message =
       '\n------------------------------' +
       '\n*SlackONOS Info*' +
       '\n' +
@@ -1791,7 +1854,7 @@ async function _blacklist(input, channel) {
 let serverInstance = null;
 
 async function _tts(input, channel) {
-  
+
   // Get random message
   logger.info('ttsMessage.length: ' + ttsMessage.length)
   var ran = Math.floor(Math.random() * ttsMessage.length)
@@ -1801,8 +1864,8 @@ async function _tts(input, channel) {
 
   const text = ttsSayMessage + "... Message as follows... " + message + ".... I repeat...  " + message; // Remove the leading "say"
   const filePath = path.join(__dirname, 'tts.mp3');
- _slackMessage(':mega:' + ' ' + ttsSayMessage + ':  ' + '*' + message + '*', standardChannel);
- _slackMessage( 'I will post the message in the music channel: ' + standardChannel + ', for you', channel);
+  _slackMessage(':mega:' + ' ' + ttsSayMessage + ':  ' + '*' + message + '*', standardChannel);
+  _slackMessage('I will post the message in the music channel: ' + standardChannel + ', for you', channel);
   logger.info('Generating TTS for text: ' + text);
 
   try {
@@ -1824,7 +1887,7 @@ async function _tts(input, channel) {
     }
 
 
-    
+
     // Generate the TTS file using gtts
     await new Promise((resolve, reject) => {
       const gtts = new GTTS(text, 'en'); // 'en' stands for English language
@@ -1985,6 +2048,285 @@ function xmlToJson(url, callback) {
     res.on('end', function () { parseString(xml, function (e, result) { callback(null, result) }) })
   })
 }
+
+
+
+// Create an OpenAI instance
+let openai;
+try {
+  openai = new OpenAI({
+    apiKey: openaiApiKey,
+  });
+  logger.info("OpenAI instance created successfully.");
+} catch (error) {
+  logger.error("Error creating OpenAI instance:", error);
+}
+
+
+
+
+
+async function _ai(input, channel, userName) {
+  try {
+    console.log("Input received:", input || "(no input provided)");
+    console.log("User Name provided:", userName || "(undefined)");
+
+    const helpTextPath = path.join(__dirname, 'aiText.txt');
+    let helpText;
+    let validFunctions = [];
+
+    // Load and parse help text
+    try {
+      helpText = fs.readFileSync(helpTextPath, 'utf8');
+      console.log("Help text loaded, length:", helpText.length);
+
+      validFunctions = helpText
+        .split('\n')
+        .map(line => line.split(' ')[0].trim())
+        .filter(name => name.length > 0);
+
+      console.log("Extracted valid functions:", validFunctions);
+
+    } catch (fileError) {
+      console.log("Failed to load help text:", fileError);
+      _slackMessage("Error: Unable to load help text.", channel);
+      return;
+    }
+
+    const prompt = `Here are the commands and their required input formats: ${helpText}.
+First word is the function, second is the expected input. After the : comes a description of the function.
+
+Given the following user input: "${input}", determine the most appropriate function to call, the track title, and artist name (if provided). Respond ONLY with one of the following formats:
+
+- "function_name: track_title by artist_name" (if both track and artist are provided)
+- "function_name: track_title" (if only the track title is provided)
+
+For example:
+- "add: rosa himmel by artist_name"
+- "play: rosa himmel"
+
+No other text or additional information should be included in your response.`;
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-4",
+      messages: [{ role: 'system', content: prompt }],
+      max_tokens: 50,
+    });
+
+    let aiResponse = response.choices[0]?.message?.content?.trim();
+    aiResponse = aiResponse.replace(/^['"]|['"]$/g, '').trim();
+
+    console.log("Raw AI Response:", aiResponse);
+
+    // Updated regex to capture function name, track, and optional artist
+    const match = aiResponse.match(/(\w+)\s*[:]\s*([^\s]+(?:\s+[^\s]+)*)?(?:\s+by\s+(.+))?/i);
+    console.log("Regex Match Results:", match); // Log the match result to debug
+
+    const functionName = match?.[1];
+    const track = match?.[2] || "";
+    const artist = match?.[3] || "";
+
+    if (!validFunctions.includes(functionName)) {
+      console.log("Unclear response or invalid function from OpenAI:", aiResponse);
+      _slackMessage("I'm not sure what you want. Could you clarify your request?", channel);
+      return;
+    }
+
+    // Construct combinedInput as an array with function, track words, and artist words (if available)
+    const combinedInput = [functionName, ...track.split(" "), ...(artist ? artist.split(" ") : [])];
+    console.log("Constructed combinedInput as array:", combinedInput);
+
+    // Now create the prompt for OpenAI to generate a dynamic short response only for the determined function
+    const shortResponsePrompt = `Generate a short, fun response in a lively style for the function "${functionName}" when the track is "${track}". Make the response creative and exciting! For example, if the function is 'search' and the track is 'Friday', the response could be something like "Alright folks, sifting through the soundwaves to find that good vibe track 'Friday' for you. Stay tuned!"`;
+
+    // Generate a dynamic response using OpenAI
+    const shortResponse = await openai.chat.completions.create({
+      model: "gpt-4",
+      messages: [{ role: 'system', content: shortResponsePrompt }],
+      max_tokens: 100,
+    });
+
+    const dynamicResponse = shortResponse.choices[0]?.message?.content?.trim();
+    console.log("Generated dynamic response:", dynamicResponse);
+
+    // Prepare the Slack message with consistent backticks around all dynamic values
+    let slackMessage = dynamicResponse || "Alright, let's get this going!";
+
+    // Enclose track, artist, and state in backticks if they have values
+    if (track) {
+      slackMessage += ` Track: \`${track}\``;
+    }
+
+    if (artist) {
+      slackMessage += ` Artist: \`${artist}\``;
+    }
+
+    // If state (e.g., "stopped") has a value, enclose it in backticks too
+    const state = "stopped"; // Example state; replace with actual state value if applicable
+    slackMessage += ` State: \`${state}\``; // Add state in backticks if available
+
+    // Send the formatted response to Slack
+    _slackMessage(slackMessage, channel);
+
+    const functionToCall = `_${functionName}`;
+    if (typeof global[functionToCall] === "function") {
+      console.log(`Calling function: ${functionToCall}`);
+      console.log(" - input:", combinedInput);
+      console.log(" - channel:", channel);
+      console.log(" - userIdOrName:", userName);
+
+      // Call the function with the exact order: input, channel, userIdOrName
+      global[functionToCall](combinedInput, channel, userName);
+    } else {
+      console.log(`Function ${functionToCall} not found.`);
+      _slackMessage(`Function ${functionToCall} not recognized.`, channel);
+    }
+
+  } catch (error) {
+    console.log("Error processing input with OpenAI:", error);
+    _slackMessage("Error processing input with OpenAI", channel);
+  }
+}
+
+
+
+
+
+
+
+
+async function _ai(input, channel, userName) {
+  try {
+    console.log("Input received:", input || "(no input provided)");
+    console.log("User Name provided:", userName || "(undefined)");
+
+    const helpTextPath = path.join(__dirname, 'aiText.txt');
+    let helpText;
+    let validFunctions = [];
+
+    // Load and parse help text
+    try {
+      helpText = fs.readFileSync(helpTextPath, 'utf8');
+      console.log("Help text loaded, length:", helpText.length);
+
+      validFunctions = helpText
+        .split('\n')
+        .map(line => line.split(' ')[0].trim())
+        .filter(name => name.length > 0);
+
+      console.log("Extracted valid functions:", validFunctions);
+
+    } catch (fileError) {
+      console.log("Failed to load help text:", fileError);
+      _slackMessage("Error: Unable to load help text.", channel);
+      return;
+    }
+
+    const prompt = `Here are the commands and their required input formats: ${helpText}.
+First word is the function, second is the expected input. After the : comes a description of the function.
+
+Given the following user input: "${input}", determine the most appropriate function to call, the track title, and artist name (if provided). Respond ONLY with one of the following formats:
+
+- "function_name: track_title by artist_name" (if both track and artist are provided)
+- "function_name: track_title" (if only the track title is provided)
+
+For example:
+- "add: rosa himmel by artist_name"
+- "play: rosa himmel"
+
+No other text or additional information should be included in your response.`;
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-4",
+      messages: [{ role: 'system', content: prompt }],
+      max_tokens: 50,
+    });
+
+    let aiResponse = response.choices[0]?.message?.content?.trim();
+    aiResponse = aiResponse.replace(/^['"]|['"]$/g, '').trim();
+
+    console.log("Raw AI Response:", aiResponse);
+
+    // Updated regex to capture function name, track, and optional artist
+    const match = aiResponse.match(/(\w+)\s*[:]\s*([^\s]+(?:\s+[^\s]+)*)?(?:\s+by\s+(.+))?/i);
+    console.log("Regex Match Results:", match); // Log the match result to debug
+
+    const functionName = match?.[1];
+    const track = match?.[2] || "";
+    const artist = match?.[3] || "";
+
+    if (!validFunctions.includes(functionName)) {
+      console.log("Unclear response or invalid function from OpenAI:", aiResponse);
+      _slackMessage("I'm not sure what you want. Could you clarify your request?", channel);
+      return;
+    }
+
+    // Construct combinedInput as an array with function, track words, and artist words (if available)
+    const combinedInput = [functionName, ...track.split(" "), ...(artist ? artist.split(" ") : [])];
+    console.log("Constructed combinedInput as array:", combinedInput);
+
+    // Now create the prompt for OpenAI to generate a dynamic short response only for the determined function
+    const shortResponsePrompt = `Generate a short, fun response in a lively style for the function "${functionName}" when the track is "${track}". Make the response creative and exciting! For example, if the function is 'search' and the track is 'Friday', the response could be something like "Alright folks, sifting through the soundwaves to find that good vibe track 'Friday' for you. Stay tuned!"`;
+
+    // Generate a dynamic response using OpenAI
+    const shortResponse = await openai.chat.completions.create({
+      model: "gpt-4",
+      messages: [{ role: 'system', content: shortResponsePrompt }],
+      max_tokens: 100,
+    });
+
+    const dynamicResponse = shortResponse.choices[0]?.message?.content?.trim();
+    console.log("Generated dynamic response:", dynamicResponse);
+
+    // Prepare the Slack message
+    let slackMessage = dynamicResponse || "Alright, let's get this going!";
+
+    // Only include track and artist if they have values
+    if (track) {
+      slackMessage += ` Track: \`${track}\``;
+    }
+
+    if (artist) {
+      slackMessage += ` Artist: \`${artist}\``;
+    }
+
+    // Send the formatted response to Slack
+    _slackMessage(slackMessage, channel);
+
+    const functionToCall = `_${functionName}`;
+    if (typeof global[functionToCall] === "function") {
+      console.log(`Calling function: ${functionToCall}`);
+      console.log(" - input:", combinedInput);
+      console.log(" - channel:", channel);
+      console.log(" - userIdOrName:", userName);
+
+      // Call the function with the exact order: input, channel, userIdOrName
+      global[functionToCall](combinedInput, channel, userName);
+    } else {
+      console.log(`Function ${functionToCall} not found.`);
+      _slackMessage(`Function ${functionToCall} not recognized.`, channel);
+    }
+
+  } catch (error) {
+    console.log("Error processing input with OpenAI:", error);
+    _slackMessage("Error processing input with OpenAI", channel);
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // Travis.
 // Just making sure that is at least will build...

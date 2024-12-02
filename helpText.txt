@@ -15,7 +15,7 @@ Current commands!
 `gong` : current track is bad! *5* gongs will skip the track
 `gongcheck` : how many gong votes there are currently, as well as who has gonged.
 `voteimmune` *number* : vote to make the current track immune to gong. *3* votes will make it immune
-`flushvote` : vote to flush the queue. *4* votes will flush the queue :toilet: 
+`flushvote` : vote to flush the queue. Get the required votes and it will flush the queue :toilet: 
 `upnext` : show the next track to be played
 `volume` : view current volume
 `list` : list current queue
