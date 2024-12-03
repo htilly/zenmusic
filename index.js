@@ -176,14 +176,29 @@ async function _lookupChannelID() {
   try {
     let allChannels = [];
     let nextCursor;
+    let retryAfter = 0;
 
     // Loop through paginated responses to get all channels (both public and private)
     do {
+      if (retryAfter > 0) {
+        logger.info(`Rate limit exceeded. Retrying after ${retryAfter} seconds...`);
+        await delay(retryAfter * 1000);
+      }
+
       const response = await web.conversations.list({
         limit: 1000,
         cursor: nextCursor,
         types: 'public_channel,private_channel'
       });
+
+      // Check rate limit headers
+      const rateLimitRemaining = response.headers ? response.headers['x-slack-rate-limit-remaining'] : 'N/A';
+      const rateLimitReset = response.headers ? response.headers['x-slack-rate-limit-reset'] : 'N/A';
+      retryAfter = response.headers ? response.headers['retry-after'] || 0 : 0;
+
+      logger.info(`Rate limit remaining: ${rateLimitRemaining}`);
+      logger.info(`Rate limit reset: ${rateLimitReset}`);
+      logger.info(`Retry after: ${retryAfter} seconds`);
 
       allChannels = allChannels.concat(response.channels);
       nextCursor = response.response_metadata.next_cursor;
@@ -199,7 +214,7 @@ async function _lookupChannelID() {
     // Find the admin channel by name
     const adminChannelInfo = allChannels.find(channel => channel.name === adminChannelName);
     if (!adminChannelInfo) {
-      logger.info('Admin channel not found. Make sure the channel is named properly in config.json and that the channel is private. It needs to be the channel name, not the SlackID.');
+      logger.info(`Admin channel not found: ${adminChannelName}. Make sure the channel is named properly in config.json and that it's a private channel.`);
       throw new Error(`Admin channel "${adminChannelName}" not found`);
     }
 
@@ -214,7 +229,7 @@ async function _lookupChannelID() {
     // Find the standard channel by name
     const standardChannelInfo = allChannels.find(channel => channel.name === standardChannelName);
     if (!standardChannelInfo) {
-      logger.info('Standard channel not found. Make sure the channel is named properly in config.json. It needs to be the channel name, not the SlackID.');
+      logger.info(`Standard channel not found: ${standardChannelName}. Make sure the channel is named properly in config.json.`);
       throw new Error(`Standard channel "${standardChannelName}" not found`);
     }
 
