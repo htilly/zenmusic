@@ -191,6 +191,9 @@ async function _lookupChannelID() {
         types: 'public_channel,private_channel'
       });
 
+      // Log the full response headers
+      logger.info('Response headers: ' + JSON.stringify(response.headers, null, 2));
+
       // Check rate limit headers
       const rateLimitRemaining = response.headers ? response.headers['x-slack-rate-limit-remaining'] : 'N/A';
       const rateLimitReset = response.headers ? response.headers['x-slack-rate-limit-reset'] : 'N/A';
@@ -1490,51 +1493,60 @@ function _addToSpotifyArtist(userName, trackName, spid, channel) {
   })
 }
 
-function _addplaylist(input, channel, userName) {
-  var [data, message] = spotify.searchSpotifyPlaylist(input, channel, userName, 1)
+async function _addplaylist(input, channel, userName) {
+  logger.info('_addplaylist ' + input);
+  const [data, message] = await spotify.searchSpotifyPlaylist(input, channel, userName, searchLimit);
+
   if (message) {
-    _slackMessage(message, channel)
-  }
-  if (!data) {
-    return
+    _slackMessage(message, channel);
   }
 
-  var trackNames = []
-  for (var i = 1; i <= data.playlists.items.length; i++) {
-    var uri = data.playlists.items[i - 1].uri
-    var trackName = data.playlists.items[i - 1].name
-    trackNames.push(trackName)
+  if (!data || !data.playlists || !data.playlists.items || data.playlists.items.length === 0) {
+    _slackMessage('No playlists found for the given input.', channel);
+    return;
   }
 
-  sonos.getCurrentState().then(state => {
-    logger.info('Got current state: ' + state)
+  logger.info('Playlists found: ' + JSON.stringify(data.playlists.items, null, 2));
 
-    if (state === 'stopped') {
-      _flushInt(input, channel)
-      _addToSpotifyPlaylist(userName, uri, trackName, channel)
-      logger.info('Adding playlist:' + trackName)
-      // Start playing the queue automatically.
-      _playInt('play', channel)
-    } else if (state === 'playing') {
-      // Add the track to playlist...
-      _addToSpotifyPlaylist(userName, uri, trackName, channel)
-    } else if (state === 'paused') {
-      _addToSpotifyPlaylist(userName, uri, trackName, channel, function () {
-        if (channel === global.adminChannel) {
-          _slackMessage('Sonos is currently PAUSED. Type `resume` to start playing...', channel)
-        }
-      })
-    } else if (state === 'transitioning') {
-      _slackMessage("Sonos says it is 'transitioning'. We've got no idea what that means either...", channel)
-    } else if (state === 'no_media') {
-      _slackMessage("Sonos reports 'no media'. Any idea what that means?", channel)
-    } else {
-      _slackMessage("Sonos reports its state as '" + state + "'. Any idea what that means? I've got nothing.", channel)
+  for (let i = 1; i <= data.playlists.items.length; i++) {
+    const playlist = data.playlists.items[i - 1];
+    if (!playlist) {
+      logger.error('Playlist item is null or undefined at index: ' + (i - 1));
+      continue;
     }
-  }).catch(err => {
-    logger.error('Error occurred ' + err)
-  })
+
+    const uri = playlist.uri;
+    const albumImg = playlist.images[2]?.url || 'No image available';
+    const playlistName = playlist.name;
+
+    logger.info('Adding playlist: ' + playlistName + ' with URI: ' + uri);
+
+    sonos.getCurrentState().then(state => {
+      logger.info('Got current state: ' + state);
+
+      if (state === 'stopped') {
+        _flushInt(input, channel);
+        logger.info('State: ' + state + ' - appending');
+        _addToSpotify(userName, uri, albumImg, playlistName, channel);
+        logger.info('Adding playlist: ' + playlistName);
+        setTimeout(() => _playInt('play', channel), 1000);
+      } else if (state === 'playing') {
+        logger.info('State: ' + state + ' - adding...');
+        _addToSpotify(userName, uri, albumImg, playlistName, channel);
+      } else if (state === 'paused') {
+        logger.info('State: ' + state + ' - telling them no...');
+        _addToSpotify(userName, uri, albumImg, playlistName, channel, function () {
+          if (channel === global.adminChannel) {
+            _slackMessage('Sonos is currently PAUSED. Type `resume` to start playing...', channel);
+          }
+        });
+      }
+    }).catch(err => {
+      logger.error('Error getting current state: ' + err);
+    });
+  }
 }
+
 
 function _bestof(input, channel, userName) {
   var [data, message] = spotify.searchSpotifyArtist(input, channel, userName, 1)
