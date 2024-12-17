@@ -436,6 +436,9 @@ function processInput(text, channel, userName) {
       case 'say':
         _tts(input, channel)
         break
+      case 'move':
+        _moveTrackAdmin(input, channel, userName)
+        break
       default:
     }
   }
@@ -890,6 +893,54 @@ function _vote(input, channel, userName) {
   });
 }
 
+async function _moveTrackAdmin(input, channel, userName) {
+  if (channel !== global.adminChannel) {
+    _slackMessage('You do not have permission to move tracks.', channel);
+    return;
+  }
+
+  if (input.length < 3) {
+    _slackMessage('Please provide both the track number and the desired position.', channel);
+    return;
+  }
+
+  const trackNb = parseInt(input[1], 10); // Use the original input value
+  const desiredPosition = parseInt(input[2], 10); // Use the original input value
+
+  if (isNaN(trackNb) || isNaN(desiredPosition)) {
+    _slackMessage('Invalid track number or desired position.', channel);
+    return;
+  }
+
+  logger.info(`_moveTrackAdmin: Moving track ${trackNb} to position ${desiredPosition}`);
+
+  try {
+    const queue = await sonos.getQueue();
+    logger.info('Current queue: ' + JSON.stringify(queue, null, 2));
+
+    const track = queue.items.find(item => item.id.split('/')[1] === String(trackNb + 1)); // Adjust for 1-based index
+    if (!track) {
+      _slackMessage(`Track number ${trackNb} not found in the queue.`, channel);
+      return;
+    }
+
+    const currentTrackPosition = parseInt(track.id.split('/')[1], 10);
+    logger.info('Current track position: ' + currentTrackPosition);
+
+    // Define the parameters
+    const startingIndex = currentTrackPosition; // Current position of the track
+    const numberOfTracks = 1; // Moving one track
+    const insertBefore = desiredPosition + 1; // Adjust for 1-based index
+
+    // Move the track to the desired position using reorderTracksInQueue
+    await sonos.reorderTracksInQueue(startingIndex, numberOfTracks, insertBefore, 0);
+    logger.info(`Moved track ${trackNb} to position ${desiredPosition}`);
+    _slackMessage(`Moved track ${trackNb} to position ${desiredPosition}`, channel);
+  } catch (err) {
+    logger.error('Error occurred: ' + err);
+    _slackMessage('Error moving track. Please try again later.', channel);
+  }
+}
 
 
 /**

@@ -2,6 +2,7 @@
 `debug` : show debug info for Spotify, Node and Sonos
 `flush` : flush the current queue
 `remove` *number* : removes the track in the queue
+`move` *number* *number* : move the given track to desired position in the queue
 `setvolume` *number* : sets volume
 `play` : play track
 `stop` : stop life
