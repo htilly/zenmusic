@@ -16,6 +16,8 @@ const ttsMessage = fs.readFileSync('tts.txt', 'utf8').split('\n').filter(Boolean
 const buildNumber = Number(fs.readFileSync('build.txt', 'utf8').split('\n').filter(Boolean)[0]);
 const { execSync } = require('child_process');
 const gongBannedTracks = {};
+const SLACK_API_URL_LIST = 'https://slack.com/api/conversations.list';
+
 
 
 config.argv()
@@ -58,6 +60,7 @@ let ipAddress = config.get('ipAddress')
 
 
 
+
 let blacklist = config.get('blacklist')
 if (!Array.isArray(blacklist)) {
   blacklist = blacklist.replace(/\s*(,|^|$)\s*/g, '$1').split(/\s*,\s*/)
@@ -66,13 +69,22 @@ if (!Array.isArray(blacklist)) {
 /* Initialize Logger */
 const logger = winston.createLogger({
   level: logLevel,
-  format: winston.format.json(),
+  format: winston.format.combine(
+    winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }), // Add timestamp
+    winston.format.json()
+  ),
   transports: [
     new winston.transports.Console({
-      format: winston.format.combine(winston.format.colorize(), winston.format.simple())
+      format: winston.format.combine(
+        winston.format.colorize(),
+        winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }), // Add timestamp to console logs
+        winston.format.printf(({ timestamp, level, message }) => {
+          return `[${timestamp}] ${level}: ${message}`;
+        })
+      )
     })
   ]
-})
+});
 
 /* Initialize Sonos */
 const SONOS = require('sonos')
@@ -172,81 +184,109 @@ function delay(ms) {
 }
 
 
-async function _lookupChannelID() {
-  try {
-    let allChannels = [];
-    let nextCursor;
-    let retryAfter = 0;
+// Proper delay function
+const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-    // Loop through paginated responses to get all channels (both public and private)
+// Function to fetch the channel IDs
+async function _lookupChannelID() {
+  let allChannels = [];
+  let nextCursor;
+  let retryAfter = 0;
+  let backoff = 1; // Exponential backoff starts at 1 second
+
+  try {
     do {
+      // Wait if rate limited
       if (retryAfter > 0) {
-        logger.info(`Rate limit exceeded. Retrying after ${retryAfter} seconds...`);
-        await delay(retryAfter * 1000);
+        logger.warn(`Rate limit hit! Retrying after ${retryAfter} seconds...`);
+        logger.info(`Wait start: ${new Date().toISOString()}`);
+        await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
+        retryAfter = 0; // Reset retryAfter
       }
 
-      const response = await web.conversations.list({
-        limit: 1000,
-        cursor: nextCursor,
-        types: 'public_channel,private_channel'
+      // Fetch channels
+      const url = `${SLACK_API_URL_LIST}?limit=1000&types=public_channel,private_channel${nextCursor ? `&cursor=${nextCursor}` : ''}`;
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
       });
 
-      // Log the full response headers
-      logger.info('Response headers: ' + JSON.stringify(response.headers, null, 2));
+      logger.info(`Response status for fetching channels: ${response.status}`);
+      
+      if (response.status === 429) {
+        retryAfter = parseInt(response.headers.get('retry-after')) || backoff;
+        backoff = Math.min(backoff * 2, 60); // Exponential backoff up to 60s
+        continue;
+      }
 
-      // Check rate limit headers
-      const rateLimitRemaining = response.headers ? response.headers['x-slack-rate-limit-remaining'] : 'N/A';
-      const rateLimitReset = response.headers ? response.headers['x-slack-rate-limit-reset'] : 'N/A';
-      retryAfter = response.headers ? response.headers['retry-after'] || 0 : 0;
+      const data = await response.json();
+      if (!data.ok) throw new Error(`Slack API Error: ${data.error}`);
 
-      logger.info(`Rate limit remaining: ${rateLimitRemaining}`);
-      logger.info(`Rate limit reset: ${rateLimitReset}`);
-      logger.info(`Retry after: ${retryAfter} seconds`);
+      // Extract and add channels
+      if (data.channels) allChannels = allChannels.concat(data.channels);
 
-      allChannels = allChannels.concat(response.channels);
-      nextCursor = response.response_metadata.next_cursor;
+      nextCursor = data.response_metadata?.next_cursor;
+
+      // Reset backoff after successful response
+      backoff = 1;
+
     } while (nextCursor);
 
-    // Log all fetched channel names
     logger.info('Fetched channels: ' + allChannels.map(channel => channel.name).join(', '));
 
-    // Get admin channel name from config
+    // Fetch Admin and Standard channel IDs
     const adminChannelName = config.get('adminChannel').replace('#', '');
-    logger.info('Admin channel (in configfile): ' + adminChannelName);
-
-    // Find the admin channel by name
-    const adminChannelInfo = allChannels.find(channel => channel.name === adminChannelName);
-    if (!adminChannelInfo) {
-      logger.info(`Admin channel not found: ${adminChannelName}. Make sure the channel is named properly in config.json and that it's a private channel.`);
-      throw new Error(`Admin channel "${adminChannelName}" not found`);
-    }
-
-    // Get the ID of the Admin channel and store it in global scope
-    global.adminChannel = adminChannelInfo.id;
-    logger.info('Admin channelID: ' + global.adminChannel);
-
-    // Get standard channel name from config
     const standardChannelName = config.get('standardChannel').replace('#', '');
-    logger.info('Standard channel (in configfile): ' + standardChannelName);
 
-    // Find the standard channel by name
+    logger.info('Admin channel (in config): ' + adminChannelName);
+    logger.info('Standard channel (in config): ' + standardChannelName);
+
+    const adminChannelInfo = allChannels.find(channel => channel.name === adminChannelName);
+    if (!adminChannelInfo) throw new Error(`Admin channel "${adminChannelName}" not found`);
+
     const standardChannelInfo = allChannels.find(channel => channel.name === standardChannelName);
-    if (!standardChannelInfo) {
-      logger.info(`Standard channel not found: ${standardChannelName}. Make sure the channel is named properly in config.json.`);
-      throw new Error(`Standard channel "${standardChannelName}" not found`);
-    }
+    if (!standardChannelInfo) throw new Error(`Standard channel "${standardChannelName}" not found`);
 
-    // Get the ID of the Standard channel and store it in global scope
+    // Set the global variables
+    global.adminChannel = adminChannelInfo.id;
     global.standardChannel = standardChannelInfo.id;
+
+    logger.info('Admin channelID: ' + global.adminChannel);
     logger.info('Standard channelID: ' + global.standardChannel);
 
   } catch (error) {
-    logger.error(`Error fetching channels: ${error}`);
+    logger.error(`Error fetching channels: ${error.message}`);
   }
 }
 
 // Call the function to lookup channel IDs
 _lookupChannelID();
+
+
+// TEST CODE: Force Slack API Rate Limit
+//async function testRateLimit() {
+//  const requests = 500; // Adjust the number of simultaneous requests
+//
+// logger.info(`Starting ${requests} parallel API calls to test rate limit...`);
+//
+//  const promises = [];
+//  for (let i = 0; i < requests; i++) {
+//    promises.push(_lookupChannelID());
+//  }
+
+//  await Promise.all(promises);
+//  logger.info('Finished parallel API calls.');
+//}
+
+// Run the rate limit test
+//(async () => {
+//  logger.info('Starting API rate limit test...');
+//  await testRateLimit();
+//  logger.info('Rate limit test completed.');
+//})();
 
 
 
@@ -849,6 +889,8 @@ function _vote(input, channel, userName) {
     }
   });
 }
+
+
 
 /**
  * Checks the vote status for all tracks and sends a Slack message with the results.
