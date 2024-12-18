@@ -17,6 +17,7 @@ const buildNumber = Number(fs.readFileSync('build.txt', 'utf8').split('\n').filt
 const { execSync } = require('child_process');
 const gongBannedTracks = {};
 const SLACK_API_URL_LIST = 'https://slack.com/api/conversations.list';
+const userActionsFile = path.join(__dirname, 'config/userActions.json');
 
 
 
@@ -437,6 +438,7 @@ function processInput(text, channel, userName) {
         _tts(input, channel)
         break
       case 'move':
+      case 'mv':
         _moveTrackAdmin(input, channel, userName)
         break
       default:
@@ -628,6 +630,8 @@ const voteTimeLimit = voteTimeLimitMinutes * 60 * 1000; // Convert minutes to mi
 
 
 
+
+
 function _flushvote(channel, userName) {
   logger.info('_flushvote...');
 
@@ -674,6 +678,7 @@ logger.info('1voteTimer: ' + voteTimer);
 
 
 function _gong(channel, userName) {
+  _logUserAction(userName, 'gong');
   logger.info('_gong...')
   _currentTrackTitle(channel, function (err, track) {
     if (err) {
@@ -1278,17 +1283,16 @@ function _currentTrackTitle(channel, cb) {
   })
 }
 
-async function _add(input, channel, userId) {
-  // Convert userId to userName
-  const userName = await _checkUser(userId);
-  if (!userName) {
-    logger.error('Failed to fetch username for user ID: ' + userId);
-    return;
-  }
+async function _add(input, channel, userName) {
+  _logUserAction(userName, 'add');
+
+  // Ensure the userName has a single @ sign
+  userName = userName.replace(/[<@>]/g, ""); // Remove any existing <@>
+  userName = '@' + userName; // Add a single @ sign
 
   // Check if the user is on the blacklist
   logger.info('Checking the following user: ' + userName);
-  console.log('Blacklisted users:', blacklist);
+  logger.info('Current blacklist: ' + JSON.stringify(blacklist, null, 2));
   if (blacklist.includes(userName)) {
     logger.info('User is on the blacklist: ' + userName);
     _slackMessage("Well... this is awkward.. U're *blacklisted*! ", channel);
@@ -1445,6 +1449,7 @@ function _append(input, channel, userName) {
 }
 
 function _search(input, channel, userName) {
+  _logUserAction(userName, 'search');
   logger.info('_search ' + input)
   var [data, message] = spotify.searchSpotify(input, channel, userName, searchLimit)
 
@@ -1642,6 +1647,7 @@ async function _addplaylist(input, channel, userName) {
 
 
 function _bestof(input, channel, userName) {
+  _logUserAction(userName, 'bestof');
   var [data, message] = spotify.searchSpotifyArtist(input, channel, userName, 1)
   if (message) {
     _slackMessage(message, channel)
@@ -1857,45 +1863,55 @@ async function _blacklist(input, channel) {
   }
 
   var action = input[1] ? input[1] : '';
-  var slackUser = input[2] ? input[2] : '';
+  var slackUser = input[2] ? input[2].replace(/[<@>]/g, '') : '';
 
   let message = '';
 
   if (slackUser !== '') {
-    var username = await _checkUser(slackUser);
-    if (!username) {
-      message = 'The user ' + slackUser + ' is not a valid Slack user.';
-      _slackMessage(message, channel);
-      return;
-    }
+    var userId = slackUser;
   }
 
   if (action === '') {
-    message = 'The following users are blacklisted:\n```\n' + blacklist.join('\n') + '\n```';
-  } else if (typeof username !== 'undefined') {
+    // Fetch usernames for each user ID in the blacklist
+    const usernames = await Promise.all(blacklist.map(async (userId) => {
+      const userName = await _checkUser(userId.replace('@', ''));
+      return userName ? `@${userName}` : userId;
+    }));
+
+    message = 'The following users are blacklisted:\n```\n' + usernames.join('\n') + '\n```';
+  } else if (typeof userId !== 'undefined') {
+    const userName = await _checkUser(userId);
+    const displayName = userName ? `@${userName}` : `@${userId}`;
+
     if (action === 'add') {
-      var i = blacklist.indexOf(username);
+      var i = blacklist.indexOf('@' + userId);
       if (i === -1) {
-        blacklist.push(username);
-        message = 'The user ' + username + ' has been added to the blacklist.';
+        blacklist.push('@' + userId);
+        message = `The user ${displayName} has been added to the blacklist.`;
       } else {
-        message = 'The user ' + username + ' is already on the blacklist.';
+        message = `The user ${displayName} is already on the blacklist.`;
       }
     } else if (action === 'del') {
-      var i = blacklist.indexOf(username);
+      var i = blacklist.indexOf('@' + userId);
       if (i !== -1) {
         blacklist.splice(i, 1);
-        message = 'The user ' + username + ' has been removed from the blacklist.';
+        message = `The user ${displayName} has been removed from the blacklist.`;
       } else {
-        message = 'The user ' + username + ' is not on the blacklist.';
+        message = `The user ${displayName} is not on the blacklist.`;
       }
     } else {
       message = 'Usage: `blacklist add|del @username`';
     }
+  } else {
+    message = 'Usage: `blacklist add|del @username`';
   }
-  _slackMessage(message, channel);
-}
 
+  if (message) {
+    _slackMessage(message, channel);
+  } else {
+    logger.error('No message to send to Slack.');
+  }
+}
 
 let serverInstance = null;
 
@@ -2081,6 +2097,51 @@ function _purgeHalfQueue(input, channel) {
     logger.error(err)
   })
 }
+
+
+// Function to log user actions
+function _logUserAction(userName, action) {
+  let userActions = {};
+
+  // Ensure the file exists
+  if (!fs.existsSync(userActionsFile)) {
+    fs.writeFileSync(userActionsFile, JSON.stringify({}), 'utf8');
+  }
+
+  // Read existing user actions from the file
+  try {
+    const data = fs.readFileSync(userActionsFile, 'utf8');
+    userActions = JSON.parse(data);
+  } catch (err) {
+    logger.error('Error reading or parsing userActions.json: ' + err);
+    userActions = {};
+  }
+
+  // Initialize user actions if not already present
+  if (!userActions[userName]) {
+    userActions[userName] = {};
+  }
+
+  // Initialize action count if not already present
+  if (!userActions[userName][action]) {
+    userActions[userName][action] = 0;
+  }
+
+  // Increment the action count
+  userActions[userName][action] += 1;
+
+  // Write updated user actions back to the file
+  try {
+    fs.writeFileSync(userActionsFile, JSON.stringify(userActions, null, 2), 'utf8');
+  } catch (err) {
+    logger.error('Error writing to userActions.json: ' + err);
+  }
+
+  logger.info(`Logged action: ${action} for user: ${userName}`);
+}
+
+
+
 
 // Function to parse XML to JSON
 
