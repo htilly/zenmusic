@@ -138,11 +138,15 @@ const web = new WebClient(token);
 let botUserId;
 
 (async () => {
-  // Fetch the bot's user ID
-  const authResponse = await web.auth.test();
-  botUserId = authResponse.user_id;
+  try {
+    // Fetch the bot's user ID
+    const authResponse = await web.auth.test();
+    botUserId = authResponse.user_id;
 
-  await rtm.start();
+    await rtm.start();
+  } catch (error) {
+    logger.error(`Error starting RTMClient: ${error}`);
+  }
 })();
 
 rtm.on('message', (event) => {
@@ -156,8 +160,6 @@ rtm.on('message', (event) => {
   logger.info(event.text);
   logger.info(event.channel);
   logger.info(event.user);
-
-
 
   logger.info(`Received: ${type} ${channel} <@${user}> ${ts} "${text}"`);
 
@@ -176,7 +178,7 @@ rtm.on('message', (event) => {
 });
 
 rtm.on('error', (error) => {
-  logger.error(`Error: ${error}`);
+  logger.error(`RTMClient error: ${error}`);
 });
 
 
@@ -418,7 +420,7 @@ function processInput(text, channel, userName) {
         _setVolume(input, channel, userName)
         break
       case 'blacklist':
-        _blacklist(input, channel)
+        _blacklist(input, channel, userName)
         break
       case 'test':
         _addToSpotifyPlaylist(input, channel)
@@ -440,6 +442,9 @@ function processInput(text, channel, userName) {
       case 'move':
       case 'mv':
         _moveTrackAdmin(input, channel, userName)
+        break
+      case 'stats':
+        _stats(channel)
         break
       default:
     }
@@ -1286,20 +1291,24 @@ function _currentTrackTitle(channel, cb) {
 async function _add(input, channel, userName) {
   _logUserAction(userName, 'add');
 
-  // Ensure the userName has a single @ sign
-  userName = userName.replace(/[<@>]/g, ""); // Remove any existing <@>
-  userName = '@' + userName; // Add a single @ sign
+  logger.info('userName = ' + userName);
+
+  // Fetch the actual userName using the _checkUser function
+  const actualUserName = await _checkUser(userName.replace(/[<@>]/g, ''));
+
+  // Format the userName to match the blacklist entries
+  const formattedUserName = actualUserName ? actualUserName.toLowerCase() : userName.toLowerCase();
 
   // Check if the user is on the blacklist
-  logger.info('Checking the following user: ' + userName);
+  logger.info('Checking the following user: ' + formattedUserName);
   logger.info('Current blacklist: ' + JSON.stringify(blacklist, null, 2));
-  if (blacklist.includes(userName)) {
-    logger.info('User is on the blacklist: ' + userName);
+  if (blacklist.includes(formattedUserName)) {
+    logger.info('User is on the blacklist: ' + formattedUserName);
     _slackMessage("Well... this is awkward.. U're *blacklisted*! ", channel);
     return;
   }
 
-  var [data, message] = spotify.searchSpotify(input, channel, userName, 1);
+  var [data, message] = await spotify.searchSpotify(input, channel, formattedUserName, 1);
   if (message) {
     _slackMessage(message, channel);
   }
@@ -1312,20 +1321,20 @@ async function _add(input, channel, userName) {
   var trackName = data.tracks.items[0].artists[0].name + ' - ' + data.tracks.items[0].name;
   var titleName = data.tracks.items[0].name;
 
-  sonos.getCurrentState().then(state => {
+  sonos.getCurrentState().then(async state => {
     logger.info('Got current state: ' + state);
     if (state === 'stopped') {
       sonos.flush().then(result => {
         logger.info('Flushed queue: ' + JSON.stringify(result, null, 2));
         logger.info('State: ' + state + ' - flushing');
-        _addToSpotify(userName, uri, albumImg, trackName, channel);
+        _addToSpotify(formattedUserName, uri, albumImg, trackName, channel);
         logger.info('Adding track:' + trackName);
         setTimeout(() => _playInt('play', channel), 500);
       }).catch(err => {
         logger.error('Error flushing queue: ' + err);
       });
     } else if (state === 'playing') {
-      sonos.getQueue().then(result => {
+      sonos.getQueue().then(async result => {
         logger.info('Searching for duplicated track:' + titleName);
         let trackFound = false;
         for (var i in result.items) {
@@ -1337,11 +1346,11 @@ async function _add(input, channel, userName) {
         }
         if (trackFound) {
           console.log("Track " + titleName + " is already in the queue, skipping...");
-          _slackMessage("Track already in the queue.. I will let it go for this time " + userName + "....", channel);
+          _slackMessage("Track already in the queue.. I will let it go for this time " + formattedUserName + "....", channel);
         } else {
           logger.info('State: ' + state + ' - playing...');
           // Add the track to playlist...
-          _addToSpotify(userName, uri, albumImg, trackName, channel);
+          _addToSpotify(formattedUserName, uri, albumImg, trackName, channel);
         }
       }).catch(err => {
         logger.error('Error fetching queue: ' + err);
@@ -1704,6 +1713,8 @@ function _status(channel, state) {
 }
 
 
+
+
 function _debug(channel) {
   var url = 'http://' + sonosIp + ':1400/xml/device_description.xml';
 
@@ -1779,7 +1790,6 @@ function _debug(channel) {
 
   const isDocker = isRunningInDocker();  // Improved check for Docker environment
 
-
   if (isDocker) {
     // Check if IP is defined in the environment
     // Get the IP address from the configuration
@@ -1796,27 +1806,85 @@ function _debug(channel) {
 
   const dockerIPAddress = isDocker ? getHostIPAddress() : null;  // Host IP if running inside Docker
 
+  // Define nodeVersion outside the if block
+  const nodeVersion = JSON.stringify(process.versions);
+
   xmlToJson(url, function (err, data) {
+    let sonosInfo = '';
     if (err) {
       logger.error('Error occurred ' + err);
-    }
-    logger.info('BuildNumber of SlackONOS: ', buildNumber);
-    logger.info('Platform: ', process.platform);
-    logger.info('Node version: ', process.version);
-    logger.info('Node dependencies: ', process.versions);
-    const nodeVersion = JSON.stringify(process.versions);
+      sonosInfo = 'SONOS device is offline or not responding.';
+    } else {
+      logger.info('BuildNumber of SlackONOS: ', buildNumber);
+      logger.info('Platform: ', process.platform);
+      logger.info('Node version: ', process.version);
+      logger.info('Node dependencies: ', process.versions);
 
-    // Log Sonos information
-    logger.info(data.root.device[0].modelDescription);
-    logger.info(data.root.device[0].softwareVersion);
-    logger.info(data.root.device[0].displayName);
-    logger.info(data.root.device[0].hardwareVersion);
-    logger.info(data.root.device[0].apiVersion);
-    logger.info(data.root.device[0].roomName);
-    logger.info(data.root.device[0].friendlyName);
-    logger.info(data.root.device[0].modelNumber);
-    logger.info(data.root.device[0].serialNum);
-    logger.info(data.root.device[0].MACAddress);
+      // Log Sonos information
+      logger.info(data.root.device[0].modelDescription);
+      logger.info(data.root.device[0].softwareVersion);
+      logger.info(data.root.device[0].displayName);
+      logger.info(data.root.device[0].hardwareVersion);
+      logger.info(data.root.device[0].apiVersion);
+      logger.info(data.root.device[0].roomName);
+      logger.info(data.root.device[0].friendlyName);
+      logger.info(data.root.device[0].modelNumber);
+      logger.info(data.root.device[0].serialNum);
+      logger.info(data.root.device[0].MACAddress);
+
+      sonosInfo = 
+        '\n------------------------------' +
+        '\n*Sonos Info*' +
+        '\n' +
+        '\nFriendly Name:  ' + (data.root.device[0].friendlyName) +
+        '\nRoom Name:  ' + (data.root.device[0].roomName) +
+        '\nDisplay Name:  ' + (data.root.device[0].displayName) +
+        '\nModel Description:  ' + (data.root.device[0].modelDescription) +
+        '\nModelNumber:  ' + (data.root.device[0].modelNumber) +
+        '\nSerial Number:  ' + (data.root.device[0].serialNum) +
+        '\nMAC Address:  ' + (data.root.device[0].MACAddress) +
+        '\nSW Version:  ' + (data.root.device[0].softwareVersion) +
+        '\nHW Version:  ' + (data.root.device[0].hardwareVersion) +
+        '\nAPI Version:  ' + (data.root.device[0].apiVersion) +
+        '\n------------------------------';
+    }
+
+    // Get memory usage
+    const memoryUsage = process.memoryUsage();
+    const formattedMemoryUsage = `
+Memory Usage:
+  RSS: ${Math.round(memoryUsage.rss / 1024 / 1024)} MB
+  Heap Total: ${Math.round(memoryUsage.heapTotal / 1024 / 1024)} MB
+  Heap Used: ${Math.round(memoryUsage.heapUsed / 1024 / 1024)} MB
+  External: ${Math.round(memoryUsage.external / 1024 / 1024)} MB
+  Array Buffers: ${Math.round(memoryUsage.arrayBuffers / 1024 / 1024)} MB
+`;
+
+    // Get uptime
+    const uptime = process.uptime();
+    const formattedUptime = `
+Uptime: ${Math.floor(uptime / 60)} minutes ${Math.floor(uptime % 60)} seconds
+`;
+
+    // Get environment variables
+    const envVars = `
+Environment Variables:
+  NODE_ENV: ${process.env.NODE_ENV || 'not set'}
+  PATH: ${process.env.PATH}
+`;
+
+    // Get network interfaces
+    const networkInterfaces = os.networkInterfaces();
+    const formattedNetworkInterfaces = Object.entries(networkInterfaces).map(([name, addresses]) => {
+      return addresses.map(addr => `${name}: ${addr.address}`).join('\n');
+    }).join('\n');
+
+    // Get disk usage (example for Unix-like systems)
+    const diskUsage = execSync('df -h /').toString();
+    const formattedDiskUsage = `
+Disk Usage:
+${diskUsage}
+`;
 
     let message = 
       '\n------------------------------' +
@@ -1837,64 +1905,58 @@ function _debug(channel) {
       '\nRunning inside Docker:  ' + (isDocker ? 'Yes' : 'No') +
       (dockerIPAddress ? '\nHost IP (Docker):  ' + dockerIPAddress : '') +
       '\n------------------------------' +
-      '\n*Sonos Info*' +
-      '\n' +
-      '\nFriendly Name:  ' + (data.root.device[0].friendlyName) +
-      '\nRoom Name:  ' + (data.root.device[0].roomName) +
-      '\nDisplay Name:  ' + (data.root.device[0].displayName) +
-      '\nModel Description:  ' + (data.root.device[0].modelDescription) +
-      '\nModelNumber:  ' + (data.root.device[0].modelNumber) +
-      '\nSerial Number:  ' + (data.root.device[0].serialNum) +
-      '\nMAC Address:  ' + (data.root.device[0].MACAddress) +
-      '\nSW Version:  ' + (data.root.device[0].softwareVersion) +
-      '\nHW Version:  ' + (data.root.device[0].hardwareVersion) +
-      '\nAPI Version:  ' + (data.root.device[0].apiVersion) +
-      '\n------------------------------';
+      sonosInfo +
+      '\n------------------------------' +
+      formattedMemoryUsage +
+      '\n------------------------------' +
+      formattedUptime +
+      '\n------------------------------' +
+      envVars +
+      '\n------------------------------' +
+      'Network Interfaces:\n' + formattedNetworkInterfaces +
+      '\n------------------------------' +
+      formattedDiskUsage;
 
     _slackMessage(message, channel);
   });
 }
 
 
-
-async function _blacklist(input, channel) {
+async function _blacklist(input, channel, userName) {
   if (channel !== global.adminChannel) {
     return;
   }
 
-  var action = input[1] ? input[1] : '';
-  var slackUser = input[2] ? input[2].replace(/[<@>]/g, '') : '';
+  const action = input[1] ? input[1] : '';
+  const slackUser = input[2] ? input[2].replace(/[<@>]/g, '') : '';
 
   let message = '';
 
   if (slackUser !== '') {
-    var userId = slackUser;
+    var userNameToCheck = await _checkUser(slackUser);
   }
 
   if (action === '') {
     // Fetch usernames for each user ID in the blacklist
-    const usernames = await Promise.all(blacklist.map(async (userId) => {
-      const userName = await _checkUser(userId.replace('@', ''));
-      return userName ? `@${userName}` : userId;
+    const usernames = await Promise.all(blacklist.map(async (userName) => {
+      return `@${userName}`;
     }));
 
     message = 'The following users are blacklisted:\n```\n' + usernames.join('\n') + '\n```';
-  } else if (typeof userId !== 'undefined') {
-    const userName = await _checkUser(userId);
-    const displayName = userName ? `@${userName}` : `@${userId}`;
+  } else if (typeof userNameToCheck !== 'undefined') {
+    const displayName = `@${userNameToCheck}`;
 
     if (action === 'add') {
-      var i = blacklist.indexOf('@' + userId);
-      if (i === -1) {
-        blacklist.push('@' + userId);
+      if (!blacklist.includes(userNameToCheck)) {
+        blacklist.push(userNameToCheck);
         message = `The user ${displayName} has been added to the blacklist.`;
       } else {
         message = `The user ${displayName} is already on the blacklist.`;
       }
     } else if (action === 'del') {
-      var i = blacklist.indexOf('@' + userId);
-      if (i !== -1) {
-        blacklist.splice(i, 1);
+      const index = blacklist.indexOf(userNameToCheck);
+      if (index !== -1) {
+        blacklist.splice(index, 1);
         message = `The user ${displayName} has been removed from the blacklist.`;
       } else {
         message = `The user ${displayName} is not on the blacklist.`;
@@ -2098,6 +2160,39 @@ function _purgeHalfQueue(input, channel) {
   })
 }
 
+//Show stats
+async function _stats(channel) {
+  let userActions = {};
+
+  // Ensure the file exists
+  if (!fs.existsSync(userActionsFile)) {
+    _slackMessage('No statistics available.', channel);
+    return;
+  }
+
+  // Read existing user actions from the file
+  try {
+    const data = fs.readFileSync(userActionsFile, 'utf8');
+    userActions = JSON.parse(data);
+  } catch (err) {
+    logger.error('Error reading or parsing userActions.json: ' + err);
+    _slackMessage('Error reading statistics.', channel);
+    return;
+  }
+
+  // Format the data into a readable list
+  let message = 'User Statistics:\n```\n';
+  for (const userName in userActions) {
+    message += `${userName}:\n`;
+    for (const action in userActions[userName]) {
+      message += `  ${action}: ${userActions[userName][action]}\n`;
+    }
+  }
+  message += '```';
+
+  // Send the formatted message to the specified Slack channel
+  _slackMessage(message, channel);
+}
 
 // Function to log user actions
 function _logUserAction(userName, action) {
