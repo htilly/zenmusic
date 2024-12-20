@@ -125,8 +125,8 @@ if (!token) {
   throw new Error('SLACK_API_TOKEN is not set');
 }
 
-const { RTMClient } = require('@slack/rtm-api'); 
-const { WebClient } = require('@slack/web-api'); 
+const { RTMClient } = require('@slack/rtm-api');
+const { WebClient } = require('@slack/web-api');
 const rtm = new RTMClient(token, {
   logLevel: 'error',
   dataStore: false,
@@ -218,7 +218,7 @@ async function _lookupChannelID() {
       });
 
       logger.info(`Response status for fetching channels: ${response.status}`);
-      
+
       if (response.status === 429) {
         retryAfter = parseInt(response.headers.get('retry-after')) || backoff;
         backoff = Math.min(backoff * 2, 60); // Exponential backoff up to 60s
@@ -378,43 +378,43 @@ function processInput(text, channel, userName) {
     default:
       matched = false
       break
-      case 'flush':
-        _flush(input, channel)
-        break
+    case 'flush':
+      _flush(input, channel)
+      break
   }
 
   if (!matched && channel === global.adminChannel) {
     switch (term) {
       case 'debug':
-        _debug(channel)
+        _debug(channel, userName)
         break
       case 'next':
-        _nextTrack(channel)
+        _nextTrack(channel, userName)
         break
       case 'stop':
-        _stop(input, channel)
+        _stop(input, channel, userName)
         break
       case 'flush':
-        _flush(input, channel)
+        _flush(input, channel, userName)
         break
       case 'play':
-        _play(input, channel)
+        _play(input, channel, userName)
         break
       case 'pause':
-        _pause(input, channel)
+        _pause(input, channel, userName)
         break
       case 'playpause':
       case 'resume':
-        _resume(input, channel)
+        _resume(input, channel, userName)
         break
       case 'previous':
-        _previous(input, channel)
+        _previous(input, channel, userName)
         break
       case 'shuffle':
-        _shuffle(input, channel)
+        _shuffle(input, channel, userName)
         break
       case 'normal':
-        _normal(input, channel)
+        _normal(input, channel, userName)
         break
       case 'setvolume':
         _setVolume(input, channel, userName)
@@ -432,7 +432,7 @@ function processInput(text, channel, userName) {
       case 'snap':
         _purgeHalfQueue(input, channel)
         break
-        case 'listimmune': 
+      case 'listimmune':
         _listImmune(channel)
         break
       case 'tts':
@@ -444,7 +444,7 @@ function processInput(text, channel, userName) {
         _moveTrackAdmin(input, channel, userName)
         break
       case 'stats':
-        _stats(channel)
+        _stats(channel, userName)
         break
       default:
     }
@@ -498,6 +498,7 @@ function _getVolume(channel) {
 }
 
 function _setVolume(input, channel, userName) {
+  _logUserAction(userName, 'setVolume');
   if (channel !== global.adminChannel) {
     return
   }
@@ -563,7 +564,7 @@ function _showQueue(channel) {
           let trackTitle = item.title;
           if (_isTrackGongBanned(item.title)) {
             tracks.push(':lock: ' + '_#' + i + '_ ' + trackTitle + ' by ' + item.artist);
-  //          trackTitle = ':lock:' + trackTitle;
+            //          trackTitle = ':lock:' + trackTitle;
           } else if (item.title === track.title) {
             trackTitle = '*' + trackTitle + '*';
           } else {
@@ -595,38 +596,48 @@ function _showQueue(channel) {
 
 function _upNext(channel) {
   sonos.getQueue().then(result => {
-    logger.debug('Current queue: ' + JSON.stringify(result, null, 2))
+//    logger.debug('Current queue: ' + JSON.stringify(result, null, 2));
 
     _currentTrack(channel, function (err, track) {
-      if (!result) {
-        logger.debug(result)
-        _slackMessage('Seems like the queue is empty... Have you tried adding a song?!', channel)
+      if (!result || !result.items || result.items.length === 0) {
+        logger.debug('Queue is empty or undefined');
+        _slackMessage('Seems like the queue is empty... Have you tried adding a song?!', channel);
+        return;
       }
       if (err) {
-        logger.error(err)
+        logger.error('Error getting current track: ' + err);
+        return;
       }
-      var message = 'Recent and upcoming tracks\n====================\n'
-      let tracks = []
-      let currentIndex = track.queuePosition
-      result.items.map(
-        function (item, i) {
-          if (i === currentIndex) {
-            currentIndex = i
-            tracks.push('_#' + i + '_ ' + "_"+item.title+"_" + ' by ' + item.artist)
-          } 
+      if (!track) {
+        logger.debug('Current track is undefined');
+        _slackMessage('No current track is playing.', channel);
+        return;
+      }
+
+//      logger.info('Got current track: ' + JSON.stringify(track, null, 2));
+
+      var message = 'Upcoming tracks\n====================\n';
+      let tracks = [];
+      let currentIndex = track.queuePosition;
+
+      // Add current track and upcoming tracks to the tracks array
+      result.items.forEach((item, i) => {
+        if (i >= currentIndex && i <= currentIndex + 5) {
+          tracks.push('_#' + i + '_ ' + "_" + item.title + "_" + ' by ' + item.artist);
         }
-      )
-      tracks = tracks.slice(Math.max(currentIndex - 5, 0), Math.min(currentIndex + 20, tracks.length))
+      });
+
       for (var i in tracks) {
-        message += tracks[i] + '\n'
+        message += tracks[i] + '\n';
       }
+
       if (message) {
-        _slackMessage(message, channel)
+        _slackMessage(message, channel);
       }
-    })
+    });
   }).catch(err => {
-    logger.error('Error fetching queue: ' + err)
-  })
+    logger.error('Error fetching queue: ' + err);
+  });
 }
 
 
@@ -638,6 +649,7 @@ const voteTimeLimit = voteTimeLimitMinutes * 60 * 1000; // Convert minutes to mi
 
 
 function _flushvote(channel, userName) {
+  _logUserAction(userName, 'flushvote');
   logger.info('_flushvote...');
 
   if (!(userName in flushVoteScore)) {
@@ -649,8 +661,8 @@ function _flushvote(channel, userName) {
   } else {
     flushVoteScore[userName] = flushVoteScore[userName] + 1;
     voteCounter++;
-logger.info('1voteCounter: ' + voteCounter);
-logger.info('1voteTimer: ' + voteTimer);
+    logger.info('1voteCounter: ' + voteCounter);
+    logger.info('1voteTimer: ' + voteTimer);
     if (voteCounter === 1) {
       // Start the timer on the first vote
       voteTimer = setTimeout(() => {
@@ -665,7 +677,7 @@ logger.info('1voteTimer: ' + voteTimer);
       logger.info('3voteTimer: ' + voteTimer);
     }
 
-    _slackMessage('This is VOTE ' + "*"+voteCounter+"*" + '/' + flushVoteLimit + ' for a full flush of the playlist!!', channel);
+    _slackMessage('This is VOTE ' + "*" + voteCounter + "*" + '/' + flushVoteLimit + ' for a full flush of the playlist!!', channel);
 
     if (voteCounter >= flushVoteLimit) {
       clearTimeout(voteTimer); // Clear the timer if the vote limit is reached
@@ -719,7 +731,7 @@ function _gong(channel, userName) {
 
       gongScore[userName] = gongScore[userName] + 1
       gongCounter++
-      _slackMessage(randomMessage + ' This is GONG ' + gongCounter + '/' + gongLimit + ' for ' + "*"+track+"*", channel)
+      _slackMessage(randomMessage + ' This is GONG ' + gongCounter + '/' + gongLimit + ' for ' + "*" + track + "*", channel)
       if (gongCounter >= gongLimit) {
         _slackMessage('The music got GONGED!!', channel)
         _gongplay('play', channel)
@@ -797,7 +809,7 @@ function _listImmune(channel) {
   if (gongBannedTracksList.length === 0) {
     _slackMessage('No tracks are currently immune.', channel);
   } else {
-    const message = 'Immune Tracks:\n' + gongBannedTracksList.join ('\n');
+    const message = 'Immune Tracks:\n' + gongBannedTracksList.join('\n');
     _slackMessage(message, channel);
   }
 }
@@ -808,13 +820,14 @@ function _listImmune(channel) {
 let trackVoteCount = {};
 
 function _vote(input, channel, userName) {
+  _logUserAction(userName, 'vote');
 
-      // Get message
-      logger.info('voteMessage.length: ' + voteMessage.length)
-      var ran = Math.floor(Math.random() * voteMessage.length)
-      var randomMessage = voteMessage[ran]
-      logger.info('voteMessage: ' + randomMessage)
-  
+  // Get message
+  logger.info('voteMessage.length: ' + voteMessage.length)
+  var ran = Math.floor(Math.random() * voteMessage.length)
+  var randomMessage = voteMessage[ran]
+  logger.info('voteMessage: ' + randomMessage)
+
   var voteNb = input[1];
   voteNb = Number(voteNb) + 1; // Add 1 to match the queue index
   voteNb = String(voteNb);
@@ -860,7 +873,7 @@ function _vote(input, channel, userName) {
         // Log the vote count for the track
         logger.info('Track ' + voteTrackName + ' has received ' + trackVoteCount[voteNb] + ' votes.');
 
-        _slackMessage('This is VOTE ' + trackVoteCount[voteNb] + '/' + voteLimit + ' for ' + "*"+voteTrackName+"*", channel);
+        _slackMessage('This is VOTE ' + trackVoteCount[voteNb] + '/' + voteLimit + ' for ' + "*" + voteTrackName + "*", channel);
         if (trackVoteCount[voteNb] >= voteLimit) {
           logger.info('Track ' + voteTrackName + ' has reached the vote limit.');
           _slackMessage(randomMessage, channel);
@@ -974,7 +987,7 @@ function _votecheck(channel) {
         const trackName = trackNames[trackId] || 'Unknown Track';
         const voters = Object.keys(voteScore).filter(user => voteScore[user] > 0 && voteScore[user] < voteLimitPerUser);
         const votedBy = voters.map(user => `${user}`).join(', ');
-        _slackMessage("*"+trackName+"*" + ' has received ' + voteCount + ' votes. Voted by: ' + votedBy, channel);
+        _slackMessage("*" + trackName + "*" + ' has received ' + voteCount + ' votes. Voted by: ' + votedBy, channel);
       }
     }
   }).catch(err => {
@@ -1018,7 +1031,8 @@ function _gongcheck(channel, userName) {
   })
 }
 
-function _previous(input, channel) {
+function _previous(input, channel, userName) {
+  _logUserAction(userName, 'previous');
   if (channel !== global.adminChannel) {
     return
   }
@@ -1039,7 +1053,8 @@ function _help(input, channel) {
   _slackMessage(message, channel)
 }
 
-function _play(input, channel, state) {
+function _play(input, channel, userName, state) {
+  _logUserAction(userName, 'play');
   if (channel !== global.adminChannel) {
     return
   }
@@ -1061,7 +1076,8 @@ function _playInt(input, channel) {
   })
 }
 
-function _stop(input, channel, state) {
+function _stop(input, channel, userName, state) {
+  _logUserAction(userName, 'stop');
   if (channel !== global.adminChannel) {
     return
   }
@@ -1085,7 +1101,8 @@ function _pause(input, channel, state) {
   })
 }
 
-function _resume(input, channel, state) {
+function _resume(input, channel, userName, state) {
+  _logUserAction(userName, 'resume');
   if (channel !== global.adminChannel) {
     return
   }
@@ -1097,7 +1114,8 @@ function _resume(input, channel, state) {
   })
 }
 
-function _flush(input, channel) {
+function _flush(input, channel, userName) {
+  _logUserAction(userName, 'flush');
   if (channel !== global.adminChannel) {
     _slackMessage('Where you supposed to type _flushvote_?', channel)
     return
@@ -1366,6 +1384,8 @@ async function _add(input, channel, userName) {
 
 
 function _addalbum(input, channel, userName) {
+  _logUserAction(userName, 'addalbum');
+
   var [data, message] = spotify.searchSpotifyAlbum(input, channel, userName, 1)
   if (message) {
     _slackMessage(message, channel)
@@ -1485,6 +1505,7 @@ function _search(input, channel, userName) {
 }
 
 async function _searchplaylist(input, channel, userName) {
+  _logUserAction(userName, 'searchplaylist');
   logger.info('_searchplaylist ' + input);
 
   // Ensure userName is defined; set a fallback if it’s undefined
@@ -1601,6 +1622,7 @@ function _addToSpotifyArtist(userName, trackName, spid, channel) {
 }
 
 async function _addplaylist(input, channel, userName) {
+  _logUserAction(userName, '_addplaylist');
   logger.info('_addplaylist ' + input);
   const [data, message] = await spotify.searchSpotifyPlaylist(input, channel, userName, searchLimit);
 
@@ -1613,45 +1635,45 @@ async function _addplaylist(input, channel, userName) {
     return;
   }
 
-  logger.info('Playlists found: ' + JSON.stringify(data.playlists.items, null, 2));
+//  logger.info('Playlists found: ' + JSON.stringify(data.playlists.items, null, 2));
 
-  for (let i = 1; i <= data.playlists.items.length; i++) {
-    const playlist = data.playlists.items[i - 1];
-    if (!playlist) {
-      logger.error('Playlist item is null or undefined at index: ' + (i - 1));
-      continue;
-    }
-
-    const uri = playlist.uri;
-    const albumImg = playlist.images[2]?.url || 'No image available';
-    const playlistName = playlist.name;
-
-    logger.info('Adding playlist: ' + playlistName + ' with URI: ' + uri);
-
-    sonos.getCurrentState().then(state => {
-      logger.info('Got current state: ' + state);
-
-      if (state === 'stopped') {
-        _flushInt(input, channel);
-        logger.info('State: ' + state + ' - appending');
-        _addToSpotify(userName, uri, albumImg, playlistName, channel);
-        logger.info('Adding playlist: ' + playlistName);
-        setTimeout(() => _playInt('play', channel), 1000);
-      } else if (state === 'playing') {
-        logger.info('State: ' + state + ' - adding...');
-        _addToSpotify(userName, uri, albumImg, playlistName, channel);
-      } else if (state === 'paused') {
-        logger.info('State: ' + state + ' - telling them no...');
-        _addToSpotify(userName, uri, albumImg, playlistName, channel, function () {
-          if (channel === global.adminChannel) {
-            _slackMessage('Sonos is currently PAUSED. Type `resume` to start playing...', channel);
-          }
-        });
-      }
-    }).catch(err => {
-      logger.error('Error getting current state: ' + err);
-    });
+  // Select the first playlist from the search results
+  const playlist = data.playlists.items[0];
+  if (!playlist) {
+    logger.error('Playlist item is null or undefined at index: 0');
+    _slackMessage('No valid playlists found for the given input.', channel);
+    return;
   }
+
+  const uri = playlist.uri;
+  const albumImg = playlist.images[2]?.url || 'No image available';
+  const playlistName = playlist.name;
+
+  logger.info('Adding playlist: ' + playlistName + ' with URI: ' + uri);
+
+  sonos.getCurrentState().then(state => {
+    logger.info('Got current state: ' + state);
+
+    if (state === 'stopped') {
+      _flushInt(input, channel);
+      logger.info('State: ' + state + ' - appending');
+      _addToSpotify(userName, uri, albumImg, playlistName, channel);
+      logger.info('Adding playlist: ' + playlistName);
+      setTimeout(() => _playInt('play', channel), 1000);
+    } else if (state === 'playing') {
+      logger.info('State: ' + state + ' - adding...');
+      _addToSpotify(userName, uri, albumImg, playlistName, channel);
+    } else if (state === 'paused') {
+      logger.info('State: ' + state + ' - telling them no...');
+      _addToSpotify(userName, uri, albumImg, playlistName, channel, function () {
+        if (channel === global.adminChannel) {
+          _slackMessage('Sonos is currently PAUSED. Type `resume` to start playing...', channel);
+        }
+      });
+    }
+  }).catch(err => {
+    logger.error('Error getting current state: ' + err);
+  });
 }
 
 
@@ -1712,10 +1734,9 @@ function _status(channel, state) {
   })
 }
 
-
-
-
-function _debug(channel) {
+// Ensure the _debug function is defined
+async function _debug(channel, userName) {
+  _logUserAction(userName, 'debug');
   var url = 'http://' + sonosIp + ':1400/xml/device_description.xml';
 
   // Function to get the IP address of the machine (Docker container if inside Docker)
@@ -1760,10 +1781,10 @@ function _debug(channel) {
     try {
       const result = fs.readFileSync('/proc/net/route', 'utf8');
       const lines = result.split('\n');
-      
+
       for (const line of lines) {
         const columns = line.trim().split(/\s+/);
-        
+
         // Look for the default route (Destination is 00000000)
         if (columns[1] === '00000000') {
           const hexIp = columns[2];  // Gateway IP is in the third column
@@ -1771,13 +1792,13 @@ function _debug(channel) {
           return gatewayIp;
         }
       }
-      
+
       return 'Host IP address not found';
     } catch (err) {
       return 'Host IP address not found';
     }
   }
-  
+
   // Helper function to convert hex IP from /proc/net/route to a readable IP address
   function hexToIp(hex) {
     return [
@@ -1809,7 +1830,7 @@ function _debug(channel) {
   // Define nodeVersion outside the if block
   const nodeVersion = JSON.stringify(process.versions);
 
-  xmlToJson(url, function (err, data) {
+  xmlToJson(url, async function (err, data) {
     let sonosInfo = '';
     if (err) {
       logger.error('Error occurred ' + err);
@@ -1832,10 +1853,8 @@ function _debug(channel) {
       logger.info(data.root.device[0].serialNum);
       logger.info(data.root.device[0].MACAddress);
 
-      sonosInfo = 
-        '\n------------------------------' +
+      sonosInfo =
         '\n*Sonos Info*' +
-        '\n' +
         '\nFriendly Name:  ' + (data.root.device[0].friendlyName) +
         '\nRoom Name:  ' + (data.root.device[0].roomName) +
         '\nDisplay Name:  ' + (data.root.device[0].displayName) +
@@ -1845,14 +1864,13 @@ function _debug(channel) {
         '\nMAC Address:  ' + (data.root.device[0].MACAddress) +
         '\nSW Version:  ' + (data.root.device[0].softwareVersion) +
         '\nHW Version:  ' + (data.root.device[0].hardwareVersion) +
-        '\nAPI Version:  ' + (data.root.device[0].apiVersion) +
-        '\n------------------------------';
+        '\nAPI Version:  ' + (data.root.device[0].apiVersion);
     }
 
     // Get memory usage
     const memoryUsage = process.memoryUsage();
     const formattedMemoryUsage = `
-Memory Usage:
+*Memory Usage*:
   RSS: ${Math.round(memoryUsage.rss / 1024 / 1024)} MB
   Heap Total: ${Math.round(memoryUsage.heapTotal / 1024 / 1024)} MB
   Heap Used: ${Math.round(memoryUsage.heapUsed / 1024 / 1024)} MB
@@ -1863,14 +1881,7 @@ Memory Usage:
     // Get uptime
     const uptime = process.uptime();
     const formattedUptime = `
-Uptime: ${Math.floor(uptime / 60)} minutes ${Math.floor(uptime % 60)} seconds
-`;
-
-    // Get environment variables
-    const envVars = `
-Environment Variables:
-  NODE_ENV: ${process.env.NODE_ENV || 'not set'}
-  PATH: ${process.env.PATH}
+*Uptime*: ${Math.floor(uptime / 60)} minutes ${Math.floor(uptime % 60)} seconds
 `;
 
     // Get network interfaces
@@ -1882,47 +1893,150 @@ Environment Variables:
     // Get disk usage (example for Unix-like systems)
     const diskUsage = execSync('df -h /').toString();
     const formattedDiskUsage = `
-Disk Usage:
+*Disk Usage*:
 ${diskUsage}
 `;
 
-    let message = 
-      '\n------------------------------' +
-      '\n*SlackONOS Info*' +
-      '\n' +
-      '\nBuildNumber:  ' + buildNumber +
-      '\n------------------------------' +
-      '\n*Spotify Info*' +
-      '\n' +
-      '\nMarket:  ' + market +
-      '\n------------------------------' +
-      '\n*Node Info*' +
-      '\n' +
-      '\nPlatform:  ' + process.platform +
-      '\nNode version:  ' + process.version +
-      '\nNode dependencies:  ' + nodeVersion +
-      '\nIP:  ' + ipAddress +
-      '\nRunning inside Docker:  ' + (isDocker ? 'Yes' : 'No') +
-      (dockerIPAddress ? '\nHost IP (Docker):  ' + dockerIPAddress : '') +
-      '\n------------------------------' +
-      sonosInfo +
-      '\n------------------------------' +
-      formattedMemoryUsage +
-      '\n------------------------------' +
-      formattedUptime +
-      '\n------------------------------' +
-      envVars +
-      '\n------------------------------' +
-      'Network Interfaces:\n' + formattedNetworkInterfaces +
-      '\n------------------------------' +
-      formattedDiskUsage;
 
-    _slackMessage(message, channel);
+
+// Read configuration values only from config.json
+const configKeys = Object.keys(config.stores.file.store); // Access only the file-based store
+const configValues = configKeys.map(key => `${key}: ${config.get(key)}`).join('\n');
+
+// Debug log for verification
+logger.info('DEBUG -- Config values from config.json: ' + configValues);
+
+// Ensure environment variables are handled separately
+const envVars = `
+*Environment Variables*:
+  NODE_VERSION: ${process.env.NODE_VERSION || 'not set'}
+  HOSTNAME: ${process.env.HOSTNAME || 'not set'}
+  YARN_VERSION: ${process.env.YARN_VERSION || 'not set'}
+  HOME: ${process.env.HOME || 'not set'}
+  PATH: ${process.env.PATH}
+  PWD: ${process.env.PWD}
+`;
+
+    const blocks = [
+      {
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text: '*SlackONOS Info*\nBuildNumber: ' + buildNumber
+        }
+      },
+      {
+        type: 'divider'
+      },
+      {
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text: '*Spotify Info*\nMarket: ' + market
+        }
+      },
+      {
+        type: 'divider'
+      },
+      {
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text: sonosInfo
+        }
+      },
+      {
+        type: 'divider'
+      },
+      {
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text: formattedMemoryUsage
+        }
+      },
+      {
+        type: 'divider'
+      },
+      {
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text: formattedUptime
+        }
+      },
+      {
+        type: 'divider'
+      },
+      {
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text: envVars
+        }
+      },
+      {
+        type: 'divider'
+      },
+      {
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text: '*Network Interfaces*\n' + formattedNetworkInterfaces
+        }
+      },
+      {
+        type: 'divider'
+      },
+      {
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text: formattedDiskUsage
+        }
+      },
+      {
+        type: 'divider'
+      },
+      {
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text: '*Configuration Values*\n' + configValues
+        }
+      },
+      {
+        type: 'divider'
+      },
+      {
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text: envVars
+        }
+      }
+    ];
+
+    const message = {
+      channel: channel,
+      blocks: blocks
+    };
+
+    try {
+      await web.chat.postMessage(message);
+    } catch (err) {
+      logger.error('Error sending debug message: ' + err);
+      _slackMessage('Error sending debug message.', channel);
+    }
   });
 }
 
 
+
+
+
 async function _blacklist(input, channel, userName) {
+  _logUserAction(userName, 'blacklist');
   if (channel !== global.adminChannel) {
     return;
   }
@@ -1978,7 +2092,7 @@ async function _blacklist(input, channel, userName) {
 let serverInstance = null;
 
 async function _tts(input, channel) {
-  
+
   // Get random message
   logger.info('ttsMessage.length: ' + ttsMessage.length)
   var ran = Math.floor(Math.random() * ttsMessage.length)
@@ -1988,8 +2102,8 @@ async function _tts(input, channel) {
 
   const text = ttsSayMessage + "... Message as follows... " + message + ".... I repeat...  " + message; // Remove the leading "say"
   const filePath = path.join(__dirname, 'tts.mp3');
- _slackMessage(':mega:' + ' ' + ttsSayMessage + ':  ' + '*' + message + '*', standardChannel);
- _slackMessage( 'I will post the message in the music channel: ' + standardChannel + ', for you', channel);
+  _slackMessage(':mega:' + ' ' + ttsSayMessage + ':  ' + '*' + message + '*', standardChannel);
+  _slackMessage('I will post the message in the music channel: ' + standardChannel + ', for you', channel);
   logger.info('Generating TTS for text: ' + text);
 
   try {
@@ -2011,7 +2125,7 @@ async function _tts(input, channel) {
     }
 
 
-    
+
     // Generate the TTS file using gtts
     await new Promise((resolve, reject) => {
       const gtts = new GTTS(text, 'en'); // 'en' stands for English language
@@ -2180,18 +2294,57 @@ async function _stats(channel) {
     return;
   }
 
-  // Format the data into a readable list
-  let message = 'User Statistics:\n```\n';
-  for (const userName in userActions) {
-    message += `${userName}:\n`;
-    for (const action in userActions[userName]) {
-      message += `  ${action}: ${userActions[userName][action]}\n`;
+  // Format the data into Slack's block kit format
+  const blocks = [
+    {
+      type: 'section',
+      text: {
+        type: 'mrkdwn',
+        text: '*User Statistics*'
+      }
+    },
+    {
+      type: 'divider'
     }
+  ];
+
+  for (const userName in userActions) {
+    const userStats = userActions[userName];
+    const fields = [];
+
+    for (const action in userStats) {
+      fields.push({
+        type: 'mrkdwn',
+        text: `*${action}*: ${userStats[action]}`
+      });
+    }
+
+    blocks.push({
+      type: 'section',
+      text: {
+        type: 'mrkdwn',
+        text: `*${userName}*`
+      },
+      fields: fields
+    });
+
+    blocks.push({
+      type: 'divider'
+    });
   }
-  message += '```';
 
   // Send the formatted message to the specified Slack channel
-  _slackMessage(message, channel);
+  const message = {
+    channel: channel,
+    blocks: blocks
+  };
+
+  try {
+    await web.chat.postMessage(message);
+  } catch (err) {
+    logger.error('Error sending statistics message: ' + err);
+    _slackMessage('Error sending statistics message.', channel);
+  }
 }
 
 // Function to log user actions
