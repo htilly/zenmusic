@@ -1369,16 +1369,21 @@ async function _add(input, channel, userName) {
     logger.info('Got current state: ' + state);
 
     if (state === 'stopped') {
-      sonos.flush().then(result => {
-        logger.info('Flushed queue: ' + JSON.stringify(result, null, 2));
-        _addToSpotify(formattedUserName, uri, albumImg, trackName, channel);
+      try {
+        await sonos.flush();
+        logger.info('Flushed queue');
+        await _addToSpotify(formattedUserName, uri, albumImg, trackName, channel);
         logger.info('Adding track:' + trackName);
-        setTimeout(() => _playInt('play', channel), 500);
-      }).catch(err => {
-        logger.error('Error flushing queue: ' + err);
-      });
+        setTimeout(async () => {
+          await _playInt('play', channel);
+          logger.info('Started playing');
+        }, 500);
+      } catch (err) {
+        logger.error('Error during flush or add to Spotify: ' + err);
+      }
     } else if (state === 'playing') {
-      sonos.getQueue().then(async result => {
+      try {
+        const result = await sonos.getQueue();
         logger.info('Searching for duplicated track:' + titleName);
         let trackFound = false;
         for (var i in result.items) {
@@ -1392,11 +1397,11 @@ async function _add(input, channel, userName) {
           _slackMessage("Track already in queue.. letting it go this time " + formattedUserName + "....", channel);
         } else {
           logger.info('State: ' + state + ' - playing...');
-          _addToSpotify(formattedUserName, uri, albumImg, trackName, channel);
+          await _addToSpotify(formattedUserName, uri, albumImg, trackName, channel);
         }
-      }).catch(err => {
+      } catch (err) {
         logger.error('Error fetching queue: ' + err);
-      });
+      }
     } else if (state === 'paused') {
       _slackMessage("SlackONOS is currently paused.. ask an admin to resume...", channel);
     }
@@ -1404,7 +1409,6 @@ async function _add(input, channel, userName) {
     logger.error('Error getting current state: ' + err);
   });
 }
-
 
 function _addalbum(input, channel, userName) {
   _logUserAction(userName, 'addalbum');
