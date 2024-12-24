@@ -379,7 +379,7 @@ function processInput(text, channel, userName) {
       matched = false
       break
     case 'flush':
-      _flush(input, channel)
+      _flush(input, channel, userName)
       break
   }
 
@@ -462,14 +462,22 @@ function _slackMessage(message, id) {
   }
 }
 
+const userCache = {};
+
 async function _checkUser(userId) {
   try {
     // Clean the userId if wrapped in <@...>
     userId = userId.replace(/[<@>]/g, "");
 
+    // Check if user info is already in cache
+    if (userCache[userId]) {
+      return userCache[userId];
+    }
+
     // Fetch user info from Slack API
     const result = await web.users.info({ user: userId });
     if (result.ok && result.user) {
+      userCache[userId] = result.user.name; // Cache the user info
       return result.user.name;
     } else {
       logger.error('User not found: ' + userId);
@@ -541,23 +549,24 @@ function _countQueue(channel, cb) {
   })
 }
 
-function _showQueue(channel) {
-  sonos.getQueue().then(result => {
+async function _showQueue(channel) {
+  try {
+    const result = await sonos.getQueue();
     //   logger.info('Current queue: ' + JSON.stringify(result, null, 2))
     _status(channel, function (state) {
       logger.info('_showQueue, got state = ' + state)
-    })
+    });
     _currentTrack(channel, function (err, track) {
       if (!result) {
-        logger.debug(result)
-        _slackMessage('Seems like the queue is empty... Have you tried adding a song?!', channel)
+        logger.debug(result);
+        _slackMessage('Seems like the queue is empty... Have you tried adding a song?!', channel);
       }
       if (err) {
-        logger.error(err)
+        logger.error(err);
       }
-      var message = 'Total tracks in queue: ' + result.total + '\n====================\n'
-      logger.info('Total tracks in queue: ' + result.total)
-      const tracks = []
+      var message = 'Total tracks in queue: ' + result.total + '\n====================\n';
+      logger.info('Total tracks in queue: ' + result.total);
+      const tracks = [];
 
       result.items.map(
         function (item, i) {
@@ -577,26 +586,26 @@ function _showQueue(channel) {
             tracks.push('>_#' + i + '_ ' + trackTitle + ' by ' + item.artist);
           }
         }
-      )
+      );
       for (var i in tracks) {
-        message += tracks[i] + '\n'
+        message += tracks[i] + '\n';
         if (i > 0 && Math.floor(i % 100) === 0) {
-          _slackMessage(message, channel)
-          message = ''
+          _slackMessage(message, channel);
+          message = '';
         }
       }
       if (message) {
-        _slackMessage(message, channel)
+        _slackMessage(message, channel);
       }
-    })
-  }).catch(err => {
-    logger.error('Error fetch queue: ' + err)
-  })
+    });
+  } catch (err) {
+    logger.error('Error fetching queue: ' + err);
+  }
 }
 
 function _upNext(channel) {
   sonos.getQueue().then(result => {
-//    logger.debug('Current queue: ' + JSON.stringify(result, null, 2));
+    //    logger.debug('Current queue: ' + JSON.stringify(result, null, 2));
 
     _currentTrack(channel, function (err, track) {
       if (!result || !result.items || result.items.length === 0) {
@@ -614,7 +623,7 @@ function _upNext(channel) {
         return;
       }
 
-//      logger.info('Got current track: ' + JSON.stringify(track, null, 2));
+      //      logger.info('Got current track: ' + JSON.stringify(track, null, 2));
 
       var message = 'Upcoming tracks\n====================\n';
       let tracks = [];
@@ -1317,6 +1326,8 @@ async function _add(input, channel, userName) {
   // Format the userName to match the blacklist entries
   const formattedUserName = actualUserName ? actualUserName.toLowerCase() : userName.toLowerCase();
 
+  logger.info('Checking if user is blacklisted: ' + formattedUserName);
+
   // Check if the user is on the blacklist
   logger.info('Checking the following user: ' + formattedUserName);
   logger.info('Current blacklist: ' + JSON.stringify(blacklist, null, 2));
@@ -1326,7 +1337,19 @@ async function _add(input, channel, userName) {
     return;
   }
 
-  var [data, message] = await spotify.searchSpotify(input, channel, formattedUserName, 1);
+  let data, message;
+  try {
+    [data, message] = await spotify.searchSpotify(input, channel, formattedUserName, 1);
+  } catch (error) {
+    logger.error('Error searching Spotify: ' + error);
+    _slackMessage('Error searching Spotify.', channel);
+    return;
+  }
+
+  if (!data || !data.tracks || !data.tracks.items || data.tracks.items.length === 0) {
+    _slackMessage('No tracks found for the given input.', channel);
+    return;
+  }
   if (message) {
     _slackMessage(message, channel);
   }
@@ -1334,17 +1357,20 @@ async function _add(input, channel, userName) {
     return;
   }
 
-  var uri = data.tracks.items[0].uri;
-  var albumImg = data.tracks.items[0].album.images[2].url;
-  var trackName = data.tracks.items[0].artists[0].name + ' - ' + data.tracks.items[0].name;
-  var titleName = data.tracks.items[0].name;
+  // Define the URI, album image, and track name before using them
+  let trackItem = data.tracks.items[0];
+  let uri = trackItem.uri;
+  let albumImg = trackItem.album.images[0].url;
+  let trackName = trackItem.artists[0].name + ' - ' + trackItem.name;
+  let titleName = trackItem.name;
 
+  // Check Sonos state
   sonos.getCurrentState().then(async state => {
     logger.info('Got current state: ' + state);
+
     if (state === 'stopped') {
       sonos.flush().then(result => {
         logger.info('Flushed queue: ' + JSON.stringify(result, null, 2));
-        logger.info('State: ' + state + ' - flushing');
         _addToSpotify(formattedUserName, uri, albumImg, trackName, channel);
         logger.info('Adding track:' + trackName);
         setTimeout(() => _playInt('play', channel), 500);
@@ -1363,19 +1389,16 @@ async function _add(input, channel, userName) {
           }
         }
         if (trackFound) {
-          console.log("Track " + titleName + " is already in the queue, skipping...");
-          _slackMessage("Track already in the queue.. I will let it go for this time " + formattedUserName + "....", channel);
+          _slackMessage("Track already in queue.. letting it go this time " + formattedUserName + "....", channel);
         } else {
           logger.info('State: ' + state + ' - playing...');
-          // Add the track to playlist...
           _addToSpotify(formattedUserName, uri, albumImg, trackName, channel);
         }
       }).catch(err => {
         logger.error('Error fetching queue: ' + err);
       });
     } else if (state === 'paused') {
-      // Handle paused state if needed
-      _slackMessage("SlackONOS is currently paused..  ask an admin to resume the playlist...", channel);
+      _slackMessage("SlackONOS is currently paused.. ask an admin to resume...", channel);
     }
   }).catch(err => {
     logger.error('Error getting current state: ' + err);
@@ -1477,7 +1500,7 @@ function _append(input, channel, userName) {
   })
 }
 
-function _search(input, channel, userName) {
+async function _search(input, channel, userName) {
   _logUserAction(userName, 'search');
   logger.info('_search ' + input)
   var [data, message] = spotify.searchSpotify(input, channel, userName, searchLimit)
@@ -1635,7 +1658,7 @@ async function _addplaylist(input, channel, userName) {
     return;
   }
 
-//  logger.info('Playlists found: ' + JSON.stringify(data.playlists.items, null, 2));
+  //  logger.info('Playlists found: ' + JSON.stringify(data.playlists.items, null, 2));
 
   // Select the first playlist from the search results
   const playlist = data.playlists.items[0];
@@ -1899,15 +1922,15 @@ ${diskUsage}
 
 
 
-// Read configuration values only from config.json
-const configKeys = Object.keys(config.stores.file.store); // Access only the file-based store
-const configValues = configKeys.map(key => `${key}: ${config.get(key)}`).join('\n');
+    // Read configuration values only from config.json
+    const configKeys = Object.keys(config.stores.file.store); // Access only the file-based store
+    const configValues = configKeys.map(key => `${key}: ${config.get(key)}`).join('\n');
 
-// Debug log for verification
-logger.info('DEBUG -- Config values from config.json: ' + configValues);
+    // Debug log for verification
+    logger.info('DEBUG -- Config values from config.json: ' + configValues);
 
-// Ensure environment variables are handled separately
-const envVars = `
+    // Ensure environment variables are handled separately
+    const envVars = `
 *Environment Variables*:
   NODE_VERSION: ${process.env.NODE_VERSION || 'not set'}
   HOSTNAME: ${process.env.HOSTNAME || 'not set'}
